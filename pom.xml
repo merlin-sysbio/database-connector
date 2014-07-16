@@ -1,0 +1,35 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>pt.uminho.sysbio.merlin</groupId>
+	<artifactId>database-connector</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>database-connector</name>
+	<url>http://maven.apache.org</url>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.7</maven.compiler.source>
+		<maven.compiler.target>1.7</maven.compiler.target>
+		<pt.uminho.sysbio.version>0.0.1-SNAPSHOT</pt.uminho.sysbio.version>
+	</properties>
+
+	<!-- <build>
+		<sourceDirectory>D:\workspaces\maven\database-connector\src</sourceDirectory>
+		<scriptSourceDirectory>D:\workspaces\maven\database-connector\src\main\scripts</scriptSourceDirectory>
+		<testSourceDirectory>D:\workspaces\maven\database-connector\test</testSourceDirectory>
+		<outputDirectory>D:\workspaces\maven\database-connector\bin\</outputDirectory>
+		<testOutputDirectory>D:\workspaces\maven\database-connector\test-bin</testOutputDirectory>
+	</build> -->
+
+	<dependencies>
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>5.1.30</version>
+		</dependency>
+	</dependencies>
+</project>
