@@ -94,7 +94,7 @@ public class MySQL_Schemas {
 		String driver_class_name = "com.mysql.jdbc.Driver";
 
 		String url_db_connection = "jdbc:mysql://"+this.host+":"+this.port;//+"/mysql";
-		
+	
 		Connection connection = null;
 		try  {
 			
@@ -213,64 +213,71 @@ public class MySQL_Schemas {
 	 */
 	private void sqlByStrBuffer(Connection connection, BufferedReader br) throws Exception {
 
-		StringBuffer stat = new StringBuffer();
+		try {
+			StringBuffer stat = new StringBuffer();
 
-		String str = br.readLine();
-		Statement statement;
+			String str = br.readLine();
+			Statement statement;
 
-		while(str!=null) {
+			while(str!=null) {
+				
+				if(str.compareTo("")!=0 ) {
 
-			if(str.compareTo("")!=0 ) {
+					stat.append(str+"\n");
+					if(str.startsWith("DELIMITER")) {
 
-				stat.append(str+"\n");
-				if(str.startsWith("DELIMITER")) {
-
-					stat=new StringBuffer();
-					String delimiter = str.replace("DELIMITER", "").trim();
-					str = br.readLine();
-
-					String query="";
-
-					while(!str.trim().equals(delimiter)) {
-
-						query+=" "+str;
+						stat=new StringBuffer();
+						String delimiter = str.replace("DELIMITER", "").trim();
 						str = br.readLine();
+
+						String query="";
+
+						while(!str.trim().equals(delimiter)) {
+
+							query+=" "+str;
+							str = br.readLine();
+						}
+
+						try  {
+
+							statement = connection.createStatement();
+							statement.execute(query.trim()+";");
+						} 
+						catch (SQLException e) {
+
+							System.out.println(query);
+							e.printStackTrace();
+							br.close();
+							throw new Exception();
+						}
 					}
 
-					try  {
+					if(str.contains(";")) {
 
-						statement = connection.createStatement();
-						statement.execute(query.trim()+";");
-					} 
-					catch (SQLException e) {
+						try  {
 
-						System.out.println(query);
-						e.printStackTrace();
-						br.close();
-						throw new Exception();
+							statement = connection.createStatement();
+							statement.execute(stat.toString());
+						} 
+						catch (SQLException e) {
+
+							System.out.println(stat.toString());
+							e.printStackTrace();
+							br.close();
+							throw new Exception();
+						}
+						stat=new StringBuffer();
 					}
 				}
-
-				if(str.contains(";")) {
-
-					try  {
-
-						statement = connection.createStatement();
-						statement.execute(stat.toString());
-					} 
-					catch (SQLException e) {
-
-						System.out.println(stat.toString());
-						e.printStackTrace();
-						br.close();
-						throw new Exception();
-					}
-					stat=new StringBuffer();
-				}
+				str = br.readLine();
 			}
-			str = br.readLine();
+			br.close();
+		} 
+		catch (Exception e) {
+
+			e.printStackTrace();
+			throw e;
 		}
-		br.close();
 
 	}
 
@@ -302,7 +309,7 @@ public class MySQL_Schemas {
 
 			for(String s: list) {
 
-				if(checkTable(s,"geneblast") || checkTable(s,"geneHomology")) {
+				if(checkTable(s,"geneblast") || checkTable(s,"geneHomology") || checkTable(s,"genehomology")) {
 					
 					schemasList.add(s);
 				}
