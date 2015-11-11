@@ -614,6 +614,7 @@ public class MySQLMultiThread implements Externalizable {
 	 */
 	public void setDatabase_host(String database_host) {
 		this.database_host = database_host;
+		this.dataSource.setServerName(database_host);
 	}
 
 	/**
@@ -621,6 +622,7 @@ public class MySQLMultiThread implements Externalizable {
 	 */
 	public void setDatabase_port(String database_port) {
 		this.database_port = database_port;
+		this.dataSource.setPortNumber(Integer.valueOf(database_port));
 	}
 
 	/**
@@ -628,6 +630,7 @@ public class MySQLMultiThread implements Externalizable {
 	 */
 	public void setDatabase_name(String database_name) {
 		this.database_name = database_name;
+		this.dataSource.setDatabaseName(database_name);
 	}
 
 	/**
@@ -635,6 +638,7 @@ public class MySQLMultiThread implements Externalizable {
 	 */
 	public void setDatabase_user(String database_user) {
 		this.database_user = database_user;
+		this.dataSource.setUser(database_user);
 	}
 
 	/**
@@ -642,6 +646,7 @@ public class MySQLMultiThread implements Externalizable {
 	 */
 	public void setDatabase_password(String database_password) {
 		this.database_password = database_password;
+		this.dataSource.setPassword(database_password);
 	}
 
 	@Override
