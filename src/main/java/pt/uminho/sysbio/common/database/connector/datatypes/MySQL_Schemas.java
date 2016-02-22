@@ -392,10 +392,8 @@ public class MySQL_Schemas {
 
 			Connection connection = this.createConnection(schema);
 
-			for(int i=0;i<filePath.length;i++) {
-
+			for(int i=0;i<filePath.length;i++)
 				this.sqlByStrBuffer(connection, filePath[i]);
-			}
 
 			this.closeConnection(connection);	
 

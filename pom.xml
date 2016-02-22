@@ -17,13 +17,67 @@
 		<pt.uminho.sysbio.version>0.0.1-SNAPSHOT</pt.uminho.sysbio.version>
 	</properties>
 
-	<!-- <build>
-		<sourceDirectory>D:\workspaces\maven\database-connector\src</sourceDirectory>
-		<scriptSourceDirectory>D:\workspaces\maven\database-connector\src\main\scripts</scriptSourceDirectory>
-		<testSourceDirectory>D:\workspaces\maven\database-connector\test</testSourceDirectory>
-		<outputDirectory>D:\workspaces\maven\database-connector\bin\</outputDirectory>
-		<testOutputDirectory>D:\workspaces\maven\database-connector\test-bin</testOutputDirectory>
-	</build> -->
+	<repositories>
+		<repository>
+			<id>nexus</id>
+			<name>nexus</name>
+			<url>http://192.168.1.99/nexus/content/groups/public/</url>
+		</repository>
+	</repositories>
+
+	<!-- <build> <sourceDirectory>D:\workspaces\maven\database-connector\src</sourceDirectory> 
+		<scriptSourceDirectory>D:\workspaces\maven\database-connector\src\main\scripts</scriptSourceDirectory> 
+		<testSourceDirectory>D:\workspaces\maven\database-connector\test</testSourceDirectory> 
+		<outputDirectory>D:\workspaces\maven\database-connector\bin\</outputDirectory> 
+		<testOutputDirectory>D:\workspaces\maven\database-connector\test-bin</testOutputDirectory> 
+		</build> -->
+		
+		<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.17</version>
+				<configuration>
+					<skipTests>true</skipTests>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.sonatype.plugins</groupId>
+				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<version>1.6.6</version>
+				<extensions>true</extensions>
+				<configuration>
+					<serverId>watson</serverId>
+					<nexusUrl>http://192.168.1.99/nexus/</nexusUrl>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- <plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin> -->
+		</plugins>
+	</build>
 
 	<dependencies>
 		<dependency>
@@ -31,5 +85,23 @@
 			<artifactId>mysql-connector-java</artifactId>
 			<version>5.1.30</version>
 		</dependency>
+
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<version>1.4.190</version>
+		</dependency>
 	</dependencies>
+
+  <distributionManagement>
+  	<snapshotRepository>
+	    <id>biosystems-snapshots</id>
+	    <url>http://192.168.1.99/nexus/content/repositories/biosystems-snapshots</url>
+	</snapshotRepository>
+	<repository>
+	    <id>biosystems-releases</id>
+		<url>http://192.168.1.99/nexus/content/repositories/biosystems-releases</url>
+	</repository>
+  </distributionManagement>
+
 </project>

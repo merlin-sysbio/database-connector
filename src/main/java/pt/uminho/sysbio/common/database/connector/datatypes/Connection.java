@@ -68,7 +68,7 @@ public class Connection implements Externalizable {
 		this.database_password=mysqlMutithread.get_database_password();
 		
 		this.mysqlMutithread = mysqlMutithread;
-		this.connection = this.mysqlMutithread .openConnection();
+		this.connection = this.mysqlMutithread.openConnection();
 	}
 	
 	/**
