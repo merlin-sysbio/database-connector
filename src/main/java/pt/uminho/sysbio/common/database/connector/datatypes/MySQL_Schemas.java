@@ -199,7 +199,6 @@ public class MySQL_Schemas {
 
 		FileReader fr = new FileReader(new File(filePath));
 		BufferedReader br = new BufferedReader(fr);
-
 		this.sqlByStrBuffer(connection, br);
 		fr.close();
 	}
@@ -239,7 +238,7 @@ public class MySQL_Schemas {
 						}
 
 						try  {
-
+							
 							statement = connection.createStatement();
 							statement.execute(query.trim()+";");
 						} 
@@ -359,13 +358,10 @@ public class MySQL_Schemas {
 		try {
 
 			Connection conn = this.createConnection();
-
 			conn = this.createSchema(conn, schema);		
 
-			for(int i=0;i<filePath.length;i++) {
-				
+			for(int i=0;i<filePath.length;i++)				
 				this.sqlByStrBuffer(conn, filePath[i]);
-			}
 
 			this.closeConnection(conn);	
 
