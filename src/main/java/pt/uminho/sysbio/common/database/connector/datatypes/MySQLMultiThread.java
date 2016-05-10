@@ -524,23 +524,23 @@ public class MySQLMultiThread implements Externalizable {
 	 * @return
 	 * @throws SQLException 
 	 */
-	public String[] showTables() throws SQLException
-	{
+	public String[] showTables() throws SQLException {
+		
 		this.openConnection();
 		LinkedList<String> res = new LinkedList<String>();
 
-		try 
-		{
+		try {
+			
 			DatabaseMetaData md = connection.getMetaData();
 			ResultSet rs = md.getTables(null, null, "%", null);
 
-
-			while(rs.next()){
+			while(rs.next())
 				res.add(rs.getString(3));
-			}
+			
 			rs.close();
 
-		} catch (SQLException ex) {
+		}
+		catch (SQLException ex) {
 			// handle any errors
 			ex.printStackTrace();
 		}

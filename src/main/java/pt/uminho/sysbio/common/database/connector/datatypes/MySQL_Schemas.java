@@ -280,7 +280,7 @@ public class MySQL_Schemas {
 	}
 
 	/**
-	 * Retrives all the existing Schemas in the MySQL database.
+	 * Retrieves all the existing Schemas in the MySQL database.
 	 * 
 	 * @return
 	 * @throws SQLException 
@@ -300,18 +300,12 @@ public class MySQL_Schemas {
 			statement.execute( "SHOW DATABASES ");
 			rs = statement.getResultSet();
 
-			while(rs.next()) {
-
+			while(rs.next())
 				list.add(rs.getString(1));
-			}
 
-			for(String s: list) {
-
-				if(checkTable(s,"geneblast") || checkTable(s,"geneHomology") || checkTable(s,"genehomology")) {
-					
+			for(String s: list)
+				if(checkTable(s,"geneblast") || checkTable(s,"geneHomology") || checkTable(s,"genehomology"))
 					schemasList.add(s);
-				}
-			}
 		}
 		catch (SQLException ex) {
 
