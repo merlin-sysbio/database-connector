@@ -211,10 +211,12 @@ public class MySQL_Schemas {
 	 */
 	private void sqlByStrBuffer(Connection connection, BufferedReader br) throws Exception {
 
+		String str = null;
+				
 		try {
 			StringBuffer stat = new StringBuffer();
 
-			String str = br.readLine();
+			str = br.readLine();
 			Statement statement;
 
 			while(str!=null) {
@@ -230,7 +232,7 @@ public class MySQL_Schemas {
 
 						String query="";
 
-						while(!str.trim().equals(delimiter)) {
+						while(str!=null && !str.trim().equals(delimiter)) {
 
 							query+=" "+str;
 							str = br.readLine();
@@ -253,7 +255,7 @@ public class MySQL_Schemas {
 					if(str.contains(";")) {
 
 						try  {
-
+							
 							statement = connection.createStatement();
 							statement.execute(stat.toString());
 						} 
