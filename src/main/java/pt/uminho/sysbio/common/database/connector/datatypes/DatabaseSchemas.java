@@ -237,10 +237,12 @@ public class DatabaseSchemas {
 	 */
 	private void sqlByStrBuffer(Connection connection, BufferedReader br) throws Exception {
 
+		String str = null;
+				
 		try {
 			StringBuffer stat = new StringBuffer();
 
-			String str = br.readLine();
+			str = br.readLine();
 			Statement statement;
 			
 			while(str!=null) {
@@ -256,7 +258,7 @@ public class DatabaseSchemas {
 
 						String query="";
 
-						while(!str.trim().equals(delimiter)) {
+						while(str!=null && !str.trim().equals(delimiter)) {
 
 							query+=" "+str;
 							str = br.readLine();
@@ -279,7 +281,7 @@ public class DatabaseSchemas {
 					if(str.contains(";")) {
 
 						try  {
-
+							
 							statement = connection.createStatement();
 							statement.execute(stat.toString());
 						} 
@@ -306,7 +308,11 @@ public class DatabaseSchemas {
 	}
 
 	/**
+<<<<<<< HEAD:src/main/java/pt/uminho/sysbio/common/database/connector/datatypes/DatabaseSchemas.java
 	 * Retrieves all the existing Schemas in the database.
+=======
+	 * Retrieves all the existing Schemas in the MySQL database.
+>>>>>>> db12a4266596084b103f95d622c0f90cacf67645:src/main/java/pt/uminho/sysbio/common/database/connector/datatypes/MySQL_Schemas.java
 	 * 
 	 * @return
 	 * @throws SQLException 
