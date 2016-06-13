@@ -22,10 +22,9 @@ public class Connection implements Externalizable {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -1308617527146150210L;
 	private java.sql.Connection connection;
-	private String database_host, database_port, database_name, database_user, database_password;
-	private MySQLMultiThread mysqlMutithread;
+	private String database_host, database_port, database_name, database_user, database_password, database_type;
+	private DatabaseAccess dbAccess;
 
 	
 	/**
@@ -41,34 +40,41 @@ public class Connection implements Externalizable {
 	 * @param databaseName
 	 * @param user
 	 * @param password
+	 * @param dbType
 	 * @throws SQLException 
 	 */
-	public Connection(String host, String port, String databaseName,String user, String password) throws SQLException {
+	public Connection(String host, String port, String databaseName,String user, String password, String dbType) throws SQLException {
 		
 		this.database_host=host;
 		this.database_port=port;
 		this.database_name=databaseName;
 		this.database_user=user;
 		this.database_password=password;
+		this.database_type=dbType;
 		
-		this.mysqlMutithread = new MySQLMultiThread(user, password, host, port, databaseName);
-		this.connection = this.mysqlMutithread.openConnection();
+		if (this.database_type.equals("MySQL")) {
+			this.dbAccess = new MySQLDatabaseAccess(user, password, host, port, databaseName);
+		}else{
+			this.dbAccess = new H2DatabaseAccess(user, password, databaseName);
+		}
+		
+		this.connection = this.dbAccess.openConnection();
 	}
 	
 	/**
-	 * @param mysqlMutithread
+	 * @param dbAccess
 	 * @throws SQLException 
 	 */
-	public Connection(MySQLMultiThread mysqlMutithread) throws SQLException {
+	public Connection(DatabaseAccess dbAccess) throws SQLException {
 	
-		this.database_host=mysqlMutithread.get_database_host();
-		this.database_port=mysqlMutithread.get_database_port();
-		this.database_name=mysqlMutithread.get_database_name();
-		this.database_user=mysqlMutithread.get_database_user();
-		this.database_password=mysqlMutithread.get_database_password();
+		this.database_host=dbAccess.get_database_host();
+		this.database_port=dbAccess.get_database_port();
+		this.database_name=dbAccess.get_database_name();
+		this.database_user=dbAccess.get_database_user();
+		this.database_password=dbAccess.get_database_password();
 		
-		this.mysqlMutithread = mysqlMutithread;
-		this.connection = this.mysqlMutithread.openConnection();
+		this.dbAccess = dbAccess;
+		this.connection = this.dbAccess.openConnection();
 	}
 	
 	/**
@@ -83,7 +89,7 @@ public class Connection implements Externalizable {
 			
 			if(this.connection==null || this.connection.isClosed()) {
 				
-				this.connection = this.mysqlMutithread.openConnection();
+				this.connection = this.dbAccess.openConnection();
 			}
 				statement = this.connection.createStatement();
 				statement.isClosed();
@@ -93,7 +99,7 @@ public class Connection implements Externalizable {
 		catch (CommunicationsException e) {
 		
 			System.err.println("CommunicationsException\t"+e.getMessage());
-			this.connection = this.mysqlMutithread.openConnection();
+			this.connection = this.dbAccess.openConnection();
 			statement = this.connection.createStatement();
 		}
 		
@@ -107,7 +113,7 @@ public class Connection implements Externalizable {
 	 */
 	public DatabaseMetaData getMetaData() throws SQLException {
 		if(this.connection==null) {
-			this.connection = this.mysqlMutithread.openConnection();
+			this.connection = this.dbAccess.openConnection();
 		}
 		return this.connection.getMetaData();
 	}
@@ -120,6 +126,7 @@ public class Connection implements Externalizable {
 		out.writeUTF(this.database_password);
 		out.writeUTF(this.database_port);
 		out.writeUTF(this.database_user);
+		out.writeUTF(this.database_type);
 	}
 
 	@Override
@@ -129,8 +136,13 @@ public class Connection implements Externalizable {
 		this.database_password=in.readUTF();	
 		this.database_port=in.readUTF();	
 		this.database_user=in.readUTF();
+		this.database_type=in.readUTF();
 		
-		this.mysqlMutithread = new MySQLMultiThread(this.database_user, this.database_password, this.database_host, this.database_port, this.database_name);
+		if (this.database_type.equals("MySQL")) {
+			this.dbAccess = new MySQLDatabaseAccess(this.database_user, this.database_password, this.database_host, this.database_port, this.database_name);
+		}else{
+			this.dbAccess = new H2DatabaseAccess(this.database_user, this.database_password, this.database_name);
+		}
 	}
 
 	/**
