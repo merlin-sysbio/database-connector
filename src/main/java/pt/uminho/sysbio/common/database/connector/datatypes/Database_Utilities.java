@@ -8,11 +8,13 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
+
 /**
  * @author oscar
  *
  */
-public class MySQL_Utilities {
+public class Database_Utilities {
 	
 	private static Map<String, String> sqlTokens;
 	private static Pattern sqlTokenPattern;
@@ -78,7 +80,8 @@ public class MySQL_Utilities {
 	
 	static
 	{           
-        //MySQL escape sequences: http://dev.mysql.com/doc/refman/5.1/en/string-syntax.html
+        //MySQL escape sequences: http://dev.mysql.com/doc/refman/5.7/en/string-literals.html
+		
         String[][] search_regex_replacement = new String[][]
                 {
                 //search string     search regex        sql replacement regex
@@ -106,22 +109,25 @@ public class MySQL_Utilities {
 
 
     //public static String escape(String s) {
-    public static String mysqlStrConverter(String s) {
+    public static String databaseStrConverter(String s, DatabaseType databaseType) {
 
         //System.out.println(s);
-        
-        if(s!=null) {
-
-            Matcher matcher = sqlTokenPattern.matcher(s);
-            StringBuffer sb = new StringBuffer();
-            while(matcher.find())
-            {
-                matcher.appendReplacement(sb, sqlTokens.get(matcher.group(1)));
-            }
-            matcher.appendTail(sb);
-            //System.out.println(sb.toString());
-            s = sb.toString();
-        }
+	    if(s!=null) {
+	
+	    	Matcher matcher = sqlTokenPattern.matcher(s);
+	       	StringBuffer sb = new StringBuffer();
+	       	while(matcher.find())
+	        {
+	       		matcher.appendReplacement(sb, sqlTokens.get(matcher.group(1)));
+	        }
+	        matcher.appendTail(sb);
+	        //System.out.println(sb.toString());
+	        s = sb.toString();
+	        
+	        if (databaseType.equals(DatabaseType.H2)){
+	        	
+	        }
+	        }
         return s;
     }
 

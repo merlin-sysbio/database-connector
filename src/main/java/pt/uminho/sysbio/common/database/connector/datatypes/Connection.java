@@ -55,7 +55,7 @@ public class Connection implements Externalizable {
 		this.database_password=password;
 		this.database_type=dbType;
 		
-		if (this.database_type.equals("MySQL")) {
+		if (this.database_type.equals(DatabaseType.MYSQL)) {
 			this.dbAccess = new MySQLDatabaseAccess(user, password, host, port, databaseName);
 		}else{
 			this.dbAccess = new H2DatabaseAccess(user, password, databaseName);
@@ -141,11 +141,11 @@ public class Connection implements Externalizable {
 		this.database_user=in.readUTF();
 		String temp =in.readUTF();
 		
-		this.database_type = DatabaseType.h2;
-		if(temp.equalsIgnoreCase(DatabaseType.mysql.toString()))
-			this.database_type = DatabaseType.mysql;
+		this.database_type = DatabaseType.H2;
+		if(temp.equalsIgnoreCase(DatabaseType.MYSQL.toString()))
+			this.database_type = DatabaseType.MYSQL;
 		
-		if (this.database_type.equals(DatabaseType.mysql)) {
+		if (this.database_type.equals(DatabaseType.MYSQL)) {
 			this.dbAccess = new MySQLDatabaseAccess(this.database_user, this.database_password, this.database_host, this.database_port, this.database_name);
 		}else{
 			this.dbAccess = new H2DatabaseAccess(this.database_user, this.database_password, this.database_name);
@@ -167,5 +167,9 @@ public class Connection implements Externalizable {
 	public void closeConnection() throws SQLException{
 		
 		this.connection.close();	
+	}
+	
+	public DatabaseType getDatabaseType() {
+		return this.database_type;
 	}
 }

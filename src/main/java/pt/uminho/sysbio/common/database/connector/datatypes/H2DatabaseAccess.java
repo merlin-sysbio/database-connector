@@ -17,6 +17,8 @@ import java.sql.PreparedStatement;
 	
 	import org.h2.jdbcx.JdbcDataSource;
 
+import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
+
 //	import javax.sql.ConnectionPoolDataSource;
 //	import javax.naming.Context;
 //	import javax.naming.InitialContext;
@@ -599,8 +601,8 @@ import java.sql.PreparedStatement;
 			return database_user;
 		}
 		
-		public String get_database_type() {
-			return "H2";
+		public DatabaseType get_database_type() {
+			return DatabaseType.H2;
 		}
 
 		/**

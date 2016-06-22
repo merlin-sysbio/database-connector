@@ -12,13 +12,15 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
+
 public class DatabaseSchemas {
 
 	private String username;
 	private String password;
 	private String host;
 	private String port;
-	private String dbType;
+	private DatabaseType dbType;
 
 
 	/**
@@ -30,7 +32,7 @@ public class DatabaseSchemas {
 	 * @param port
 	 * @param dbType
 	 */
-	public DatabaseSchemas(String username, String password, String host, String port, String dbType){
+	public DatabaseSchemas(String username, String password, String host, String port, DatabaseType dbType){
 
 		this.username = username;
 		this.password = password;
@@ -66,7 +68,7 @@ public class DatabaseSchemas {
 		}else{
 			driver_class_name = "org.h2.Driver";
 			//url_db_connection = "jdbc:h2://"+this.host+":"+this.port;
-			url_db_connection = "jdbc:h2:file:~/merlin/"+schema;
+			url_db_connection = "jdbc:h2:file:~/merlin/"+schema+";MODE=MySQL;IGNORECASE=TRUE;DATABASE_TO_UPPER=false";
 		}
 		
 		Connection connection = null;
@@ -113,7 +115,7 @@ public class DatabaseSchemas {
 		}else{
 			driver_class_name = "org.h2.Driver";
 			//url_db_connection = "jdbc:h2://"+this.host+":"+this.port;
-			url_db_connection = "jdbc:h2:~/merlin";
+			url_db_connection = "jdbc:h2:~/merlin;MODE=MySQL;IGNORECASE=TRUE;DATABASE_TO_UPPER=false";
 		}
 
 		Connection connection = null;
@@ -283,7 +285,11 @@ public class DatabaseSchemas {
 						try  {
 							
 							statement = connection.createStatement();
-							statement.execute(stat.toString());
+							
+							String text = stat.toString();
+							if (dbType.equals(DatabaseType.H2))
+								text = text.replace("\\'","''");
+							statement.execute(text);
 						} 
 						catch (SQLException e) {
 
@@ -308,11 +314,7 @@ public class DatabaseSchemas {
 	}
 
 	/**
-<<<<<<< HEAD:src/main/java/pt/uminho/sysbio/common/database/connector/datatypes/DatabaseSchemas.java
 	 * Retrieves all the existing Schemas in the database.
-=======
-	 * Retrieves all the existing Schemas in the MySQL database.
->>>>>>> db12a4266596084b103f95d622c0f90cacf67645:src/main/java/pt/uminho/sysbio/common/database/connector/datatypes/MySQL_Schemas.java
 	 * 
 	 * @return
 	 * @throws SQLException 
@@ -325,7 +327,7 @@ public class DatabaseSchemas {
 		Connection connection = this.createConnection();
 		ResultSet rs;
 		Statement statement = null;
-		
+
 //		statement = (Statement) connection.createStatement();
 //		ResultSet query1=statement.executeQuery( "SHOW TABLES");
 //
@@ -336,7 +338,7 @@ public class DatabaseSchemas {
 				statement = (Statement) connection.createStatement();
 				statement.execute( "SHOW DATABASES ");
 				rs = statement.getResultSet();
-	
+
 				while(rs.next()) {
 					
 					list.add(rs.getString(1));

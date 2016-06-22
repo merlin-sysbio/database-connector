@@ -5,8 +5,8 @@ public class Enumerators {
 	
 	public enum DatabaseType {
 		
-		h2,
-		mysql
+		H2,
+		MYSQL
 	}
 	
 }

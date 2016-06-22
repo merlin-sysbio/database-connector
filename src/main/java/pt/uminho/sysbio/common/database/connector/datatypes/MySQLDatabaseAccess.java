@@ -16,6 +16,8 @@ package pt.uminho.sysbio.common.database.connector.datatypes;
 
 	import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource;
 
+import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
+
 	public class MySQLDatabaseAccess implements DatabaseAccess {
 
 		/**
@@ -607,8 +609,8 @@ package pt.uminho.sysbio.common.database.connector.datatypes;
 			return database_user;
 		}
 		
-		public String get_database_type() {
-			return "MySQL";
+		public DatabaseType get_database_type() {
+			return DatabaseType.MYSQL;
 		}
 
 		/**

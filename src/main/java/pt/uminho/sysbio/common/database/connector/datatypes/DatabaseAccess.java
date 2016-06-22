@@ -9,6 +9,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
+
 public interface DatabaseAccess {
 
 	
@@ -196,7 +198,7 @@ public interface DatabaseAccess {
 
 	public String get_database_user();
 	
-	public String get_database_type();
+	public DatabaseType get_database_type();
 
 	/**
 	 * @param database_host the database_host to set
