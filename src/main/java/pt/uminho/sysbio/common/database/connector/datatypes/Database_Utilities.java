@@ -3,11 +3,21 @@
  */
 package pt.uminho.sysbio.common.database.connector.datatypes;
 
+import java.io.File;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
 
 /**
@@ -109,7 +119,7 @@ public class Database_Utilities {
 
 
     //public static String escape(String s) {
-    public static String databaseStrConverter(String s, DatabaseType databaseType) {
+	public static String databaseStrConverter(String s, DatabaseType databaseType) {
 
         //System.out.println(s);
 	    if(s!=null) {
@@ -123,13 +133,68 @@ public class Database_Utilities {
 	        matcher.appendTail(sb);
 	        //System.out.println(sb.toString());
 	        s = sb.toString();
-	        
+
 	        if (databaseType.equals(DatabaseType.H2)){
-	        	
+				s = s.replace("\\'","''");
 	        }
-	        }
+	    }
         return s;
     }
+	
+	public static void h2CleanDatabaseFiles() throws SQLException {
+		
+		String driver_class_name;
+		String url_db_connection;
+		
+		String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
+		driver_class_name = "org.h2.Driver";
+		//url_db_connection = "jdbc:h2://"+this.host+":"+this.port;
+		url_db_connection = "jdbc:h2:"+path+"/h2Database;MODE=MySQL;DATABASE_TO_UPPER=FALSE";
+	
+		Connection connection = null;
+
+		try{
+		Class.forName(driver_class_name).newInstance();
+		connection = (Connection) DriverManager.getConnection(url_db_connection, "root", "password");
+		}
+		catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		List<String> list = new ArrayList<String>();
+		ResultSet rs;
+		Statement statement = null;
+		
+		try{
+			statement = (Statement) connection.createStatement();
+			statement.execute( "SHOW DATABASES ");
+			rs = statement.getResultSet();
+	
+			while(rs.next()) {
+				list.add(rs.getString(1)+".mv.db");
+				list.add(rs.getString(1)+".trace.db");
+			}
+//		System.out.println("-----------------------------");
+//		System.out.println(list);
+//		System.out.println("-----------------------------");		
+		File h2directory = new File(path+"/h2Database");
+
+	    for (File fileEntry : h2directory.listFiles()) {
+	        if (!list.contains(fileEntry.getName())){
+	        	fileEntry.delete();
+	        }
+	    }
+		
+		}
+		catch (SQLException ex) {
+			ex.printStackTrace();
+		}
+		connection.close();
+	}
 
 
 }

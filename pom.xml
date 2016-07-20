@@ -90,7 +90,13 @@
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<version>1.4.190</version>
+			<version>1.4.192</version>
+		</dependency>
+		
+				<dependency>
+			<groupId>pt.uminho.ceb.biosystems.mew</groupId>
+			<artifactId>utilities</artifactId>
+			<version>0.0.1.M-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 

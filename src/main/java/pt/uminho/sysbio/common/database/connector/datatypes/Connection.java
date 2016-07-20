@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -75,6 +76,7 @@ public class Connection implements Externalizable {
 		this.database_name=dbAccess.get_database_name();
 		this.database_user=dbAccess.get_database_user();
 		this.database_password=dbAccess.get_database_password();
+		this.database_type=dbAccess.get_database_type();
 		
 		this.dbAccess = dbAccess;
 		this.connection = this.dbAccess.openConnection();
@@ -94,7 +96,8 @@ public class Connection implements Externalizable {
 				
 				this.connection = this.dbAccess.openConnection();
 			}
-				statement = this.connection.createStatement();
+				statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
+					    ResultSet.CONCUR_READ_ONLY);
 				statement.isClosed();
 				statement.isPoolable();
 				statement.executeQuery("SHOW TABLES;");
@@ -167,6 +170,10 @@ public class Connection implements Externalizable {
 	public void closeConnection() throws SQLException{
 		
 		this.connection.close();	
+	}
+	
+	public void setDatabaseType(DatabaseType dbType) {
+		this.database_type=dbType;
 	}
 	
 	public DatabaseType getDatabaseType() {

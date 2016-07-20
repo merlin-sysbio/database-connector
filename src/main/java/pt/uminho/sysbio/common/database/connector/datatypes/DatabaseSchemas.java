@@ -12,6 +12,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
 
 public class DatabaseSchemas {
@@ -62,13 +63,14 @@ public class DatabaseSchemas {
 		String driver_class_name;
 		String url_db_connection;
 
-		if (this.dbType.equals("MySQL")) {
+		if (this.dbType.equals(DatabaseType.MYSQL)) {
 			driver_class_name = "com.mysql.jdbc.Driver";
 			url_db_connection = "jdbc:mysql://"+this.host+":"+this.port+"/"+schema;
 		}else{
+			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
 			driver_class_name = "org.h2.Driver";
-			//url_db_connection = "jdbc:h2://"+this.host+":"+this.port;
-			url_db_connection = "jdbc:h2:file:~/merlin/"+schema+";MODE=MySQL;IGNORECASE=TRUE;DATABASE_TO_UPPER=false";
+			//url_db_connection = "jdbc:h2://"+this.host+":"+this.port;"
+			url_db_connection = "jdbc:h2:file:"+path+"/h2Database/"+schema+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;";
 		}
 		
 		Connection connection = null;
@@ -109,18 +111,18 @@ public class DatabaseSchemas {
 		String driver_class_name;
 		String url_db_connection;
 		
-		if (this.dbType.equals("MySQL")) {
+		if (this.dbType.equals(DatabaseType.MYSQL)) {
 			driver_class_name = "com.mysql.jdbc.Driver";
 			url_db_connection = "jdbc:mysql://"+this.host+":"+this.port;
 		}else{
+			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
 			driver_class_name = "org.h2.Driver";
 			//url_db_connection = "jdbc:h2://"+this.host+":"+this.port;
-			url_db_connection = "jdbc:h2:~/merlin;MODE=MySQL;IGNORECASE=TRUE;DATABASE_TO_UPPER=false";
+			url_db_connection = "jdbc:h2:"+path+"/h2Database;MODE=MySQL;DATABASE_TO_UPPER=FALSE";
 		}
-
+		
 		Connection connection = null;
 		try  {
-			
 			Class.forName(driver_class_name).newInstance();
 			connection = (Connection) DriverManager.getConnection(url_db_connection, this.username, this.password);
 		}
@@ -289,6 +291,8 @@ public class DatabaseSchemas {
 							String text = stat.toString();
 							if (dbType.equals(DatabaseType.H2))
 								text = text.replace("\\'","''");
+							else
+								text = text.replace("\"", "");
 							statement.execute(text);
 						} 
 						catch (SQLException e) {
@@ -328,12 +332,6 @@ public class DatabaseSchemas {
 		ResultSet rs;
 		Statement statement = null;
 
-//		statement = (Statement) connection.createStatement();
-//		ResultSet query1=statement.executeQuery( "SHOW TABLES");
-//
-//		while (query1.next())
-//			System.out.println(query1.getString(1));
-
 		try {	
 				statement = (Statement) connection.createStatement();
 				statement.execute( "SHOW DATABASES ");
@@ -343,9 +341,8 @@ public class DatabaseSchemas {
 					
 					list.add(rs.getString(1));
 				}
-	
+
 				for(String s: list) {
-					
 					if(checkTable(s,"geneblast") || checkTable(s,"geneHomology")) {
 						
 						schemasList.add(s);
@@ -442,13 +439,13 @@ public class DatabaseSchemas {
 	 * @throws SQLException 
 	 */
 	public boolean isConnected() throws SQLException {
-		
+
 		//try {
 			
 			boolean isConnected = false;
-			
+
 			Connection connection = this.createConnection();
-			
+
 			if(connection != null) {
 				
 				isConnected=true;
@@ -470,15 +467,32 @@ public class DatabaseSchemas {
 	 * @param database
 	 * @return
 	 */
-	public boolean dropDatabase(String database) {
+	public boolean dropDatabase(String database){
 		
 		try {
-			
+//			if (this.dbType.equals(DatabaseType.H2)) {
+//				String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
+//				DeleteDbFiles.execute(path+"/h2Database",database,true);
+//			}
 			Connection connection = this.createConnection();
 			Statement statement = (Statement) connection.createStatement();
+			if (this.dbType.equals(DatabaseType.H2)) {
+				String[] filePath=null;
+				String path = FileUtils.getCurrentLibDirectory()+"/../utilities";
+				
+				filePath=new String[5];
+				filePath[0]=path +"/sysbio_model.sql";
+				filePath[1]=path +"/sysbio_homology.sql";
+				filePath[2]=path +"/sysbio_metabolites_transporters.sql";
+				filePath[3]=path +"/sysbio_compartments.sql";
+				filePath[4]=path +"/sysbio_transporters_identification.sql";
+				
+				this.cleanSchema(database, filePath);
+			}
 			statement.execute( "DROP SCHEMA "+database);
 			statement.close();
 			connection.close();
+			
 			return true;
 		}
 		catch (SQLException ex)

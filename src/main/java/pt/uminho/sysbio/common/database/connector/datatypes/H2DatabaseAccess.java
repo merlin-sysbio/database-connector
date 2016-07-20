@@ -1,6 +1,7 @@
 package pt.uminho.sysbio.common.database.connector.datatypes;
 
-	import java.io.IOException;
+	import java.io.File;
+import java.io.IOException;
 	import java.io.ObjectInput;
 	import java.io.ObjectOutput;
 	import java.sql.Connection;
@@ -17,6 +18,7 @@ import java.sql.PreparedStatement;
 	
 	import org.h2.jdbcx.JdbcDataSource;
 
+import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
 
 //	import javax.sql.ConnectionPoolDataSource;
@@ -85,7 +87,8 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 //			}
 
 //			JdbcConnectionPool connect = JdbcConnectionPool.create(this.dataSource);
-			JdbcConnectionPool connect = JdbcConnectionPool.create("jdbc:h2:~/merlin/"+this.database_host,this.database_user,this.database_password);
+			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
+			JdbcConnectionPool connect = JdbcConnectionPool.create("jdbc:h2:"+path+"/h2Database/"+this.database_host+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;",this.database_user,this.database_password);
 			this.connection=connect.getConnection();
 			return this.connection;
 		}
@@ -590,7 +593,7 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		}
 
 		public String get_database_name() {
-			return database_name;
+			return database_host;
 		}
 
 		public String get_database_password() {
