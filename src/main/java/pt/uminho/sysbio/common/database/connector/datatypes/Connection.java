@@ -20,24 +20,25 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
  * @author ODias
  *
  */
-public class Connection implements Externalizable {
+public class Connection implements Externalizable{
 
 	/**
 	 * 
 	 */
+	private static final long serialVersionUID = 1L;
 	private java.sql.Connection connection;
 	private String database_host, database_port, database_name, database_user, database_password;
 	private DatabaseType database_type;
 	private DatabaseAccess dbAccess;
 
-	
+
 	/**
 	 * @throws SQLException
 	 */
 	public Connection() throws SQLException {
-		
+
 	}
-	
+
 	/**
 	 * @param host
 	 * @param port
@@ -48,69 +49,79 @@ public class Connection implements Externalizable {
 	 * @throws SQLException 
 	 */
 	public Connection(String host, String port, String databaseName,String user, String password, DatabaseType dbType) throws SQLException {
-		
+
 		this.database_host=host;
+		
 		this.database_port=port;
+		if(port==null)
+			this.database_port="";
+		
 		this.database_name=databaseName;
 		this.database_user=user;
 		this.database_password=password;
 		this.database_type=dbType;
-		
+
 		if (this.database_type.equals(DatabaseType.MYSQL)) {
+
 			this.dbAccess = new MySQLDatabaseAccess(user, password, host, port, databaseName);
-		}else{
+		}
+		else {
+
 			this.dbAccess = new H2DatabaseAccess(user, password, databaseName);
 		}
-		
+
 		this.connection = this.dbAccess.openConnection();
 	}
-	
+
 	/**
 	 * @param dbAccess
 	 * @throws SQLException 
 	 */
 	public Connection(DatabaseAccess dbAccess) throws SQLException {
-	
+
 		this.database_host=dbAccess.get_database_host();
 		this.database_port=dbAccess.get_database_port();
+		if(dbAccess.get_database_port()==null)
+			this.database_port="";
+		
 		this.database_name=dbAccess.get_database_name();
 		this.database_user=dbAccess.get_database_user();
 		this.database_password=dbAccess.get_database_password();
 		this.database_type=dbAccess.get_database_type();
-		
+
 		this.dbAccess = dbAccess;
 		this.connection = this.dbAccess.openConnection();
 	}
-	
+
 	/**
 	 * @return
 	 * @throws SQLException
 	 */
 	public Statement createStatement() throws SQLException {
-		
+
 		Statement statement = null;
-		
+
 		try {
-			
+
 			if(this.connection==null || this.connection.isClosed()) {
-				
+
 				this.connection = this.dbAccess.openConnection();
 			}
-				statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
-					    ResultSet.CONCUR_READ_ONLY);
-				statement.isClosed();
-				statement.isPoolable();
-				statement.executeQuery("SHOW TABLES;");
+			statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
+					ResultSet.CONCUR_READ_ONLY);
+			statement.isClosed();
+			statement.isPoolable();
+			statement.executeQuery("SHOW TABLES;");
 		}
 		catch (CommunicationsException e) {
-		
+
 			System.err.println("CommunicationsException\t"+e.getMessage());
 			this.connection = this.dbAccess.openConnection();
 			statement = this.connection.createStatement();
 		}
-		
+
 		return statement;
-		
+
 	}
 
 	/**
@@ -123,8 +134,8 @@ public class Connection implements Externalizable {
 		}
 		return this.connection.getMetaData();
 	}
-	
-	
+
+
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		out.writeUTF(this.database_host);
@@ -143,11 +154,11 @@ public class Connection implements Externalizable {
 		this.database_port=in.readUTF();	
 		this.database_user=in.readUTF();
 		String temp =in.readUTF();
-		
+
 		this.database_type = DatabaseType.H2;
 		if(temp.equalsIgnoreCase(DatabaseType.MYSQL.toString()))
 			this.database_type = DatabaseType.MYSQL;
-		
+
 		if (this.database_type.equals(DatabaseType.MYSQL)) {
 			this.dbAccess = new MySQLDatabaseAccess(this.database_user, this.database_password, this.database_host, this.database_port, this.database_name);
 		}else{
@@ -162,20 +173,20 @@ public class Connection implements Externalizable {
 	public static String mysqlStrConverter(String input){
 		return input.replace("\\'","'").replace("-","\\-").replace("'","\\'").replace("[","\\[").replace("]","\\]");
 	}
-	
+
 	/**
 	 * @return
 	 * @throws SQLException 
 	 */
 	public void closeConnection() throws SQLException{
-		
+
 		this.connection.close();	
 	}
-	
+
 	public void setDatabaseType(DatabaseType dbType) {
 		this.database_type=dbType;
 	}
-	
+
 	public DatabaseType getDatabaseType() {
 		return this.database_type;
 	}

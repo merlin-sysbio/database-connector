@@ -6,7 +6,6 @@ package pt.uminho.sysbio.common.database.connector.datatypes;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -25,7 +24,7 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
  *
  */
 public class Database_Utilities {
-	
+
 	private static Map<String, String> sqlTokens;
 	private static Pattern sqlTokenPattern;
 
@@ -71,91 +70,91 @@ public class Database_Utilities {
 		}
 		return false;
 	}
-	
-//	/**
-//	 * @param input
-//	 * @return
-//	 */
-//	public static String mysqlStrConverter(String input) {
-//	
-//		if(input == null) {
-//
-//			return null;
-//		} 
-//		else {
-//			
-//			return input.replace("\\'","'").replace("\\","\\\\").replace("'","\\").replace("-","\\-").replace("/","\\/");
-//		}
-//	}
-	
+
+	//	/**
+	//	 * @param input
+	//	 * @return
+	//	 */
+	//	public static String mysqlStrConverter(String input) {
+	//	
+	//		if(input == null) {
+	//
+	//			return null;
+	//		} 
+	//		else {
+	//			
+	//			return input.replace("\\'","'").replace("\\","\\\\").replace("'","\\").replace("-","\\-").replace("/","\\/");
+	//		}
+	//	}
+
 	static
 	{           
-        //MySQL escape sequences: http://dev.mysql.com/doc/refman/5.7/en/string-literals.html
-		
-        String[][] search_regex_replacement = new String[][]
-                {
-                //search string     search regex        sql replacement regex
-                {   "\u0000"    ,       "\\x00"     ,       "\\\\0"     },
-                {   "'"         ,       "'"         ,       "\\\\'"     },
-                {   "\""        ,       "\""        ,       "\\\\\""    },
-                {   "\b"        ,       "\\x08"     ,       "\\\\b"     },
-                {   "\n"        ,       "\\n"       ,       "\\\\n"     },
-                {   "\r"        ,       "\\r"       ,       "\\\\r"     },
-                {   "\t"        ,       "\\t"       ,       "\\\\t"     },
-                {   "\u001A"    ,       "\\x1A"     ,       "\\\\Z"     },
-                {   "\\"        ,       "\\\\"      ,       "\\\\\\\\"  }
-                };
+		//MySQL escape sequences: http://dev.mysql.com/doc/refman/5.7/en/string-literals.html
 
-        sqlTokens = new HashMap<>();
-        String patternStr = "";
+		String[][] search_regex_replacement = new String[][]
+				{
+			//search string     search regex        sql replacement regex
+			{   "\u0000"    ,       "\\x00"     ,       "\\\\0"     },
+			{   "'"         ,       "'"         ,       "\\\\'"     },
+			{   "\""        ,       "\""        ,       "\\\\\""    },
+			{   "\b"        ,       "\\x08"     ,       "\\\\b"     },
+			{   "\n"        ,       "\\n"       ,       "\\\\n"     },
+			{   "\r"        ,       "\\r"       ,       "\\\\r"     },
+			{   "\t"        ,       "\\t"       ,       "\\\\t"     },
+			{   "\u001A"    ,       "\\x1A"     ,       "\\\\Z"     },
+			{   "\\"        ,       "\\\\"      ,       "\\\\\\\\"  }
+				};
 
-        for (String[] srr : search_regex_replacement)
-        {
-            sqlTokens.put(srr[0], srr[2]);
-            patternStr += (patternStr.isEmpty() ? "" : "|") + srr[1];            
-        }
-        sqlTokenPattern = Pattern.compile('(' + patternStr + ')');
-    }
+				sqlTokens = new HashMap<>();
+				String patternStr = "";
+
+				for (String[] srr : search_regex_replacement)
+				{
+					sqlTokens.put(srr[0], srr[2]);
+					patternStr += (patternStr.isEmpty() ? "" : "|") + srr[1];            
+				}
+				sqlTokenPattern = Pattern.compile('(' + patternStr + ')');
+	}
 
 
-    //public static String escape(String s) {
+	//public static String escape(String s) {
 	public static String databaseStrConverter(String s, DatabaseType databaseType) {
 
-        //System.out.println(s);
-	    if(s!=null) {
-	
-	    	Matcher matcher = sqlTokenPattern.matcher(s);
-	       	StringBuffer sb = new StringBuffer();
-	       	while(matcher.find())
-	        {
-	       		matcher.appendReplacement(sb, sqlTokens.get(matcher.group(1)));
-	        }
-	        matcher.appendTail(sb);
-	        //System.out.println(sb.toString());
-	        s = sb.toString();
+		//System.out.println(s);
+		if(s!=null) {
 
-	        if (databaseType.equals(DatabaseType.H2)){
+			Matcher matcher = sqlTokenPattern.matcher(s);
+			StringBuffer sb = new StringBuffer();
+			while(matcher.find())
+			{
+				matcher.appendReplacement(sb, sqlTokens.get(matcher.group(1)));
+			}
+			matcher.appendTail(sb);
+			//System.out.println(sb.toString());
+			s = sb.toString();
+
+			if (databaseType.equals(DatabaseType.H2)){
 				s = s.replace("\\'","''");
-	        }
-	    }
-        return s;
-    }
-	
+			}
+		}
+		return s;
+	}
+
 	public static void h2CleanDatabaseFiles() throws SQLException {
-		
+
 		String driver_class_name;
 		String url_db_connection;
-		
+
 		String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
 		driver_class_name = "org.h2.Driver";
 		//url_db_connection = "jdbc:h2://"+this.host+":"+this.port;
 		url_db_connection = "jdbc:h2:"+path+"/h2Database;MODE=MySQL;DATABASE_TO_UPPER=FALSE";
-	
+
 		Connection connection = null;
 
 		try{
-		Class.forName(driver_class_name).newInstance();
-		connection = (Connection) DriverManager.getConnection(url_db_connection, "root", "password");
+			Class.forName(driver_class_name).newInstance();
+			connection = (Connection) DriverManager.getConnection(url_db_connection, "root", "password");
 		}
 		catch (InstantiationException e) {
 			e.printStackTrace();
@@ -168,27 +167,26 @@ public class Database_Utilities {
 		List<String> list = new ArrayList<String>();
 		ResultSet rs;
 		Statement statement = null;
-		
+
 		try{
 			statement = (Statement) connection.createStatement();
 			statement.execute( "SHOW DATABASES ");
 			rs = statement.getResultSet();
-	
+
 			while(rs.next()) {
 				list.add(rs.getString(1)+".mv.db");
 				list.add(rs.getString(1)+".trace.db");
 			}
-//		System.out.println("-----------------------------");
-//		System.out.println(list);
-//		System.out.println("-----------------------------");		
-		File h2directory = new File(path+"/h2Database");
+			//		System.out.println("-----------------------------");
+			//		System.out.println(list);
+			//		System.out.println("-----------------------------");		
+			File h2directory = new File(path+"/h2Database");
 
-	    for (File fileEntry : h2directory.listFiles()) {
-	        if (!list.contains(fileEntry.getName())){
-	        	fileEntry.delete();
-	        }
-	    }
-		
+			if(h2directory.exists())
+				for (File fileEntry : h2directory.listFiles())
+					if (!list.contains(fileEntry.getName()))
+						fileEntry.delete();
+
 		}
 		catch (SQLException ex) {
 			ex.printStackTrace();

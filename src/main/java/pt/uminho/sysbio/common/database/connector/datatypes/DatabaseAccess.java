@@ -211,11 +211,6 @@ public interface DatabaseAccess {
 	public void setDatabase_port(String database_port);
 
 	/**
-	 * @param database_name the database_name to set
-	 */
-	public void setDatabase_name(String database_name);
-
-	/**
 	 * @param database_user the database_user to set
 	 */
 	public void setDatabase_user(String database_user);

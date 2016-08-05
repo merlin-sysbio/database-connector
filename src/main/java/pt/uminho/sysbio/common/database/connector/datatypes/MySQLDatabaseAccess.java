@@ -1,43 +1,42 @@
 package pt.uminho.sysbio.common.database.connector.datatypes;
 
-	import java.io.IOException;
-	import java.io.ObjectInput;
-	import java.io.ObjectOutput;
-	import java.sql.Connection;
-	import java.sql.DatabaseMetaData;
-	import java.sql.PreparedStatement;
-	import java.sql.ResultSet;
-	import java.sql.ResultSetMetaData;
-	import java.sql.SQLException;
-	import java.sql.Statement;
-	import java.util.LinkedList;
+	import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.LinkedList;
 
-	import javax.sql.PooledConnection;
+import javax.sql.PooledConnection;
 
-	import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource;
+import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource;
 
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
 
-	public class MySQLDatabaseAccess implements DatabaseAccess {
+	/**
+	 * @author Oscar Dias
+	 *
+	 */
+	public class MySQLDatabaseAccess implements DatabaseAccess, Externalizable {
 
-		/**
-		 * 
-		 */
+		private static final long serialVersionUID = 1L;
 		private String database_host, database_port, database_name, database_user, database_password;
 		private Connection connection;
 		private transient MysqlConnectionPoolDataSource dataSource;
 
-		//	public DatabaseAccess(String host, String port,String db, String usr, String pwd){	
-		//		
-		//	}
-
-//		/**
-//		 * 
-//		 */
-//		public MySQLDatabaseAccess() {
-//			
-//			this.dataSource = new MysqlConnectionPoolDataSource();
-//		}
+		/**
+		 * 
+		 */
+		public MySQLDatabaseAccess() {
+			
+			this.dataSource = new MysqlConnectionPoolDataSource();
+		}
 
 		/**
 		 * @param user
@@ -57,6 +56,7 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 			this.dataSource.setUser(user);
 			this.dataSource.setPassword(password);
 			this.dataSource.setServerName(server);
+			System.out.println(port);
 			this.dataSource.setPortNumber(Integer.valueOf(port));
 			this.dataSource.setDatabaseName(database);
 			this.dataSource.setAutoReconnect(true);
