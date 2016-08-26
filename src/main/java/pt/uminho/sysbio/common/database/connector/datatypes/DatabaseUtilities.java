@@ -23,12 +23,12 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
  * @author oscar
  *
  */
-public class Database_Utilities {
+public class DatabaseUtilities {
 
 	private static Map<String, String> sqlTokens;
 	private static Pattern sqlTokenPattern;
 
-
+	
 	/**
 	 * @param boolean_string
 	 * @return
