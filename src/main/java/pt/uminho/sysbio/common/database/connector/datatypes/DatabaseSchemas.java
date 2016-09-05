@@ -470,37 +470,32 @@ public class DatabaseSchemas {
 	public boolean dropDatabase(String database){
 		
 		try {
-//			if (this.dbType.equals(DatabaseType.H2)) {
-//				String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
-//				DeleteDbFiles.execute(path+"/h2Database",database,true);
-//			}
+			
 			Connection connection = this.createConnection();
 			Statement statement = (Statement) connection.createStatement();
 			if (this.dbType.equals(DatabaseType.H2)) {
 				String[] filePath=null;
 				String path = FileUtils.getCurrentLibDirectory()+"/../utilities";
 				
-				filePath=new String[5];
+				filePath=new String[6];
 				filePath[0]=path +"/sysbio_model.sql";
-				filePath[1]=path +"/sysbio_homology.sql";
-				filePath[2]=path +"/sysbio_metabolites_transporters.sql";
-				filePath[3]=path +"/sysbio_compartments.sql";
-				filePath[4]=path +"/sysbio_transporters_identification.sql";
+				filePath[1]=path +"/sysbio_interpro.sql";
+				filePath[2]=path +"/sysbio_homology.sql";
+				filePath[3]=path +"/sysbio_metabolites_transporters.sql";
+				filePath[4]=path +"/sysbio_compartments.sql";
+				filePath[5]=path +"/sysbio_transporters_identification.sql";
 				
 				this.cleanSchema(database, filePath);
 			}
-			statement.execute( "DROP SCHEMA "+database);
+			statement.execute("DROP SCHEMA "+database);
 			statement.close();
 			connection.close();
 			
 			return true;
 		}
-		catch (SQLException ex)
-		{
+		catch (SQLException ex) {
+			
 			ex.printStackTrace();
-			//			System.out.println("SQLException: " + ex.getMessage());
-			//			System.out.println("SQLState: " + ex.getSQLState());
-			//			System.out.println("VendorError: " + ex.getErrorCode());
 			return false;
 		}
 

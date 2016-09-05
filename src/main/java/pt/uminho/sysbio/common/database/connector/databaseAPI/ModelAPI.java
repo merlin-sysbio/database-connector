@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
 import pt.uminho.sysbio.common.database.connector.databaseAPI.containers.gpr.GeneAssociation;
@@ -27,9 +28,9 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
  *
  */
 public class ModelAPI {
-	
 
-	
+
+
 	/**
 	 * Load gene to model.
 	 * 
@@ -47,7 +48,7 @@ public class ModelAPI {
 
 		String locusTag = geneNames.getA();
 		String geneName = geneNames.getB();
-		
+
 		ResultSet rs = statement.executeQuery("SELECT idgene FROM gene WHERE locusTag = '"+locusTag+"' AND sequence_id = '"+sequence_id+"';");
 
 		if(!rs.next()) {
@@ -81,6 +82,249 @@ public class ModelAPI {
 			statement.execute("UPDATE gene SET name = '"+DatabaseUtilities.databaseStrConverter(geneName,databaseType)+"' WHERE sequence_id = '"+sequence_id+"'");
 
 		return geneID;
+	}
+
+	/**
+	 * Retrieve queries from model.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, String> getQueries(Statement statement) throws SQLException {
+
+		Map<String, String> ret = new HashMap<>();
+
+
+		ResultSet rs = statement.executeQuery("SELECT locusTag, query FROM geneHomology;");
+
+		while(rs.next())	
+			ret.put(rs.getString(1), rs.getString(2));
+
+		return ret;
+	}
+
+	/**
+	 * Retrieve all database genes not integrated from homology.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException 
+	 */
+	public static Set<String> getAllDatabaseGenes(Statement statement) throws SQLException{
+
+		Set<String> locusTag = new TreeSet<String>();
+
+		ResultSet rs = statement.executeQuery("SELECT locusTag FROM gene //WHERE origin<>'HOMOLOGY'");
+
+		while(rs.next())
+			locusTag.add(rs.getString(1));
+
+		rs.close();
+
+		return locusTag;
+	}
+
+
+	/**
+	 * Retrieve all chromosomes.
+	 *
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, String> getChromosomes(Statement statement) throws SQLException {
+
+		Map<String, String> existingChromosome = new HashMap<> ();
+
+		ResultSet rs = statement.executeQuery("SELECT gene.name, locusTag, chromosome.name FROM gene "+
+				"INNER JOIN chromosome ON (idchromosome=chromosome_idchromosome) " //+
+				//"WHERE origin='KEGG'"
+				);
+
+		while(rs.next()) {
+
+			//			String name = "";
+			//			if(rs.getString(1)!=null)
+			//				name = rs.getString(1);
+
+			//existingNames.put(rs.getString(2), name);
+			//this.existingECNumbers.put(rs.getString(2), new TreeSet<String>());
+			//existingProducts.put(rs.getString(2), "");
+			existingChromosome.put(rs.getString(2), rs.getString(3));
+		}
+
+		return existingChromosome;
+	}
+
+	/**
+	 * Retrieve all gene name aliases.
+	 *
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, Set<String>> getGeneNamesAliases(Statement statement) throws SQLException {
+
+		Map<String, Set<String>> existingGeneNamesAlias = new HashMap<> ();
+
+		ResultSet rs = statement.executeQuery("SELECT locusTag, alias FROM gene " +
+				"INNER JOIN aliases ON (idgene=aliases.entity) " +
+				"WHERE class='g' "
+				);
+
+		while(rs.next()) {
+
+			Set<String> aliases = new TreeSet<>();
+
+			if(existingGeneNamesAlias.containsKey(rs.getString(1)))
+				aliases = existingGeneNamesAlias.get(rs.getString(1));
+
+			aliases.add(rs.getString(2));
+			existingGeneNamesAlias.put(rs.getString(1), aliases);
+		}
+
+		return existingGeneNamesAlias;
+	}
+
+	/**
+	 * Retrieve all ec numbers associated to each gene locus tag.
+	 *
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, Set<String>> getECNumbers(Statement statement) throws SQLException {
+
+		Map<String, Set<String>> existingECNumbers = new HashMap<> ();
+
+		ResultSet rs = statement.executeQuery("SELECT locusTag, enzyme_ecNumber FROM gene " +
+				"INNER JOIN subunit ON (idgene=gene_idgene) "
+				);
+
+		while(rs.next()) {
+
+			Set<String> enzymes  = new TreeSet<>();
+
+			if(existingECNumbers.containsKey(rs.getString(1)))
+				enzymes = existingECNumbers.get(rs.getString(1));
+
+			enzymes.add(rs.getString(2));
+			existingECNumbers.put(rs.getString(1), enzymes);
+		}
+
+		return existingECNumbers;
+	}
+
+	/**
+	 * Retrieve all products.
+	 *
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, String> getProducts(Statement statement) throws SQLException {
+
+		Map<String, String> existingProducts = new HashMap<> ();
+
+		ResultSet 	rs = statement.executeQuery("SELECT locusTag, protein.name FROM gene " +
+				"INNER JOIN subunit ON (idgene=gene_idgene) " +
+				"INNER JOIN protein ON (subunit.enzyme_protein_idprotein=idprotein) "
+				);
+
+		while(rs.next())
+			existingProducts.put(rs.getString(1), rs.getString(2));
+
+		return existingProducts;
+	}
+
+	/**
+	 * Retrieve all products aliases.
+	 *
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, Set<String>> getProductsAliases(Statement statement) throws SQLException {
+
+		Map<String, Set<String>> existingProductsAlias = new HashMap<> ();
+
+		ResultSet rs = statement.executeQuery("SELECT locusTag, alias FROM gene " +
+				"INNER JOIN subunit ON (idgene=gene_idgene) " +
+				"INNER JOIN aliases ON (subunit.enzyme_protein_idprotein=aliases.entity)" +
+				" WHERE class='p' "
+				);
+
+		while(rs.next()) {
+
+			Set<String> aliases = new TreeSet<>();
+
+			if(existingProductsAlias.containsKey(rs.getString(1)))
+				aliases = existingProductsAlias.get(rs.getString(1));
+
+			aliases.add(rs.getString(2));
+			existingProductsAlias.put(rs.getString(1), aliases);
+		}
+		return existingProductsAlias;
+	}
+
+	/**
+	 * Retrieve all pathways and the enzymes associated to each pathway.
+	 *
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, Set<String>> getAllPathways(Statement statement) throws SQLException {
+
+		Map<String, Set<String>> allPathways = new HashMap<> ();
+
+		ResultSet rs = statement.executeQuery("SELECT pathway.idpathway, pathway.name, pathway_has_enzyme.enzyme_ecnumber FROM pathway " +
+				"INNER JOIN pathway_has_enzyme ON (pathway.idpathway=pathway_idpathway) " +
+				"ORDER BY idpathway");
+
+		//for each enzyme in the pathways
+		while(rs.next()) {
+
+			Set<String> enz= new TreeSet<String>();
+
+			if(allPathways.containsKey(rs.getString(2)))
+				enz = allPathways.get(rs.getString(2)); 
+
+			enz.add(rs.getString(3));
+			allPathways.put(rs.getString(2), enz);
+		}
+		return allPathways;
+	}
+
+	/**
+	 * Retrieve the pathways in Model and the enzymes associated to each pathway.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, Set<String>> getEnzymesPathways(Statement statement) throws SQLException {
+
+		Map<String, Set<String>> existsPathway = new HashMap<>();
+
+		ResultSet rs = statement.executeQuery("SELECT pathway.idpathway, pathway.name, enzyme.ecnumber FROM pathway " +
+				"INNER JOIN pathway_has_enzyme ON (pathway.idpathway=pathway_idpathway) " +
+				"INNER JOIN enzyme ON (enzyme.ecnumber=pathway_has_enzyme.enzyme_ecnumber) " +
+				"WHERE enzyme.inModel ORDER BY idpathway");
+
+		//for each enzyme in the pathways in the model
+		while(rs.next()) {
+
+			Set<String> enz= new TreeSet<String>();
+
+			if(existsPathway.containsKey(rs.getString(2)))
+				enz = existsPathway.get(rs.getString(2)); 
+
+			enz.add(rs.getString(3));
+			existsPathway.put(rs.getString(2), enz);
+		}
+		return existsPathway;
 	}
 
 	/**
@@ -504,12 +748,6 @@ public class ModelAPI {
 			if(rs.getString(12)!= null)
 				notes = rs.getString(12);
 
-			//			DatabaseReactionContainer drc = new DatabaseReactionContainer(id, name, equation, source, reversible, inModel, isGeneric, isSpontaneous, isNonEnzymatic);
-			//			drc.setUpperBound(upperBound);
-			//			drc.setLowerBound(lowerBound);
-			//			drc.setNotes(notes);
-			//			reactionsMap.put(id, drc);
-
 			Map<String, Object> subMap = new HashMap<>();
 
 			subMap.put("name", name);
@@ -614,7 +852,7 @@ public class ModelAPI {
 			String notes ="";
 			if(rs.getString(12)!= null)
 				notes = rs.getString(12);
-			
+
 			Map<String, Object> subMap = new HashMap<>();
 
 			subMap.put("name", name);
@@ -646,7 +884,7 @@ public class ModelAPI {
 					"FROM reaction_has_enzyme WHERE idReaction = "+idReaction+";");
 			while (rs.next())
 				proteinsPairs.add(new  Pair<>(rs.getString(2), rs.getString(3)));
-			
+
 			subMap.put("proteins", proteinsPairs);
 
 			List<String> pathways = new ArrayList<>();
@@ -654,7 +892,7 @@ public class ModelAPI {
 					+ " WHERE idReaction = "+idReaction+";");
 			while (rs.next())
 				pathways.add(rs.getString(2));
-			
+
 			subMap.put("pathways", pathways);
 
 			List<String[]> entry = new ArrayList<>();
@@ -662,7 +900,7 @@ public class ModelAPI {
 					+ "INNER JOIN reaction ON stoichiometry.reaction_idreaction = reaction.idreaction " +
 					" WHERE idReaction = "+idReaction+";");
 			while (rs.next()) {
-				
+
 				String[] ent = new String[4];
 				ent[0] = rs.getString(3);
 				ent[1] = rs.getString(5);
@@ -670,7 +908,7 @@ public class ModelAPI {
 				ent[3] = rs.getString(4);
 				entry.add(ent);
 			}
-			
+
 			subMap.put("entry", entry);
 		}
 
@@ -977,7 +1215,7 @@ public class ModelAPI {
 
 		return ret;
 	}
-	
+
 	/**
 	 * Update ec numbers note.
 	 * 
@@ -1054,7 +1292,7 @@ public class ModelAPI {
 
 		stmt.close();
 	}
-	
+
 	/**
 	 * Get locus tag ec numbers from database.
 	 * 
@@ -1093,7 +1331,7 @@ public class ModelAPI {
 
 		return ec_numbers;
 	}
-	
+
 	/**
 	 * Get locus tag orthologs from database.
 	 * 
@@ -1120,8 +1358,8 @@ public class ModelAPI {
 
 		return ret;
 	}
-	
-	
+
+
 	/**
 	 * Get locus tag from model. 
 	 * 
@@ -1149,8 +1387,8 @@ public class ModelAPI {
 		rs.close();
 		return ret;
 	}
-	
-	
+
+
 	/**
 	 * Get ec numbers with modules.
 	 * 
@@ -1169,12 +1407,12 @@ public class ModelAPI {
 		while(rs.next())
 			ec_numbers.add(rs.getString(1));
 
-			rs.close();
+		rs.close();
 		stmt.close();
 
 		return ec_numbers;
 	}
-	
+
 	/**
 	 * Load module to model.
 	 * 
@@ -1284,8 +1522,8 @@ public class ModelAPI {
 		stmt=null;
 		return genes_ko_modules;
 	}
-	
-	
+
+
 	/**
 	 * Run gene-protein reactions assignment.
 	 * 
@@ -1294,7 +1532,7 @@ public class ModelAPI {
 	 */
 	public static Map<String, ReactionsGPR_CI> runGPRsAssignment(double threshold, Connection conn) throws SQLException {
 
-		
+
 		Statement stmt = conn.createStatement();
 
 		ResultSet rs = stmt.executeQuery("SELECT DISTINCT reaction, enzyme_ecnumber, definition, idgene, " +
