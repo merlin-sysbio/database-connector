@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
@@ -1581,5 +1582,288 @@ public class ModelAPI {
 		conn.closeConnection();
 		return rpgs;
 	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//biomass
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	
+	/**
+	 * Get information for e-biomass.
+	 * 
+	 * @param data
+	 * @param statment
+	 * @return the pair compound identifier to molecular weight
+	 */
+	public static Map<String, Pair<String, Double>> getModelInformationForBiomass(List<String> metaboliteIDs, Statement statment) {
+
+		Map<String, Pair<String, Double>> map = new HashMap<>();
+
+		ResultSet rs;
+
+		for(String name : metaboliteIDs) {
+
+			try {
+
+				rs = statment.executeQuery("SELECT idcompound, molecular_weight FROM compound WHERE kegg_id = '"+name+"';");
+
+				if(rs.next()) {
+
+					Pair<String, Double> pair = new Pair<>(rs.getString(1), rs.getDouble(2));
+					map.put(name, pair);
+				}
+
+				rs.close();
+			}
+			catch (SQLException e) {
+
+				e.printStackTrace();
+			}
+		}
+		return map;
+	}
+	
+	/**
+	 * Add the biomass pathway to model.
+	 * @param statement 
+	 * 
+	 * @return The pathway database identifier.
+	 * @throws SQLException 
+	 */
+	public static String addBiomassPathway(Statement statement) throws SQLException {
+
+		ResultSet rs = statement.executeQuery("SELECT name FROM pathway WHERE name = 'Biomass Pathway'");
+
+		if(!rs.next()) {
+
+			statement.execute("INSERT INTO pathway (code, name) VALUES ('B0001','Biomass Pathway');");
+			rs = statement.executeQuery("SELECT name FROM pathway WHERE name = 'Biomass Pathway'");
+			rs.next();
+		}
+		String ret = rs.getString(1);
+		rs.close();
+
+		return ret;
+	}
+
+	/**
+	 * Add biomass compound to model.
+	 * 
+	 * @param name 
+	 * @param molecularWeight 
+	 * @param statement 
+	 * @return the compound database identifier.
+	 * @throws SQLException 
+	 */
+	public static String insertCompoundToDatabase(String name, double molecularWeight, Statement statement) throws SQLException {
+
+
+		ResultSet rs = statement.executeQuery("SELECT * FROM compound WHERE name = '"+name+"'");
+
+		if(!rs.next()) {
+
+			statement.execute("INSERT INTO compound (name, kegg_id, entry_type, molecular_weight, hasBiologicalRoles) "
+					+ "VALUES ('"+name+"','"+name+"','BIOMASS','"+molecularWeight+"',TRUE);");
+			rs = statement.executeQuery("SELECT * FROM compound WHERE name = '"+name+"'");
+			rs.next();
+		}
+		String ret = rs.getString(1);
+		rs.close();
+
+		return ret;
+	}
+	
+	
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//reaction
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	
+	/**
+	 * Method for inserting new reactions in model database.
+	 * 
+	 * 
+	 * @param name
+	 * @param equation
+	 * @param reversibility
+	 * @param metabolitesChains
+	 * @param metabolitesCompartments
+	 * @param metabolitesStoichiometry
+	 * @param inModel
+	 * @param enzymesInPathway
+	 * @param reactionCompartment
+	 * @param isSpontaneous
+	 * @param isNonEnzymatic
+	 * @param isGeneric
+	 * @param lowerBound
+	 * @param upperBound
+	 * @param source
+	 * @param boolean_rule
+	 * @param compartmentalisedModel
+	 * @param databaseType
+	 * @param statement
+	 * @throws Exception
+	 */
+	public static void insertNewReaction(String name, String equation, boolean reversibility, //Set<String> pathways, Set<String> enzymes, 
+			Map<String,String> metabolitesChains, Map<String, String > metabolitesCompartments, Map<String, String> metabolitesStoichiometry, boolean inModel, Map<String, 
+			Set<String>> enzymesInPathway, String reactionCompartment, boolean isSpontaneous, boolean isNonEnzymatic,
+			boolean isGeneric, double lowerBound, double upperBound, String source, String boolean_rule, boolean compartmentalisedModel, DatabaseType databaseType, Statement statement) throws Exception {
+
+		try {
+			
+			if(boolean_rule!=null)
+				boolean_rule = "'"+boolean_rule+"'";
+
+			ResultSet rs;
+
+			if(!name.startsWith("R") && !name.startsWith("T")&& !name.startsWith("K") && !name.toLowerCase().contains("biomass"))
+				name = "R_"+name;
+
+			if(name.toLowerCase().equals("biomass"))
+				name = "R_"+name;
+
+			rs = statement.executeQuery("SELECT idreaction FROM reaction WHERE name = '" + DatabaseUtilities.databaseStrConverter(name, databaseType)+ "'");
+			if(rs.next()) {
+
+				throw new  Exception("Reaction with the same name ("+name+") already exists. Aborting operation!");
+			}
+			else {
+
+				boolean originalReaction = true;
+
+				if(compartmentalisedModel)
+					originalReaction = false;
+
+				rs = statement.executeQuery("SELECT idcompartment FROM compartment WHERE name = '" + reactionCompartment + "'");
+				rs.next();
+				String idCompartment = rs.getString(1);
+
+				statement.execute("INSERT INTO reaction (name, equation, reversible, inModel, compartment_idcompartment, " +
+						"source, isSpontaneous, isNonEnzymatic, originalReaction, isGeneric, lowerBound, upperBound, boolean_rule) " +
+						"VALUES('" + DatabaseUtilities.databaseStrConverter(name,databaseType) + "', '" + DatabaseUtilities.databaseStrConverter(equation,databaseType) + "', " 
+						+ reversibility + ", "+ inModel+","+idCompartment+",'"+source+"', "+isSpontaneous+","+isNonEnzymatic+", "
+						+originalReaction+", "+isGeneric+", "+lowerBound+", "+upperBound+",'"+boolean_rule+"')");
+
+//				String idNewReaction = (this.select("SELECT LAST_INSERT_ID()"))[0][0];
+				ResultSet rs1=statement.executeQuery("SELECT LAST_INSERT_ID()");
+				rs1.next();
+				String idNewReaction = rs1.getString(1);
+
+				//PATHWAYS AND ENZYMES PROCESSING
+				{
+					Map<String,Set<String>> newPathwaysID = new TreeMap<String,Set<String>>();
+					enzymesInPathway.remove("");
+					{
+						if(enzymesInPathway.containsKey("-1allpathwaysinreaction") && enzymesInPathway.get("-1allpathwaysinreaction").size()>0) {
+
+							for(String enzyme : enzymesInPathway.get("-1allpathwaysinreaction")) {
+
+								String ecnumber = enzyme.split("___")[0];
+
+								String idProtein = enzyme.split("___")[2];
+
+								rs = statement.executeQuery("SELECT * FROM reaction_has_enzyme WHERE enzyme_ecnumber='" + ecnumber+ "' AND enzyme_protein_idprotein = "+idProtein+" AND reaction_idreaction = "+idNewReaction );
+
+								if(!rs.next())
+									statement.execute("INSERT INTO reaction_has_enzyme (enzyme_ecnumber,enzyme_protein_idprotein,reaction_idreaction) " +
+											"VALUES ('" + ecnumber + "', " +idProtein+", "+idNewReaction+") ");
+							}
+						}
+						enzymesInPathway.remove("-1allpathwaysinreaction");
+					}
+
+					if(enzymesInPathway.size()>0) {
+
+						for(String pathway:enzymesInPathway.keySet()) {
+
+							rs = statement.executeQuery("SELECT idpathway FROM pathway WHERE name = '" + DatabaseUtilities.databaseStrConverter(pathway,databaseType)+ "'");
+							rs.next();
+
+							Set<String> p = new TreeSet<String>();
+							if (enzymesInPathway.get(pathway).size()>0)
+								p =  new TreeSet<String>(enzymesInPathway.get(pathway));
+
+							newPathwaysID.put(rs.getString(1), p);
+						}
+
+						//when pathways are deleted, they are just removed from the pathway has reaction association
+						//insert the new pathways
+
+						for(String pathway:newPathwaysID.keySet()) {
+
+							statement.execute("INSERT INTO pathway_has_reaction (pathway_idpathway, reaction_idreaction) " +
+									"VALUES ("+pathway+","+idNewReaction+")");
+
+							for(String enzyme: newPathwaysID.get(pathway)) {
+
+								String ecnumber = enzyme.split("___")[0];
+
+								String idProtein = enzyme.split("___")[2];
+
+								rs = statement.executeQuery("SELECT * FROM pathway_has_enzyme WHERE enzyme_ecnumber='" + ecnumber+ "' AND pathway_idpathway = "+pathway+ " AND enzyme_protein_idprotein = "+idProtein);
+
+								if(!rs.next()) {
+
+									statement.execute("INSERT INTO pathway_has_enzyme (pathway_idpathway, enzyme_ecnumber,enzyme_protein_idprotein) " +
+											"VALUES ("+pathway+",'"+ecnumber+"',"+idProtein+")");
+								}
+
+								rs = statement.executeQuery("SELECT * FROM reaction_has_enzyme WHERE enzyme_ecnumber = '"+ecnumber+"' AND reaction_idreaction = "+idNewReaction+" AND enzyme_protein_idprotein = "+idProtein);
+
+								if(!rs.next()) {
+
+									statement.execute("INSERT INTO reaction_has_enzyme (enzyme_ecnumber,enzyme_protein_idprotein,reaction_idreaction) " +
+											"VALUES ('"+ecnumber+"',"+idProtein+","+idNewReaction+") ");
+								}
+							}
+						}
+					}
+				}
+
+				int biomass_id = -1;
+				rs = statement.executeQuery("SELECT idcompound FROM compound WHERE name LIKE 'Biomass'");
+				if(rs.next())
+					biomass_id = rs.getInt("idcompound");
+
+				for(String m :metabolitesStoichiometry.keySet()) {
+
+					rs = statement.executeQuery("SELECT idcompartment FROM compartment WHERE name = '" + metabolitesCompartments.get(m) + "'");
+					rs.next();
+
+					idCompartment = rs.getString(1);
+
+					statement.execute("INSERT INTO stoichiometry (stoichiometric_coefficient, compartment_idcompartment, compound_idcompound, reaction_idreaction,numberofchains) " +
+							"VALUES('" + metabolitesStoichiometry.get(m) + "', '" + idCompartment +	"', '" + m.replace("-", "") + "', '" + idNewReaction + "', '" + metabolitesChains.get(m) + "')");
+
+
+					if(m.replace("-", "").equalsIgnoreCase(biomass_id+"")) {
+
+						rs = statement.executeQuery("SELECT * FROM pathway WHERE name = 'Biomass Pathway'");
+						if(!rs.next()) {						
+
+							statement.execute("INSERT INTO pathway (name, code) VALUES('Biomass Pathway', 'B0001' );");
+							rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
+							rs.next();
+						}
+						String idBiomassPath= rs.getString(1);
+						rs = statement.executeQuery("SELECT * FROM pathway_has_reaction WHERE pathway_idpathway = "+idBiomassPath+ " AND reaction_idreaction = "+idNewReaction);
+
+						if(!rs.next()) {
+							statement.execute("INSERT INTO pathway_has_reaction (pathway_idpathway, reaction_idreaction) " +
+									"VALUES ("+idBiomassPath+","+idNewReaction+")");
+						}
+					}
+				}
+			}
+			rs.close();
+			statement.close();
+		}
+		catch (SQLException ex) {
+
+			ex.printStackTrace();
+		}
+	}
+	
+	
 
 }

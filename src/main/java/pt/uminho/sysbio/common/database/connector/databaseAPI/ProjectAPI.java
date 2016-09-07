@@ -5,11 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
 import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
 
 /**
@@ -215,38 +211,4 @@ public class ProjectAPI {
 		return ret;
 	}
 
-	/**
-	 * Get information for e-biomass.
-	 * 
-	 * @param data
-	 * @param statment
-	 * @return
-	 */
-	public static Map<String, Pair<String, Double>> getModelInformationForBiomass(List<String> metaboliteIDs, Statement statment) {
-
-		Map<String, Pair<String, Double>> map = new HashMap<>();
-
-		ResultSet rs;
-
-		for(String name : metaboliteIDs) {
-
-			try {
-
-				rs = statment.executeQuery("SELECT idcompound, molecular_weight FROM compound WHERE kegg_id = '"+name+"';");
-
-				if(rs.next()) {
-
-					Pair<String, Double> pair = new Pair<>(rs.getString(1), rs.getDouble(2));
-					map.put(name, pair);
-				}
-
-				rs.close();
-			}
-			catch (SQLException e) {
-
-				e.printStackTrace();
-			}
-		}
-		return map;
-	}
 }
