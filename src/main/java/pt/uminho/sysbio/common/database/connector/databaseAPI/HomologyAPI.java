@@ -520,11 +520,11 @@ public class HomologyAPI {
 			goName = DatabaseUtilities.databaseStrConverter(goName, databaseType).substring(0, size);
 		}
 
-		ResultSet rs = statement.executeQuery("SELECT * FROM interpro_result WHERE database = '"+database+"' AND accession = '"+accession+"' AND results_id = '"+resultsID+"';");
+		ResultSet rs = statement.executeQuery("SELECT * FROM interpro_result WHERE interpro_result.database = '"+database+"' AND accession = '"+accession+"' AND results_id = '"+resultsID+"';");
 
 		if(!rs.next()) {
 
-			statement.execute("INSERT INTO interpro_result (tool, eValue, score, familyName, accession, name, ec, goName, localization, database, results_id) "
+			statement.execute("INSERT INTO interpro_result (tool, eValue, score, familyName, accession, name, ec, goName, localization, interpro_result.database, results_id) "
 					+ "VALUES('"+tool+"', '"+eValue+"',  '"+score+"', '"+family+"', '"+accession+"', '"+name+"', '"+ec+"', '"+goName+"', '"+localization+"', '"+database+"', '"+resultsID+"')");
 			rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
 			rs.next();
@@ -570,8 +570,8 @@ public class HomologyAPI {
 
 		if(!rs.next()) {
 
-			statement.execute("INSERT INTO interpro_entry (accession, name, description) "
-					+ "VALUES('"+accession+"', '"+name+"', '"+description+"')");
+			statement.execute("INSERT INTO interpro_entry (accession, name, description, type) "
+					+ "VALUES('"+accession+"', '"+name+"', '"+description+"','"+type+"')");
 			rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
 			rs.next();
 		}
@@ -606,7 +606,7 @@ public class HomologyAPI {
 
 		if(!rs.next()) {
 
-			statement.execute("INSERT INTO interpro_xRef (category, database, name, external_id, entry_id) "
+			statement.execute("INSERT INTO interpro_xRef (category, interpro_xRef.database, name, external_id, entry_id) "
 					+ " VALUES('"+category+"', '"+database+"', '"+name+"', '"+id+"', '"+entryID+"')");
 		}
 	}
