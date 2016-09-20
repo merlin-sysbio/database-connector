@@ -1050,7 +1050,7 @@ public class ModelAPI {
 			name = rs.getString(2);
 		}
 
-		return ModelAPI.loadGene(locusTag, sequence_id, name, null, statement, databaseType, informationType);
+		return ModelAPI.loadGene(locusTag, sequence_id, name, null, null, null, null, statement, databaseType, informationType);
 	}
 
 
@@ -1067,7 +1067,7 @@ public class ModelAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static String loadGene(String locusTag, String sequence_id, String geneName, String chromosome, Statement statement, DatabaseType databaseType, String informationType) throws SQLException {
+	public static String loadGene(String locusTag, String sequence_id, String geneName, String chromosome, String direction, String left_end, String right_end, Statement statement, DatabaseType databaseType, String informationType) throws SQLException {
 
 		ResultSet rs = statement.executeQuery("SELECT idgene FROM gene WHERE locusTag = '"+locusTag+"' AND sequence_id = '"+sequence_id+"';");
 
@@ -1090,7 +1090,7 @@ public class ModelAPI {
 				aux1 = "chromosome_idchromosome, ";
 				aux2 = ","+ rs.getString(1);
 			}
-			statement.execute("INSERT INTO gene (locusTag, sequence_id,"+aux1+"origin) VALUES('"+locusTag+"','"+sequence_id+"' "+aux2+",'"+informationType+"')");
+			statement.execute("INSERT INTO gene (locusTag, sequence_id,"+aux1+"origin, transcription_direction, left_end_position, right_end_position) VALUES('"+locusTag+"','"+sequence_id+"' "+aux2+",'"+informationType+"','"+direction+"','"+left_end+"','"+right_end+"')");
 			rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
 			rs.next();
 
