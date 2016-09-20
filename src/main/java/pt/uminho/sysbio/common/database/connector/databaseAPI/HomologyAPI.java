@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.h2.jdbc.JdbcSQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +51,7 @@ public class HomologyAPI {
 		Pair <String, String> ret = new Pair<>(locusTag, name);
 		return ret;
 	}
-	
+
 	/**
 	 * Retrieve mapping of queries to database ids.
 	 * 
@@ -61,7 +62,7 @@ public class HomologyAPI {
 	public static Map<String, Integer> getLocusKeys(Statement statement) throws SQLException {
 
 		Map<String, Integer> ret = new HashMap<>();
-		
+
 		ResultSet rs = statement.executeQuery("SELECT s_key, query FROM geneHomology;");
 
 		while(rs.next())
@@ -285,8 +286,8 @@ public class HomologyAPI {
 
 		return result;
 	}
-	
-	
+
+
 	/**
 	 * Retrieve homologies query sequence for gene key.  
 	 * 
@@ -296,14 +297,14 @@ public class HomologyAPI {
 	 * @throws SQLException
 	 */
 	public static String getHomologySequence(int key, Statement statement) throws SQLException {
-		
+
 		ResultSet rs1=statement.executeQuery("SELECT query FROM geneHomology WHERE geneHomology.s_key = '" + key+"' ");
 
 		String query = "";
 
 		while (rs1.next())
 			query = rs1.getString(1);
-		
+
 		ResultSet rs5=statement.executeQuery(
 				"SELECT DISTINCT(sequence) " +
 						"FROM fastaSequence " +
@@ -312,7 +313,7 @@ public class HomologyAPI {
 
 		if (rs5.next())
 			return rs5.getString(1);
-		
+
 		return null;
 	}
 
@@ -368,7 +369,7 @@ public class HomologyAPI {
 	 * @throws SQLException 
 	 */
 	public static List< ArrayList<String>> getInterProResult(int key, Statement statement) throws SQLException {
-		
+
 		ResultSet rs1=statement.executeQuery("SELECT query FROM geneHomology WHERE geneHomology.s_key = '" + key+"' ");
 
 		String query = "";
@@ -379,19 +380,19 @@ public class HomologyAPI {
 		List< ArrayList<String>> result = new ArrayList<>();
 
 		ArrayList<String> ql = null;
-		
+
 		ResultSet resultSet = statement.executeQuery(
 				"SELECT interpro_result.database, interpro_result.accession,  interpro_result.name, interpro_result.eValue, "
-				+ " interpro_result.ec, interpro_result.name, interpro_result.goName, interpro_result.localization, interpro_entry.accession, "
-				+ " interpro_entry.name, interpro_entry.description, "
-				+ " interpro_location.start, interpro_location.end "
-				+ " FROM interpro_results "
-				+ " INNER JOIN interpro_result ON (interpro_results.id = interpro_result.results_id) "
-				+ " INNER JOIN interpro_result_has_entry ON (interpro_result.id = interpro_result_has_entry.result_id) "
-				+ " INNER JOIN interpro_entry ON (interpro_result_has_entry.entry_id = interpro_entry.id) "
-				+ " INNER JOIN interpro_location ON (interpro_result.id = interpro_location.result_id) "
-				+ " WHERE query = '" + query +"' " );
-		
+						+ " interpro_result.ec, interpro_result.name, interpro_result.goName, interpro_result.localization, interpro_entry.accession, "
+						+ " interpro_entry.name, interpro_entry.description, "
+						+ " interpro_location.start, interpro_location.end "
+						+ " FROM interpro_results "
+						+ " INNER JOIN interpro_result ON (interpro_results.id = interpro_result.results_id) "
+						+ " INNER JOIN interpro_result_has_entry ON (interpro_result.id = interpro_result_has_entry.result_id) "
+						+ " INNER JOIN interpro_entry ON (interpro_result_has_entry.entry_id = interpro_entry.id) "
+						+ " INNER JOIN interpro_location ON (interpro_result.id = interpro_location.result_id) "
+						+ " WHERE query = '" + query +"' " );
+
 		while (resultSet.next()) {
 
 			ql = new ArrayList<String>();
@@ -410,7 +411,7 @@ public class HomologyAPI {
 			ql.add(resultSet.getString(13));
 			result.add(ql);
 		}
-		
+
 		return result;
 	}
 
@@ -428,10 +429,8 @@ public class HomologyAPI {
 
 		ResultSet rs = statement.executeQuery("SELECT * FROM interpro_results WHERE status = 'PROCESSED';");
 
-		while(rs.next()) {
-
+		while(rs.next())
 			ret.add(rs.getString(2));
-		}
 
 		return ret;
 	}
@@ -449,7 +448,7 @@ public class HomologyAPI {
 	 * @return
 	 * @throws SQLException 
 	 */
-	public static int loadIntroProAnnotation(String query, String querySequence, String mostLikelyEC,
+	public static int loadInterProAnnotation(String query, String querySequence, String mostLikelyEC,
 			String mostLikelyLocalization, String name, Statement statement, DatabaseType databaseType) throws SQLException {
 
 
@@ -473,7 +472,10 @@ public class HomologyAPI {
 			rs.next();
 		}
 
-		return rs.getInt(1);
+		int ret = rs.getInt(1);
+		rs.close();
+		
+		return ret;
 	}
 
 	/**
@@ -520,16 +522,24 @@ public class HomologyAPI {
 			goName = DatabaseUtilities.databaseStrConverter(goName, databaseType).substring(0, size);
 		}
 
+		String aux = "";
+		if(databaseType.equals(DatabaseType.MYSQL))
+			aux = "interpro_result.";
+
 		ResultSet rs = statement.executeQuery("SELECT * FROM interpro_result WHERE interpro_result.database = '"+database+"' AND accession = '"+accession+"' AND results_id = '"+resultsID+"';");
 
 		if(!rs.next()) {
 
-			statement.execute("INSERT INTO interpro_result (tool, eValue, score, familyName, accession, name, ec, goName, localization, interpro_result.database, results_id) "
+			statement.execute("INSERT INTO interpro_result (tool, eValue, score, familyName, accession, name, ec, goName, localization, "+aux+"database, results_id) "
 					+ "VALUES('"+tool+"', '"+eValue+"',  '"+score+"', '"+family+"', '"+accession+"', '"+name+"', '"+ec+"', '"+goName+"', '"+localization+"', '"+database+"', '"+resultsID+"')");
 			rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
 			rs.next();
 		}
-		return rs.getInt(1);
+		
+		int ret = rs.getInt(1);
+		rs.close();
+		
+		return ret;
 	}
 
 	/**
@@ -566,6 +576,7 @@ public class HomologyAPI {
 
 			description = DatabaseUtilities.databaseStrConverter(description, databaseType).substring(0, size);
 		}
+
 		ResultSet rs = statement.executeQuery("SELECT * FROM interpro_entry WHERE accession = '"+accession+"';");
 
 		if(!rs.next()) {
@@ -575,7 +586,11 @@ public class HomologyAPI {
 			rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
 			rs.next();
 		}
-		return rs.getInt(1);
+		
+		int ret = rs.getInt(1);
+		rs.close();
+		
+		return ret;
 	}
 
 	/**
@@ -602,13 +617,20 @@ public class HomologyAPI {
 
 			name = DatabaseUtilities.databaseStrConverter(name, databaseType).substring(0, size);
 		}
+
+		String aux = "";
+		if(databaseType.equals(DatabaseType.MYSQL))
+			aux = "interpro_result.";
+
 		ResultSet rs = statement.executeQuery("SELECT * FROM interpro_xRef WHERE external_id = '"+id+"' AND entry_id = '"+entryID+"';");
 
 		if(!rs.next()) {
 
-			statement.execute("INSERT INTO interpro_xRef (category, interpro_xRef.database, name, external_id, entry_id) "
+			statement.execute("INSERT INTO interpro_xRef (category, "+aux+"database, name, external_id, entry_id) "
 					+ " VALUES('"+category+"', '"+database+"', '"+name+"', '"+id+"', '"+entryID+"')");
 		}
+		
+		rs.close();
 	}
 
 	/**
@@ -632,11 +654,14 @@ public class HomologyAPI {
 
 		ResultSet rs = statement.executeQuery("SELECT * FROM interpro_location WHERE result_id = '"+resultID+"' AND start = '"+start+"'  AND end = '"+end+"'  AND score = '"+score+"' AND eValue = '"+eValue+"';");
 
-		if(!rs.next()) {
+		boolean go = rs.next();
+		
+		if(!go) {
 
 			statement.execute("INSERT INTO interpro_location (start, end, score, hmmstart, hmmend, eValue, envstart, envend, hmmlength, result_id) "
 					+ "VALUES('"+start+"', '"+end+"', '"+score+"', '"+hmmstart+"', '"+hmmend+"', '"+eValue+"', '"+envstart+"', '"+envend+"', '"+hmmlength+"', '"+resultID+"')");
 		}
+		rs.close();
 	}
 
 	/**
@@ -676,14 +701,28 @@ public class HomologyAPI {
 		String ret = null;
 		ResultSet rs = statement.executeQuery("SELECT accession FROM interpro_model WHERE accession = '"+accession+"';");
 
-		if(!rs.next()) {
-
-			statement.execute("INSERT INTO interpro_model (accession, description, name) VALUES('"+accession+"', '"+description+"', '"+name+"')");
-			rs = statement.executeQuery("SELECT accession FROM interpro_model WHERE accession = '"+accession+"';");
-			rs.next();
-		}
+		boolean go = rs.next();
 		
+		if(!go) {
+			
+			rs.close();
+			
+			try {
+				
+				statement.execute("INSERT INTO interpro_model (accession, description, name) VALUES('"+accession+"', '"+description+"', '"+name+"')");
+				rs = statement.executeQuery("SELECT accession FROM interpro_model WHERE accession = '"+accession+"';");
+				rs.next();
+			} 
+			catch (JdbcSQLException e) {
+				
+				rs = statement.executeQuery("SELECT accession FROM interpro_model WHERE accession = '"+accession+"';");
+				if(rs.next())					
+					logger.warn("Entry exists {}", accession);
+			}
+		}
+
 		ret = rs.getString(1);
+		rs.close();
 		
 		return ret;
 	}
@@ -705,6 +744,8 @@ public class HomologyAPI {
 			statement.execute("INSERT INTO interpro_result_has_model (result_id, model_accession) "
 					+ "VALUES('"+resultID+"', '"+modelAccession+"')");
 		}
+		
+		rs.close();
 	}
 
 	/**
@@ -719,10 +760,12 @@ public class HomologyAPI {
 
 		ResultSet rs = statement.executeQuery("SELECT * FROM interpro_result_has_entry WHERE result_id = '"+resultID+"' AND entry_id = '"+entryID+"';");
 
+		//H2 demands this check not to fail
 		if(!rs.next()) {
 
 			statement.execute("INSERT INTO interpro_result_has_entry (result_id, entry_id) VALUES('"+resultID+"', '"+entryID+"')");
 		}
+		rs.close();
 	}
 
 	/**
@@ -747,7 +790,7 @@ public class HomologyAPI {
 	 */
 	public static void deleteInterProEntries(String status, Statement statement) throws SQLException {
 
-		statement.execute("DELETE from interpro_results WHERE status = '"+status+"';");
+		statement.execute("DELETE FROM interpro_results WHERE status = '"+status+"';");
 	}
 
 	/**
@@ -759,12 +802,14 @@ public class HomologyAPI {
 	public static List<String> getInterProGenes(Statement statement) throws SQLException {
 
 		List<String> ret = new ArrayList<>();
-		
+
 		ResultSet resultSet = statement.executeQuery("SELECT query FROM interpro_results WHERE status = 'PROCESSED'");
-		
+
 		while(resultSet.next())
 			ret.add(resultSet.getString(1));
 		
+		resultSet.close();
+
 		return ret;
 	}
 
