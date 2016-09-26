@@ -183,7 +183,8 @@ public class HomologyAPI {
 				" LEFT JOIN homologues_has_ecNumber on (homologues.s_key = homologues_has_ecNumber.homologues_s_key)" +
 				" LEFT JOIN ecNumber on (homologues_has_ecNumber.ecNumber_s_key = ecNumber.s_key)" +
 				" WHERE query = '" + query +"' " +
-				"AND (LOWER(program) LIKE '"+tool1+"' OR LOWER(program) LIKE '"+tool2+"' OR LOWER(program) LIKE '"+tool3+"')");
+				"AND (LOWER(program) LIKE '"+tool1+"' OR LOWER(program) LIKE '"+tool2+"' OR LOWER(program) LIKE '"+tool3+"')"
+						+ " ORDER BY bits DESC, geneHomology_has_homologues.eValue ASC");
 
 		while(resultSet.next()) {
 
