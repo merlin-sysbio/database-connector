@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -814,5 +815,173 @@ public class HomologyAPI {
 		return ret;
 	}
 
+	
+	/**
+	 * Delete a set of genes from homology searches.
+	 * 
+	 * @param deleteGenes
+	 * @param statement
+	 * @throws SQLException 
+	 */
+	/**
+	 * @param deleteGenes
+	 * @param statement
+	 * @throws SQLException
+	 */
+	public static void deleteSetOfGenes(Set<String> deleteGenes, Statement statement) throws SQLException {
 
+		for(String s_key : deleteGenes)
+			statement.execute("DELETE FROM geneHomology WHERE s_key='"+s_key+"'");
+	}
+	
+	
+	/**
+	 * Retrieve genes available in homology database.
+	 * 
+	 * @param eVal
+	 * @param matrix
+	 * @param numberOfAlignments
+	 * @param word
+	 * @param program
+	 * @param databaseID
+	 * @param deleteProcessing
+	 * @param statement
+	 * @return
+	 */
+	public static Set<String> getGenesFromDatabase(String eVal, String matrix, int numberOfAlignments, short word, String program, String databaseID, boolean deleteProcessing, Statement statement) {
+
+		Set<String> loadedGenes = new HashSet<String>();
+
+		try  {
+
+			Set<String> deleteGenes = new HashSet<String>();
+
+			// get processing genes
+			deleteGenes.addAll(HomologyAPI.getProcessingGenes(program, statement));
+			
+			// get processed genes
+			ResultSet rs =statement.executeQuery("SELECT query, program FROM geneHomology "
+					+ " INNER JOIN homologySetup ON (homologySetup.s_key = homologySetup_s_key) "
+					+ " WHERE status = 'PROCESSED';");
+
+			while(rs.next()) {
+
+				if(rs.getString(2).contains(program))
+					loadedGenes.add(rs.getString(1));
+			}
+
+			// get NO_SIMILARITY genes
+			rs =statement.executeQuery("SELECT query, program FROM geneHomology " 
+							+ " INNER JOIN homologySetup ON (homologySetup.s_key = homologySetup_s_key) "
+							+ " WHERE status = 'NO_SIMILARITY';");
+
+			while(rs.next())
+				if(rs.getString(2).contains(program) )
+					loadedGenes.add(rs.getString(1));
+
+			// get NO_SIMILARITY genes and delete if new eVal > setup eVal
+			rs =statement.executeQuery("SELECT geneHomology.s_key, query, program  " +
+					" FROM geneHomology " +
+					" INNER JOIN homologySetup ON (homologySetup.s_key = homologySetup_s_key) " +
+					" WHERE status = 'NO_SIMILARITY' " +
+					" AND eValue < "+eVal+" " +
+					" AND matrix = '"+matrix+"' " +
+					" AND wordSize = '"+word+"' " +
+					" AND maxNumberOfAlignments = '"+numberOfAlignments+"';");
+
+			while(rs.next()) {
+				
+				if(rs.getString(3).contains(program) ) {
+					
+					loadedGenes.remove(rs.getString(2));
+					deleteGenes.add(rs.getString(1));
+				}
+			}
+			
+			// get NO_SIMILARITY genes and delete if new database <> setup database
+			rs =statement.executeQuery("SELECT geneHomology.s_key, query, program  " +
+					" FROM geneHomology " +
+					" INNER JOIN homologySetup ON (homologySetup.s_key = homologySetup_s_key) " +
+					" WHERE status = 'NO_SIMILARITY' " +
+					" AND databaseID <> '"+databaseID+"';");
+
+			while(rs.next()) {
+				
+				if(rs.getString(3).contains(program) ) {
+					
+					loadedGenes.remove(rs.getString(2));
+					deleteGenes.add(rs.getString(1));
+				}
+			}
+
+			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//			// get processed genes
+//			rs =statement.executeQuery("SELECT query, program FROM geneHomology " +
+//					"INNER JOIN homologySetup ON (homologySetup.s_key = homologySetup_s_key) " +
+//					"WHERE status = 'PROCESSED' " +
+//					"AND matrix = '"+matrix+"' " +
+//					"AND wordSize = 'wordSize';");
+//
+//			while(rs.next())
+//				if(rs.getString(2).contains(program) )
+//					loadedGenes.add(rs.getString(1));
+
+			
+			//get genes with less than numberOfAlignments hits if new eVal > setup eVal and hit eVal< eVal 
+			rs =statement.executeQuery("SELECT geneHomology.s_key, COUNT(referenceID), query, program " +
+					"FROM homologySetup " +
+					"INNER JOIN geneHomology ON (homologySetup.s_key = homologySetup_s_key) " +
+					"INNER JOIN geneHomology_has_homologues ON (geneHomology.s_key = geneHomology_s_key) " +
+					"WHERE status='PROCESSED' " +
+					"AND geneHomology_has_homologues.eValue <= "+eVal+"  " +
+					"AND homologySetup.eValue >  "+eVal+"  " +
+					"AND matrix = '"+matrix+"' AND wordSize = '"+word+"' " +
+					"GROUP BY geneHomology.s_key;");
+
+			while(rs.next()) {
+				
+				if(rs.getInt(2) < numberOfAlignments && rs.getString(4).contains(program) ) {
+
+					loadedGenes.remove(rs.getString(3));
+					deleteGenes.add(rs.getString(1));
+				}
+			}
+
+			HomologyAPI.deleteSetOfGenes(deleteGenes, statement);
+
+			rs.close();
+		}
+		catch (SQLException e) {
+
+			logger.error("SQL connection error!");
+			e.printStackTrace();
+			return null;
+		}
+		return loadedGenes;
+	}
+
+	/**
+	 * Retrieve set of genes that did not finished processing.
+	 * 
+	 * @param program
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Set<String> getProcessingGenes(String program, Statement statement) throws SQLException {
+
+		Set<String> deleteGenes = new HashSet<String>();
+
+		ResultSet rs = statement.executeQuery("SELECT geneHomology.s_key, program " +
+				" FROM geneHomology INNER JOIN homologySetup ON (homologySetup.s_key = homologySetup_s_key) " +
+				" WHERE status = 'PROCESSING';");
+
+		while(rs.next())
+			if(rs.getString(2).contains(program) )
+				deleteGenes.add(rs.getString(1));
+
+		return deleteGenes;
+	}
+	
 }

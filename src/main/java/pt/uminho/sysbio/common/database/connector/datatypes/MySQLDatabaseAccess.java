@@ -56,7 +56,6 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 			this.dataSource.setUser(user);
 			this.dataSource.setPassword(password);
 			this.dataSource.setServerName(server);
-			System.out.println(port);
 			this.dataSource.setPortNumber(Integer.valueOf(port));
 			this.dataSource.setDatabaseName(database);
 			this.dataSource.setAutoReconnect(true);
