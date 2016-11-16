@@ -116,7 +116,8 @@ public class ModelAPI {
 
 		Set<String> locusTag = new TreeSet<String>();
 
-		ResultSet rs = statement.executeQuery("SELECT locusTag FROM gene //WHERE origin<>'HOMOLOGY'");
+		ResultSet rs = statement.executeQuery("SELECT locusTag FROM gene "//WHERE origin<>'HOMOLOGY'"
+				);
 
 		while(rs.next())
 			locusTag.add(rs.getString(1));
