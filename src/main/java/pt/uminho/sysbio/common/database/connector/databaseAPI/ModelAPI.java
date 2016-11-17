@@ -1074,7 +1074,8 @@ public class ModelAPI {
 
 		if(!rs.next()) {
 
-			String aux1 = "", aux2 = "";
+			String aux1 = "", aux2 = "", aux3 = "", aux4 = "", aux5 = "", aux6 = "", aux7 = "", aux8 = "" ;
+
 
 			if(chromosome!=null && !chromosome.isEmpty()) {
 
@@ -1089,9 +1090,30 @@ public class ModelAPI {
 				}
 
 				aux1 = "chromosome_idchromosome, ";
-				aux2 = ","+ rs.getString(1);
+				aux2 = rs.getString(1)+", ";
 			}
-			statement.execute("INSERT INTO gene (locusTag, sequence_id,"+aux1+"origin, transcription_direction, left_end_position, right_end_position) VALUES('"+locusTag+"','"+sequence_id+"' "+aux2+",'"+informationType+"','"+direction+"','"+left_end+"','"+right_end+"')");
+
+			if(direction!=null) {
+
+				aux3 = ", transcription_direction";
+				aux4 = ",'"+direction+"'";
+			}
+
+			if(direction!=null) {
+
+				aux5 = ", left_end_position";
+				aux6 = ",'"+left_end+"'";
+			}
+
+			if(direction!=null) {
+
+				aux7 = ", right_end_position";
+				aux8 = ",'"+right_end+"'";
+			}
+
+
+			statement.execute("INSERT INTO gene (locusTag, sequence_id, "+aux1+" origin"+aux3+aux5+aux7+") "
+					+ "VALUES('"+locusTag+"','"+sequence_id+"', "+aux2+"'"+informationType+"'"+aux4+aux6+aux8+")");
 			rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
 			rs.next();
 
@@ -1587,8 +1609,8 @@ public class ModelAPI {
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//biomass
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
-	
+
+
 	/**
 	 * Get information for e-biomass.
 	 * 
@@ -1623,7 +1645,7 @@ public class ModelAPI {
 		}
 		return map;
 	}
-	
+
 	/**
 	 * Add the biomass pathway to model.
 	 * @param statement 
@@ -1673,13 +1695,13 @@ public class ModelAPI {
 
 		return ret;
 	}
-	
-	
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//reaction
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
-	
+
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//reaction
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 	/**
 	 * Method for inserting new reactions in model database.
 	 * 
@@ -1711,7 +1733,7 @@ public class ModelAPI {
 			boolean isGeneric, double lowerBound, double upperBound, String source, String boolean_rule, boolean compartmentalisedModel, DatabaseType databaseType, Statement statement) throws Exception {
 
 		try {
-			
+
 			if(boolean_rule!=null)
 				boolean_rule = "'"+boolean_rule+"'";
 
@@ -1745,7 +1767,7 @@ public class ModelAPI {
 						+ reversibility + ", "+ inModel+","+idCompartment+",'"+source+"', "+isSpontaneous+","+isNonEnzymatic+", "
 						+originalReaction+", "+isGeneric+", "+lowerBound+", "+upperBound+",'"+boolean_rule+"')");
 
-//				String idNewReaction = (this.select("SELECT LAST_INSERT_ID()"))[0][0];
+				//				String idNewReaction = (this.select("SELECT LAST_INSERT_ID()"))[0][0];
 				ResultSet rs1=statement.executeQuery("SELECT LAST_INSERT_ID()");
 				rs1.next();
 				String idNewReaction = rs1.getString(1);
@@ -1864,7 +1886,7 @@ public class ModelAPI {
 			ex.printStackTrace();
 		}
 	}
-	
-	
+
+
 
 }
