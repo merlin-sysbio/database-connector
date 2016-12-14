@@ -397,20 +397,19 @@ public class HomologyAPI {
 
 		while (resultSet.next()) {
 
+			String out = "";
+			int counter=0;
 			ql = new ArrayList<String>();
-			ql.add(resultSet.getString(1));
-			ql.add(resultSet.getString(2));
-			ql.add(resultSet.getString(3));
-			ql.add(resultSet.getString(4));
-			ql.add(resultSet.getString(5));
-			ql.add(resultSet.getString(6));
-			ql.add(resultSet.getString(7));
-			ql.add(resultSet.getString(8));
-			ql.add(resultSet.getString(9));
-			ql.add(resultSet.getString(10));
-			ql.add(resultSet.getString(11));
-			ql.add(resultSet.getString(12));
-			ql.add(resultSet.getString(13));
+			
+			while (counter<13) {
+				
+				out = "";
+				counter++;
+				if(resultSet.getString(counter)!= null && !resultSet.getString(counter).equals("null"))
+					out = resultSet.getString(counter);	
+				ql.add(out);
+			}
+			counter = 1;
 			result.add(ql);
 		}
 
@@ -622,7 +621,7 @@ public class HomologyAPI {
 
 		String aux = "";
 		if(databaseType.equals(DatabaseType.MYSQL))
-			aux = "interpro_result.";
+			aux = "interpro_xRef.";
 
 		ResultSet rs = statement.executeQuery("SELECT * FROM interpro_xRef WHERE external_id = '"+id+"' AND entry_id = '"+entryID+"';");
 
@@ -982,6 +981,27 @@ public class HomologyAPI {
 				deleteGenes.add(rs.getString(1));
 
 		return deleteGenes;
+	}
+
+	/**
+	 * Retrieve set of gene queries from set of gene keys.
+	 * 
+	 * @param genes
+	 * @param statement
+	 * @return
+	 * @throws SQLException 
+	 */
+	public static Set<String> getQueriesFromKeys(Set<String> genes, Statement statement) throws SQLException {
+		
+		Set<String> ret = new HashSet<String>();
+
+		ResultSet rs = statement.executeQuery("SELECT s_key, query FROM geneHomology;");
+
+		while(rs.next())			
+			if(genes.contains(rs.getString(1)))
+			ret.add(rs.getString(2));
+
+		return ret;
 	}
 	
 }

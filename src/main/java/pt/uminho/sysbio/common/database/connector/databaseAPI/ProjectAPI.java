@@ -15,20 +15,22 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
 public class ProjectAPI {
 
 	/**
-	 * @param project
-	 * @param newVersion
+	 * Get project id.
+	 * 
+	 * @param conn
+	 * @param genomeID
 	 * @return
 	 * @throws IOException
 	 * @throws SQLException
 	 */
-	public static int getProjectID(Connection conn, long genomeID, boolean newVersion) throws IOException, SQLException {
+	public static int getProjectID(Connection conn, long genomeID) throws IOException, SQLException {
 
 		int project_id = -1;
 
 		Statement stmt = conn.createStatement();
 		ResultSet rs = stmt.executeQuery("SELECT id FROM projects WHERE organism_id = "+genomeID+" AND latest_version;");
 
-		if(!rs.next() || newVersion) {
+		if(!rs.next()) {
 
 			rs = stmt.executeQuery("SELECT MAX(version) FROM projects WHERE organism_id = "+genomeID+";");
 
@@ -37,10 +39,8 @@ public class ProjectAPI {
 			if(rs.next()) {
 
 				version += rs.getInt(1);
-
 				stmt.execute("UPDATE projects SET latest_version=false WHERE organism_id = "+genomeID+";");
 			}
-
 
 			long time = System.currentTimeMillis();
 			Timestamp timestamp = new Timestamp(time);
