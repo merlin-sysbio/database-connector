@@ -1879,7 +1879,6 @@ public class ModelAPI {
 				}
 			}
 			rs.close();
-			statement.close();
 		}
 		catch (SQLException ex) {
 
