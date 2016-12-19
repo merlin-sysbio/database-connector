@@ -222,5 +222,17 @@ public class TransportersAPI {
 		}
 		statement.close();
 	}
+	
+	public static boolean checkReactionData(Connection connection) throws SQLException{
+		Statement statement = connection.createStatement();
+		
+		ResultSet rs = statement.executeQuery("SELECT * FROM reaction");
+		if(rs.next()){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
 
 }
