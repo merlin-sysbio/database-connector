@@ -959,6 +959,59 @@ public class HomologyAPI {
 		}
 		return loadedGenes;
 	}
+	
+	/**
+ 	 * Retrieve genes available in homology database.
+	 * 
+	 * @param program
+	 * @param databaseID
+	 * @param deleteProcessing
+	 * @param statement
+	 * @return
+	 */
+	public static Set<String> getGenesFromDatabase(String program, boolean deleteProcessing, Statement statement) {
+
+		Set<String> loadedGenes = new HashSet<String>();
+
+		try  {
+
+			Set<String> deleteGenes = new HashSet<String>();
+
+			// get processing genes
+			deleteGenes.addAll(HomologyAPI.getProcessingGenes(program, statement));
+			
+			// get processed genes
+			ResultSet rs =statement.executeQuery("SELECT query, program FROM geneHomology "
+					+ " INNER JOIN homologySetup ON (homologySetup.s_key = homologySetup_s_key) "
+					+ " WHERE status = 'PROCESSED';");
+
+			while(rs.next()) {
+
+				if(rs.getString(2).contains(program))
+					loadedGenes.add(rs.getString(1));
+			}
+
+			// get NO_SIMILARITY genes
+			rs =statement.executeQuery("SELECT query, program FROM geneHomology " 
+							+ " INNER JOIN homologySetup ON (homologySetup.s_key = homologySetup_s_key) "
+							+ " WHERE status = 'NO_SIMILARITY';");
+
+			while(rs.next())
+				if(rs.getString(2).contains(program) )
+					loadedGenes.add(rs.getString(1));
+
+			HomologyAPI.deleteSetOfGenes(deleteGenes, statement);
+
+			rs.close();
+		}
+		catch (SQLException e) {
+
+			logger.error("SQL connection error!");
+			e.printStackTrace();
+			return null;
+		}
+		return loadedGenes;
+	}
 
 	/**
 	 * Retrieve set of genes that did not finished processing.
