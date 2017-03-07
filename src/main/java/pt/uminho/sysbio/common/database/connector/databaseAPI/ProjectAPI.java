@@ -211,4 +211,28 @@ public class ProjectAPI {
 		return ret;
 	}
 
+	/**
+	 * Check wether transporters are integrated in internal database.
+	 * 
+	 * @param connection
+	 * @param project_id 
+	 * @return
+	 */
+	public static boolean isTransportersIntegrated(Connection connection, int project_id) {
+		boolean ret = false;
+
+		try  {
+
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT * FROM genes WHERE project_id = "+project_id+ ";");
+
+			if(rs.next())
+				ret=true;
+			
+			stmt.close();
+		} 
+		catch (SQLException e) {e.printStackTrace();}
+		return ret;
+	}
+
 }
