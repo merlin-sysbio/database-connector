@@ -92,15 +92,16 @@ public class ModelAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static Map<String, String> getQueries(Statement statement) throws SQLException {
+	public static Map<Integer, String> getQueries(Statement statement) throws SQLException {
 
-		Map<String, String> ret = new HashMap<>();
+		Map<Integer, String> ret = new HashMap<>();
 
+		String query = "SELECT s_key, query FROM geneHomology;";
 
-		ResultSet rs = statement.executeQuery("SELECT locusTag, query FROM geneHomology;");
+		ResultSet rs = statement.executeQuery(query);
 
 		while(rs.next())	
-			ret.put(rs.getString(1), rs.getString(2));
+			ret.put(rs.getInt(1), rs.getString(2));
 
 		return ret;
 	}
@@ -116,8 +117,10 @@ public class ModelAPI {
 
 		Set<String> locusTag = new TreeSet<String>();
 
-		ResultSet rs = statement.executeQuery("SELECT locusTag FROM gene "//WHERE origin<>'HOMOLOGY'"
-				);
+		//		String query = "SELECT locusTag FROM gene";
+		String query = "SELECT sequence_id FROM gene";
+
+		ResultSet rs = statement.executeQuery(query);
 
 		while(rs.next())
 			locusTag.add(rs.getString(1));
@@ -139,10 +142,13 @@ public class ModelAPI {
 
 		Map<String, String> existingChromosome = new HashMap<> ();
 
-		ResultSet rs = statement.executeQuery("SELECT gene.name, locusTag, chromosome.name FROM gene "+
-				"INNER JOIN chromosome ON (idchromosome=chromosome_idchromosome) " //+
-				//"WHERE origin='KEGG'"
-				);
+		//		 "SELECT gene.name, locusTag, chromosome.name FROM gene "+
+		//			"INNER JOIN chromosome ON (idchromosome=chromosome_idchromosome) ";
+
+		String query = "SELECT gene.name, sequence_id, chromosome.name FROM gene "+
+				"INNER JOIN chromosome ON (idchromosome=chromosome_idchromosome) ";
+
+		ResultSet rs = statement.executeQuery(query);
 
 		while(rs.next()) {
 
@@ -170,10 +176,10 @@ public class ModelAPI {
 
 		Map<String, Set<String>> existingGeneNamesAlias = new HashMap<> ();
 
-		ResultSet rs = statement.executeQuery("SELECT locusTag, alias FROM gene " +
-				"INNER JOIN aliases ON (idgene=aliases.entity) " +
-				"WHERE class='g' "
-				);
+		//String query = "SELECT locusTag, alias FROM gene INNER JOIN aliases ON (idgene=aliases.entity) WHERE class='g' ";
+		String query = "SELECT sequence_id, alias FROM gene INNER JOIN aliases ON (idgene=aliases.entity) WHERE class='g' ";
+
+		ResultSet rs = statement.executeQuery(query);
 
 		while(rs.next()) {
 
@@ -200,9 +206,12 @@ public class ModelAPI {
 
 		Map<String, Set<String>> existingECNumbers = new HashMap<> ();
 
-		ResultSet rs = statement.executeQuery("SELECT locusTag, enzyme_ecNumber FROM gene " +
-				"INNER JOIN subunit ON (idgene=gene_idgene) "
-				);
+		//		String query = "SELECT locusTag, enzyme_ecNumber FROM gene " +
+		//				"INNER JOIN subunit ON (idgene=gene_idgene) ";
+		String query = "SELECT sequence_id, enzyme_ecNumber FROM gene " +
+				"INNER JOIN subunit ON (idgene=gene_idgene) ";
+
+		ResultSet rs = statement.executeQuery(query);
 
 		while(rs.next()) {
 
@@ -229,11 +238,15 @@ public class ModelAPI {
 
 		Map<String, String> existingProducts = new HashMap<> ();
 
-		ResultSet 	rs = statement.executeQuery("SELECT locusTag, protein.name FROM gene " +
-				"INNER JOIN subunit ON (idgene=gene_idgene) " +
-				"INNER JOIN protein ON (subunit.enzyme_protein_idprotein=idprotein) "
-				);
+		//		String query = "SELECT locusTag, protein.name FROM gene " +
+//		"INNER JOIN subunit ON (idgene=gene_idgene) " +
+//		"INNER JOIN protein ON (subunit.enzyme_protein_idprotein=idprotein) ";
+		String query = "SELECT sequence_id, protein.name FROM gene " +
+				" INNER JOIN subunit ON (idgene=gene_idgene) " +
+				" INNER JOIN protein ON (subunit.enzyme_protein_idprotein=idprotein) ";
 
+		ResultSet rs = statement.executeQuery(query);
+		
 		while(rs.next())
 			existingProducts.put(rs.getString(1), rs.getString(2));
 
@@ -251,11 +264,16 @@ public class ModelAPI {
 
 		Map<String, Set<String>> existingProductsAlias = new HashMap<> ();
 
-		ResultSet rs = statement.executeQuery("SELECT locusTag, alias FROM gene " +
-				"INNER JOIN subunit ON (idgene=gene_idgene) " +
-				"INNER JOIN aliases ON (subunit.enzyme_protein_idprotein=aliases.entity)" +
-				" WHERE class='p' "
-				);
+//		String query = "SELECT locusTag, alias FROM gene " +
+//				"INNER JOIN subunit ON (idgene=gene_idgene) " +
+//				"INNER JOIN aliases ON (subunit.enzyme_protein_idprotein=aliases.entity)" +
+//				" WHERE class='p' ";
+		
+		String query = "SELECT sequence_id, alias FROM gene INNER JOIN subunit ON (idgene=gene_idgene) " +
+				" INNER JOIN aliases ON (subunit.enzyme_protein_idprotein=aliases.entity)" +
+				" WHERE class='p' ";
+		
+		ResultSet rs = statement.executeQuery(query);
 
 		while(rs.next()) {
 
@@ -281,9 +299,15 @@ public class ModelAPI {
 
 		Map<String, Set<String>> allPathways = new HashMap<> ();
 
-		ResultSet rs = statement.executeQuery("SELECT pathway.idpathway, pathway.name, pathway_has_enzyme.enzyme_ecnumber FROM pathway " +
+//		"SELECT pathway.idpathway, pathway.name, pathway_has_enzyme.enzyme_ecnumber FROM pathway " +
+//		"INNER JOIN pathway_has_enzyme ON (pathway.idpathway=pathway_idpathway) " +
+//		"ORDER BY idpathway"
+		
+		String query = "SELECT pathway.idpathway, pathway.name, pathway_has_enzyme.enzyme_ecnumber FROM pathway " +
 				"INNER JOIN pathway_has_enzyme ON (pathway.idpathway=pathway_idpathway) " +
-				"ORDER BY idpathway");
+				"ORDER BY idpathway";
+		
+		ResultSet rs = statement.executeQuery(query);
 
 		//for each enzyme in the pathways
 		while(rs.next()) {
@@ -310,11 +334,13 @@ public class ModelAPI {
 
 		Map<String, Set<String>> existsPathway = new HashMap<>();
 
-		ResultSet rs = statement.executeQuery("SELECT pathway.idpathway, pathway.name, enzyme.ecnumber FROM pathway " +
+		String query = "SELECT pathway.idpathway, pathway.name, enzyme.ecnumber FROM pathway " +
 				"INNER JOIN pathway_has_enzyme ON (pathway.idpathway=pathway_idpathway) " +
 				"INNER JOIN enzyme ON (enzyme.ecnumber=pathway_has_enzyme.enzyme_ecnumber) " +
-				"WHERE enzyme.inModel ORDER BY idpathway");
-
+				"WHERE enzyme.inModel ORDER BY idpathway";
+		
+		ResultSet rs = statement.executeQuery(query);
+		
 		//for each enzyme in the pathways in the model
 		while(rs.next()) {
 
@@ -1070,12 +1096,23 @@ public class ModelAPI {
 	 */
 	public static String loadGene(String locusTag, String sequence_id, String geneName, String chromosome, String direction, String left_end, String right_end, Statement statement, DatabaseType databaseType, String informationType) throws SQLException {
 
-		ResultSet rs = statement.executeQuery("SELECT idgene FROM gene WHERE locusTag = '"+locusTag+"' AND sequence_id = '"+sequence_id+"';");
-
-		if(!rs.next()) {
+		//"SELECT idgene FROM gene WHERE locusTag = '"+locusTag+"' AND sequence_id = '"+sequence_id+"';"
+		String query = "SELECT idgene FROM gene WHERE sequence_id = '"+sequence_id+"';";
+		
+		ResultSet rs = statement.executeQuery(query);
+		String geneID = null;
+		if(rs.next()) {
+			
+			geneID = rs.getString(1);
+			query = "SELECT idgene FROM gene WHERE locusTag = '"+locusTag+"' AND sequence_id = '"+sequence_id+"';";
+			rs = statement.executeQuery(query);
+			
+			if(!rs.next())
+				statement.execute("UPDATE gene SET locusTag = '"+locusTag+"' WHERE sequence_id = '"+sequence_id+"'");
+		}
+		else {
 
 			String aux1 = "", aux2 = "", aux3 = "", aux4 = "", aux5 = "", aux6 = "", aux7 = "", aux8 = "" ;
-
 
 			if(chromosome!=null && !chromosome.isEmpty()) {
 
@@ -1116,9 +1153,9 @@ public class ModelAPI {
 					+ "VALUES('"+locusTag+"','"+sequence_id+"', "+aux2+"'"+informationType+"'"+aux4+aux6+aux8+")");
 			rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
 			rs.next();
-
+			geneID = rs.getString(1);
 		}
-		String geneID = rs.getString(1);
+		
 		rs.close();
 
 		if(geneName!=null)
