@@ -247,7 +247,7 @@ public class DatabaseSchemas {
 			StringBuffer stat = new StringBuffer();
 
 			str = br.readLine();
-			Statement statement;
+			Statement statement = connection.createStatement();
 			
 			while(str!=null) {
 				
@@ -270,7 +270,6 @@ public class DatabaseSchemas {
 
 						try  {
 							
-							statement = connection.createStatement();
 							statement.execute(query.trim()+";");
 						} 
 						catch (SQLException e) {
@@ -284,11 +283,9 @@ public class DatabaseSchemas {
 
 					if(str.contains(";")) {
 
+						String text = stat.toString();
 						try  {
 							
-							statement = connection.createStatement();
-							
-							String text = stat.toString();
 							if (dbType.equals(DatabaseType.H2))
 								text = text.replace("\\'","''");
 							else
@@ -297,7 +294,7 @@ public class DatabaseSchemas {
 						} 
 						catch (SQLException e) {
 
-							System.out.println(stat.toString());
+							System.out.println(text);
 							e.printStackTrace();
 							br.close();
 							throw new Exception();
