@@ -45,16 +45,17 @@ public class TransportersAPI {
 	 * 
 	 * @param conn
 	 * @param projectID 
+	 * @param status 
 	 * @return
 	 * @throws SQLException
 	 */
-	public static Map<String, Integer> getGenesTransmembraneHelices(Connection conn, int projectID) throws SQLException {
+	public static Map<String, Integer> getGenesTransmembraneHelices(Connection conn, int projectID, String status) throws SQLException {
 
 		Map<String, Integer> ret = new HashMap<>();
 
 		Statement statement = conn.createStatement();
 
-		ResultSet rs = statement.executeQuery("SELECT * FROM sw_reports WHERE project_id = "+projectID);
+		ResultSet rs = statement.executeQuery("SELECT * FROM sw_reports WHERE status = '"+status+"' AND project_id = "+projectID);
 
 		while(rs.next())
 			ret.put(rs.getString(3), rs.getInt(6));
