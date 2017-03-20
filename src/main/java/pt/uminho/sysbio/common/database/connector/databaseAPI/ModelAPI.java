@@ -50,7 +50,8 @@ public class ModelAPI {
 		String locusTag = geneNames.getA();
 		String geneName = geneNames.getB();
 
-		ResultSet rs = statement.executeQuery("SELECT idgene FROM gene WHERE locusTag = '"+locusTag+"' AND sequence_id = '"+sequence_id+"';");
+		//ResultSet rs = statement.executeQuery("SELECT idgene FROM gene WHERE locusTag = '"+locusTag+"' AND sequence_id = '"+sequence_id+"';");
+		ResultSet rs = statement.executeQuery("SELECT idgene FROM gene WHERE sequence_id = '"+sequence_id+"';");
 
 		if(!rs.next()) {
 
@@ -1107,7 +1108,7 @@ public class ModelAPI {
 			query = "SELECT idgene FROM gene WHERE locusTag = '"+locusTag+"' AND sequence_id = '"+sequence_id+"';";
 			rs = statement.executeQuery(query);
 			
-			if(!rs.next())
+			if(!rs.next() && !locusTag.equalsIgnoreCase(sequence_id))
 				statement.execute("UPDATE gene SET locusTag = '"+locusTag+"' WHERE sequence_id = '"+sequence_id+"'");
 		}
 		else {
