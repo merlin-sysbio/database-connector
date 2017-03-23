@@ -63,6 +63,30 @@ public class TransportersAPI {
 		statement.close();
 		return ret;
 	}
+	
+	/**
+	 * Get the transmembrane helices already for genes already loaded.
+	 * 
+	 * @param conn
+	 * @param projectID 
+	 * @param status 
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, Integer> getGenesTransmembraneHelices(Connection conn, int projectID) throws SQLException {
+
+		Map<String, Integer> ret = new HashMap<>();
+
+		Statement statement = conn.createStatement();
+
+		ResultSet rs = statement.executeQuery("SELECT * FROM sw_reports WHERE project_id = "+projectID);
+
+		while(rs.next())
+			ret.put(rs.getString(3), rs.getInt(6));
+
+		statement.close();
+		return ret;
+	}
 
 	/**
 	 * Load Transport Alignments Genes
