@@ -84,8 +84,10 @@ public class ProjectAPI {
 	public static boolean isCompartmentalisedModel(Statement statement) throws SQLException {
 
 		boolean ret = false;
+		
+		String query = "SELECT * FROM reaction WHERE NOT originalReaction;";
 
-		ResultSet rs = statement.executeQuery("SELECT * FROM reaction WHERE NOT originalReaction;");
+		ResultSet rs = statement.executeQuery(query);
 
 		if(rs.next())
 			ret=true;
