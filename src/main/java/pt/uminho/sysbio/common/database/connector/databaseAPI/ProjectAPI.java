@@ -1,6 +1,7 @@
 package pt.uminho.sysbio.common.database.connector.databaseAPI;
 
 import java.io.IOException;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -235,6 +236,33 @@ public class ProjectAPI {
 		} 
 		catch (SQLException e) {e.printStackTrace();}
 		return ret;
+	}
+	
+	public static boolean checkTableName(Connection connection, String oldName, String newName){
+		
+		try {
+			DatabaseMetaData meta;
+			meta = connection.getMetaData();
+			ResultSet rs = meta.getTables(null, null, newName, new String[] {"TABLE","VIEW"});
+			if(rs.next()) {
+				return true;
+			}
+			else {
+				rs = meta.getTables(null, null, oldName, new String[] {"TABLE","VIEW"});
+				if(rs.next()) {
+					Statement stmt = connection.createStatement();
+					stmt.execute("ALTER TABLE "+oldName+" RENAME TO "+newName+";");
+					stmt.close();
+					return true;
+				}
+			}
+			rs.close();
+			
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
 
 }
