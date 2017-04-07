@@ -1774,7 +1774,7 @@ public class ModelAPI {
 
 			if(boolean_rule!=null)
 				boolean_rule = "'"+boolean_rule+"'";
-
+			
 			ResultSet rs;
 
 			if(!name.startsWith("R") && !name.startsWith("T")&& !name.startsWith("K") && !name.toLowerCase().contains("biomass"))
@@ -1803,7 +1803,7 @@ public class ModelAPI {
 						"source, isSpontaneous, isNonEnzymatic, originalReaction, isGeneric, lowerBound, upperBound, boolean_rule) " +
 						"VALUES('" + DatabaseUtilities.databaseStrConverter(name,databaseType) + "', '" + DatabaseUtilities.databaseStrConverter(equation,databaseType) + "', " 
 						+ reversibility + ", "+ inModel+","+idCompartment+",'"+source+"', "+isSpontaneous+","+isNonEnzymatic+", "
-						+originalReaction+", "+isGeneric+", "+lowerBound+", "+upperBound+",'"+boolean_rule+"')");
+						+originalReaction+", "+isGeneric+", "+lowerBound+", "+upperBound+","+boolean_rule+")");
 
 				//				String idNewReaction = (this.select("SELECT LAST_INSERT_ID()"))[0][0];
 				ResultSet rs1=statement.executeQuery("SELECT LAST_INSERT_ID()");
