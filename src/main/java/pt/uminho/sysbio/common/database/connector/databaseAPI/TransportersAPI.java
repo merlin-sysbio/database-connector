@@ -14,6 +14,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
+import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
+import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
 
 /**
  * @author Oscar Dias
@@ -63,7 +65,7 @@ public class TransportersAPI {
 		statement.close();
 		return ret;
 	}
-	
+
 	/**
 	 * Get the transmembrane helices already for genes already loaded.
 	 * 
@@ -116,7 +118,7 @@ public class TransportersAPI {
 
 			if(rs.next()) {
 				result = rs.getString(1);
-				
+
 				stmt.execute("UPDATE sw_reports SET "
 						+ " date = '"+sqlToday+"', "
 						+ " matrix= '"+matrix+"', "
@@ -133,7 +135,7 @@ public class TransportersAPI {
 				rs.next();
 				result = rs.getString(1);
 			}
-			
+
 			rs.close();
 			stmt=null;
 			locus_ids.put(locus_tag,result);
@@ -247,10 +249,16 @@ public class TransportersAPI {
 		}
 		statement.close();
 	}
-	
+
+	/**
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
 	public static boolean checkReactionData(Connection connection) throws SQLException{
+
 		Statement statement = connection.createStatement();
-		
+
 		ResultSet rs = statement.executeQuery("SELECT * FROM reaction");
 		if(rs.next()){
 			return true;
@@ -258,6 +266,456 @@ public class TransportersAPI {
 		else{
 			return false;
 		}
+	}
+
+
+
+	/**
+	 * Add Transporters pathway.
+	 * 
+	 * @param name
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String addPathway(String name, Statement stmt) throws SQLException {
+
+		ResultSet rs = stmt.executeQuery("SELECT idpathway FROM pathway WHERE name = '"+name+"';");
+
+		if(!rs.next()) {
+
+			stmt.execute("INSERT INTO pathway (name, code) VALUES('"+name+"','T0001')");
+			rs = stmt.executeQuery("SELECT LAST_INSERT_ID()");
+			rs.next();
+		}
+		String idpathway = rs.getString(1);
+
+		return idpathway;
+	}
+
+	/**
+	 * Add transport reaction
+	 * 
+	 * @param reactionID
+	 * @param equation
+	 * @param compartmentID
+	 * @param isReversible
+	 * @param ontology
+	 * @param reactionInModel
+	 * @param databaseType
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String addReactionID(String reactionID, String equation, int compartmentID, boolean isReversible, boolean ontology, boolean reactionInModel, DatabaseType databaseType, Statement stmt) throws SQLException {
+
+		String note = "";
+		String notes ="";
+
+		if(ontology) {
+
+			notes=",notes";
+			note=",'ontology'";
+			reactionInModel=false;
+		}
+
+		ResultSet rs = stmt.executeQuery("SELECT idreaction FROM reaction WHERE name = '"+reactionID+"';");
+
+		if(!rs.next()){
+
+			stmt.execute("INSERT INTO reaction (name, reversible, inModel, equation, source, isGeneric, isSpontaneous, isNonEnzymatic,originalReaction,compartment_idcompartment"+notes+") " +
+					"VALUES('"+reactionID+"',"+isReversible+","+reactionInModel+"," +
+					"'"+DatabaseUtilities.databaseStrConverter(equation,databaseType)+"', 'TRANSPORTERS',false,false,false,true,"+compartmentID+note+")");
+
+			rs = stmt.executeQuery("SELECT LAST_INSERT_ID()");
+			rs.next();
+		}
+		String idreaction = rs.getString(1);
+
+		return idreaction;
+	}
+
+	/**
+	 * Get identification for genes in database
+	 * 
+	 * @param geneID
+	 * @param geneDatabaseIDs
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, String> getGenesDatabaseIDs(String geneID, Map<String, String> geneDatabaseIDs, Statement stmt) throws SQLException {
+
+		ResultSet rs;
+
+		if(geneDatabaseIDs==null) {
+
+			geneDatabaseIDs = new HashMap<String, String>();
+
+			rs = stmt.executeQuery("SELECT sequence_id, idgene FROM gene;");
+
+			while(rs.next())
+				geneDatabaseIDs.put(rs.getString(1),rs.getString(2));
+
+			rs.close();
+		}
+
+		boolean add = true;
+
+		if(geneDatabaseIDs.containsKey(geneID)) {
+
+			add = false;
+		}
+		else {
+
+			for(String locus : geneDatabaseIDs.keySet())
+				if(locus.replace("_", "").equalsIgnoreCase(geneID.replace("_", "")))
+					add=false;
+		}
+
+		if(add) {
+
+			rs = stmt.executeQuery("SELECT idgene FROM gene WHERE sequence_id = '"+geneID+"'");
+
+			if(!rs.next()) {
+
+				rs = stmt.executeQuery("SELECT idchromosome FROM chromosome WHERE name = 'DEFAULT'");
+				String idchromosome;
+
+				if(rs.next()) {
+
+					idchromosome = rs.getString(1);
+				}
+				else {
+
+					stmt.execute("INSERT INTO chromosome (name) VALUES('DEFAULT')");
+					rs = stmt.executeQuery("SELECT LAST_INSERT_ID()");
+					rs.next();
+					idchromosome = rs.getString(1);
+				}
+
+				String locusTag = ModelAPI.getLocusTagFromHomologyData(stmt, geneID);
+
+								if(locusTag==null)
+									locusTag=geneID;
+				//					UniProtAPI.getEntryData(geneID, this.taxonomyID).getLocusTag();
+
+				stmt.execute("INSERT INTO gene (locusTag,chromosome_idchromosome,origin, sequence_id) VALUES('"+locusTag+"','"+idchromosome+"','TRANSPORTERS', '"+ geneID+"')");
+				rs = stmt.executeQuery("SELECT LAST_INSERT_ID()");
+				rs.next();
+			}
+			geneDatabaseIDs.put(geneID, rs.getString(1));
+			rs.close();
+		}
+
+		return geneDatabaseIDs;
+	}
+
+
+	/**
+	 * Add transport protein to model. 
+	 * 
+	 * @param tcnumber
+	 * @param reactionID
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String addProteinIDs(String tcnumber, String reactionID, Statement stmt) throws SQLException {
+
+		ResultSet rs;
+
+		String class_name = "";
+		if (tcnumber.startsWith("1.")) {
+
+			class_name = "Channel/Pore";
+		}
+		else if (tcnumber.startsWith("2.")) {
+
+			class_name = "Electrochemical Potential-driven Transporter";
+		}
+		else if (tcnumber.startsWith("3.")) {
+
+			class_name = "Primary Active Transporter";
+		}
+		else if (tcnumber.startsWith("4.")) {
+
+			class_name = "Group Translocator";
+		}
+		else if (tcnumber.startsWith("5.")) {
+
+			class_name = "Transmembrane Electron Carrier";
+		}
+		else if (tcnumber.startsWith("8.")) {
+
+			class_name = "Accessory Factor Involved in Transport";
+		}
+		else if (tcnumber.startsWith("9.")) {
+
+			class_name = "Incompletely Characterized Transport System";
+		}
+
+		String reaction_code = reactionID;
+
+		if(reactionID.contains("_")) {
+
+			reaction_code = reactionID.split("_")[0];
+		}
+
+		String name = "Transport protein for reaction "+reaction_code;
+
+		rs = stmt.executeQuery("SELECT idprotein FROM protein " +
+				"WHERE name = '"+name+"' " +
+				"AND class = '"+class_name+"';");
+
+		if (!rs.next()) {
+
+			stmt.execute("INSERT INTO protein (name, class) " +
+					"VALUES('"+name+"','"+class_name+"');");
+			rs = stmt.executeQuery("SELECT LAST_INSERT_ID()");
+			rs.next();
+		}
+
+		String idprotein =  rs.getString(1);
+
+		rs = stmt.executeQuery("SELECT inModel FROM enzyme " +
+				"WHERE protein_idprotein = '"+idprotein+"' " +
+				"AND ecnumber = '"+tcnumber+"';");
+
+		if(rs.next()) {
+
+			if(!rs.getBoolean(1))
+				stmt.execute("UPDATE enzyme SET inModel = true WHERE protein_idprotein='"+idprotein+"' AND ecnumber='"+tcnumber+"' AND source='TRANSPORTERS'");
+		}
+		else {
+
+			stmt.execute("INSERT INTO enzyme (protein_idprotein, ecnumber, inModel, source)  VALUES('"+idprotein+"','"+tcnumber+"', true,'TRANSPORTERS')");
+		}
+
+		return idprotein;
+	}
+
+	/**
+	 * Add pathway has reaction.
+	 * 
+	 * @param idPathway
+	 * @param idReaction
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 * same method as in modelAPI
+	 */
+	@Deprecated 
+	public static boolean addPathway_has_Reaction(String idPathway, String idReaction, Statement stmt) throws SQLException {
+
+		ResultSet rs = stmt.executeQuery("SELECT * FROM pathway_has_reaction " +
+				"WHERE reaction_idreaction = '"+idReaction+"' " +
+				"AND pathway_idpathway = '"+idPathway+"';");
+
+		if(rs.next()) {
+
+			return false;
+		}
+		else {
+
+			stmt.execute("INSERT INTO pathway_has_reaction (reaction_idreaction, pathway_idpathway) " +
+					"VALUES('"+idReaction+"','"+idPathway+"');");
+		}
+
+		return true;
+	}
+
+	/**
+	 * Add reaction has enzyme.
+	 * 
+	 * @param idprotein
+	 * @param tcNumber
+	 * @param idReaction
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 * 
+	 * same method as in modelAPI
+	 */
+	@Deprecated 
+	public static boolean addReaction_has_Enzyme(String idprotein, String tcNumber, String idReaction, Statement stmt) throws SQLException {
+
+		ResultSet rs = stmt.executeQuery("SELECT * FROM reaction_has_enzyme " +
+				"WHERE reaction_idreaction = '"+idReaction+"' " +
+				"AND enzyme_protein_idprotein = '"+idprotein+"' " +
+				"AND enzyme_ecnumber = '"+tcNumber+"';");
+
+		if(rs.next()) {
+
+			return false;
+		}
+		else {
+
+			stmt.execute("INSERT INTO reaction_has_enzyme (reaction_idreaction, enzyme_protein_idprotein, enzyme_ecnumber) " +
+					"VALUES('"+idReaction+"','"+idprotein+"','"+tcNumber+"');");
+		}
+
+		return true;
+	}
+
+
+	/**
+	 * Add pathway has enzyme.
+	 * 
+	 * @param idprotein
+	 * @param tcNumber
+	 * @param idPathway
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 * 
+	 * same method as in modelAPI
+	 */
+	@Deprecated 
+	public static boolean addPathway_has_Enzyme(String idprotein, String tcNumber, String idPathway, Statement stmt) throws SQLException {
+
+		ResultSet rs = stmt.executeQuery("SELECT * FROM pathway_has_enzyme " +
+				"WHERE pathway_idpathway = '"+idPathway+"' " +
+				"AND enzyme_protein_idprotein = '"+idprotein+"' " +
+				"AND enzyme_ecnumber = '"+tcNumber+"';");
+
+		if(rs.next()) {
+
+			return false;
+		}
+		else {
+
+			stmt.execute("INSERT INTO pathway_has_enzyme (pathway_idpathway, enzyme_protein_idprotein, enzyme_ecnumber) " +
+					"VALUES('"+idPathway+"','"+idprotein+"','"+tcNumber+"');");
+		}
+
+		return true;
+	}
+
+
+	/**
+	 * Add subunit to model
+	 * @param idProtein
+	 * @param tcNumber
+	 * @param idgene
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 * 
+	 * same method as in modelAPI
+	 */
+	@Deprecated 
+	public static boolean addSubunit(String idProtein, String tcNumber, String idgene, Statement stmt) throws SQLException {
+
+		ResultSet rs = stmt.executeQuery("SELECT * FROM subunit " +
+				"WHERE gene_idgene = '"+idgene+"' " +
+				"AND enzyme_protein_idprotein = '"+idProtein+"' " +
+				"AND enzyme_ecnumber = '"+tcNumber+"';");
+
+		if(rs.next()) {
+
+			return false;
+		}
+		else {
+
+			stmt.execute("INSERT INTO subunit (gene_idgene, enzyme_protein_idprotein, enzyme_ecnumber) " +
+					"VALUES('"+idgene+"','"+idProtein+"','"+tcNumber+"');");
+		}
+
+		return true;
+	}
+
+	/**
+	 * Add stoichiometry
+	 * 
+	 * @param idReaction
+	 * @param idCompound
+	 * @param idCompartment
+	 * @param stoichiometry
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 * 
+	 * same method as in modelAPI
+	 */
+	@Deprecated 
+	public static boolean addStoichiometry(String idReaction, String idCompound, String idCompartment, double stoichiometry, Statement stmt) throws SQLException {
+
+		ResultSet rs = stmt.executeQuery("SELECT idstoichiometry FROM stoichiometry " +
+				"WHERE reaction_idreaction = '"+idReaction+"' " +
+				"AND compound_idcompound = '"+idCompound+"' " +
+				"AND compartment_idcompartment = '"+idCompartment+"' " +
+				"AND stoichiometric_coefficient = '"+stoichiometry+"' ;");
+
+		if(!rs.next()) {
+
+			stmt.execute("INSERT INTO stoichiometry (reaction_idreaction, compound_idcompound, compartment_idcompartment, stoichiometric_coefficient, numberofchains) " +
+					"VALUES('"+idReaction+"','"+idCompound+"','"+idCompartment+"','"+stoichiometry+"','1')");
+		}
+
+		return true;
+	}
+
+
+	/**
+	 * Get compound id from kegg id
+	 * 
+	 * @param keggID
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String getCompoundID(String keggID, Statement stmt) throws SQLException {
+
+		ResultSet rs = stmt.executeQuery("SELECT idcompound FROM compound " +
+				"WHERE kegg_id = '"+keggID+"' ;");
+
+		if(rs.next())
+			return rs.getString(1);
+		else 
+			return null;
+	}
+
+	/**
+	 * Get compartment identifier.
+	 * 
+	 * @param compartment
+	 * @param compartments_ids
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String getCompartmentsID(String compartment, Map<String, String> compartments_ids, Statement stmt) throws SQLException {
+
+		String idcompartment = null;
+
+		if(compartments_ids.containsKey(compartment)) {
+
+			idcompartment = compartments_ids.get(compartment);
+		}
+		else {
+
+			ResultSet rs = stmt.executeQuery("SELECT idCompartment FROM compartment " +
+					"WHERE name = '"+compartment+"' ;");
+
+			if(!rs.next()) {
+
+				String abb = compartment;
+
+				if(compartment.length()>3) {
+
+					abb = compartment.substring(0, 3);
+				}
+
+				stmt.execute("INSERT INTO compartment (name, abbreviation) " +
+						"VALUES('"+compartment+"','"+abb+"');");
+				rs = stmt.executeQuery("SELECT LAST_INSERT_ID()");
+				rs.next();
+			}
+			idcompartment = rs.getString(1);
+
+		}
+		return idcompartment;
 	}
 
 }
