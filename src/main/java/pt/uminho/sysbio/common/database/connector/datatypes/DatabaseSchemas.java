@@ -231,7 +231,7 @@ public class DatabaseSchemas {
 	 * @throws FileNotFoundException 
 	 */
 	private void sqlByStrBuffer(Connection connection, String filePath) throws Exception {
-		System.out.println(filePath);
+		
 		FileReader fr = new FileReader(new File(filePath));
 		BufferedReader br = new BufferedReader(fr);
 		this.sqlByStrBuffer(connection, br);
