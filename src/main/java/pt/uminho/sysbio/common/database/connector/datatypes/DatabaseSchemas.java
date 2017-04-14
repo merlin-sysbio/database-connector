@@ -64,13 +64,19 @@ public class DatabaseSchemas {
 		String url_db_connection;
 
 		if (this.dbType.equals(DatabaseType.MYSQL)) {
+			
 			driver_class_name = "com.mysql.jdbc.Driver";
 			url_db_connection = "jdbc:mysql://"+this.host+":"+this.port+"/"+schema;
-		}else{
+		}
+		else {
+			
+			String prefix = "jdbc:h2:file:";
 			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
 			driver_class_name = "org.h2.Driver";
 			//url_db_connection = "jdbc:h2://"+this.host+":"+this.port;"
-			url_db_connection = "jdbc:h2:file:"+path+"/h2Database/"+schema+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;";
+			url_db_connection = prefix+path+"/h2Database/"+schema+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;mv_store=false;AUTO_SERVER=TRUE";//;AUTO_SERVER_PORT=9090";
+			
+			System.out.println(url_db_connection);
 		}
 		
 		Connection connection = null;
