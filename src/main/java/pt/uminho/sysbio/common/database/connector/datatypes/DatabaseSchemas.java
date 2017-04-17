@@ -70,12 +70,13 @@ public class DatabaseSchemas {
 		}
 		else {
 			
-			String prefix = "jdbc:h2:file:";
+			String prefix = "jdbc:h2:";
+			//String prefix = "jdbc:h2:file:";
 			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
 			driver_class_name = "org.h2.Driver";
 			//url_db_connection = "jdbc:h2://"+this.host+":"+this.port;"
-			url_db_connection = prefix+path+"/h2Database/"+schema+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;mv_store=false;AUTO_SERVER=TRUE";//;AUTO_SERVER_PORT=9090";
-			
+			url_db_connection = prefix+path+"/h2Database/"+schema+";MODE=MySQL;DATABASE_TO_UPPER=FALSE";//;mv_store=false;AUTO_SERVER=TRUE";//;AUTO_SERVER_PORT=9090";
+		
 			System.out.println(url_db_connection);
 		}
 		
@@ -477,16 +478,16 @@ public class DatabaseSchemas {
 			Connection connection = this.createConnection();
 			Statement statement = (Statement) connection.createStatement();
 			if (this.dbType.equals(DatabaseType.H2)) {
-				String[] filePath=null;
+				String[] filePath = new String[6];;
 				String path = FileUtils.getCurrentLibDirectory()+"/../utilities";
 				
-				filePath=new String[6];
-				filePath[0]=path +"/sysbio_model.sql";
-				filePath[1]=path +"/sysbio_interpro.sql";
-				filePath[2]=path +"/sysbio_homology.sql";
-				filePath[3]=path +"/sysbio_metabolites_transporters.sql";
-				filePath[4]=path +"/sysbio_compartments.sql";
-				filePath[5]=path +"/sysbio_transporters_identification.sql";
+				filePath[0]=path +"/schema_model.sql";
+				filePath[1]=path +"/schema_enzymes_annotation.sql";
+				filePath[2]=path +"/schema_interpro.sql";
+				filePath[3]=path +"/schema_transporters_annotation.sql";
+				filePath[4]=path +"/schema_compartments_annotation.sql";
+				filePath[5]=path +"/schema_transporters_identification.sql";
+				filePath[6]=path +"/triage_database.sql";
 				
 				this.cleanSchema(database, filePath);
 			}
