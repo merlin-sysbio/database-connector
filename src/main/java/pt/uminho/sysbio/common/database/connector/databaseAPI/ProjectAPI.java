@@ -17,43 +17,59 @@ public class ProjectAPI {
 	/**
 	 * Get project id.
 	 * 
-	 * @param conn
+	 * @param statement
 	 * @param genomeID
 	 * @return
 	 * @throws IOException
 	 * @throws SQLException
 	 */
-	public static int getProjectID(Connection conn, long genomeID) throws IOException, SQLException {
+	public static int getProjectID(Statement statement, long genomeID) throws IOException, SQLException {
 
 		int project_id = -1;
 
-		Statement stmt = conn.createStatement();
-		ResultSet rs = stmt.executeQuery("SELECT id FROM projects WHERE organism_id = "+genomeID+" AND latest_version;");
+		ResultSet rs = statement.executeQuery("SELECT id FROM projects WHERE organism_id = "+genomeID+" AND latest_version;");
 
 		if(!rs.next()) {
 
-			rs = stmt.executeQuery("SELECT MAX(version) FROM projects WHERE organism_id = "+genomeID+";");
+			rs = statement.executeQuery("SELECT MAX(version) FROM projects WHERE organism_id = "+genomeID+";");
 
 			int version = 1;
 
 			if(rs.next()) {
 
 				version += rs.getInt(1);
-				stmt.execute("UPDATE projects SET latest_version=false WHERE organism_id = "+genomeID+";");
+				statement.execute("UPDATE projects SET latest_version=false WHERE organism_id = "+genomeID+";");
 			}
 
 			long time = System.currentTimeMillis();
 			Timestamp timestamp = new Timestamp(time);
-			stmt.execute("INSERT INTO projects (organism_id, date, latest_version, version) VALUES("+genomeID+",'"+timestamp+"',true,"+version+");");
-			rs = stmt.executeQuery("SELECT LAST_INSERT_ID()");
+			statement.execute("INSERT INTO projects (organism_id, date, latest_version, version) VALUES("+genomeID+",'"+timestamp+"',true,"+version+");");
+			rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
 			rs.next();
 		}
 
 		project_id = rs.getInt(1);
 		rs.close();
-		stmt.close();
-
 		return project_id;
+	}
+
+	public static String getCompartmentsTool(int projectID, Statement statement) {
+
+		ResultSet rs;
+		String ret = null;
+		try {
+
+			rs = statement.executeQuery("SELECT compartments_tool FROM projects WHERE id=" + projectID);
+
+			if(rs.next())
+				ret = rs.getString(1);
+			rs.close();
+
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return ret;
 	}
 
 	/**
@@ -84,7 +100,7 @@ public class ProjectAPI {
 	public static boolean isCompartmentalisedModel(Statement statement) throws SQLException {
 
 		boolean ret = false;
-		
+
 		String query = "SELECT * FROM reaction WHERE NOT originalReaction;";
 
 		ResultSet rs = statement.executeQuery(query);
@@ -111,15 +127,15 @@ public class ProjectAPI {
 
 			if(rs.next())
 				ret=true;
-			
+
 			if(ret) {
-				
+
 				rs = stmt.executeQuery("SELECT * FROM sw_reports WHERE status = 'PROCESSING';");
 
 				if(rs.next())
 					ret=false;
 			}
-				
+
 			stmt.close();
 		} 
 		catch (SQLException e) {e.printStackTrace();}
@@ -230,7 +246,7 @@ public class ProjectAPI {
 
 			if(rs.next())
 				ret=true;
-			
+
 			stmt.close();
 		} 
 		catch (SQLException e) {e.printStackTrace();}
