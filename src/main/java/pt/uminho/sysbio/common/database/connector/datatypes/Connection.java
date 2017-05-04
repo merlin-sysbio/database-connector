@@ -61,14 +61,10 @@ public class Connection implements Externalizable{
 		this.database_password=password;
 		this.database_type=dbType;
 
-		if (this.database_type.equals(DatabaseType.MYSQL)) {
-
+		if (this.database_type.equals(DatabaseType.MYSQL))
 			this.dbAccess = new MySQLDatabaseAccess(user, password, host, port, databaseName);
-		}
-		else {
-
+		else
 			this.dbAccess = new H2DatabaseAccess(user, password, databaseName);
-		}
 
 		this.connection = this.dbAccess.openConnection();
 	}
@@ -89,7 +85,11 @@ public class Connection implements Externalizable{
 		this.database_password=dbAccess.get_database_password();
 		this.database_type=dbAccess.get_database_type();
 
-		this.dbAccess = dbAccess;
+		if (this.database_type.equals(DatabaseType.MYSQL))
+			this.dbAccess = new MySQLDatabaseAccess(this.database_user, this.database_password, this.database_host, this.database_port, this.database_name);
+		else
+			this.dbAccess = new H2DatabaseAccess(this.database_user, this.database_password, this.database_name);
+		
 		this.connection = this.dbAccess.openConnection();
 	}
 
@@ -102,13 +102,11 @@ public class Connection implements Externalizable{
 		Statement statement = null;
 
 		try {
-
-			if(this.connection==null || this.connection.isClosed()) {
-
+			
+			if(this.connection==null || this.connection.isClosed())
 				this.connection = this.dbAccess.openConnection();
-			}
-			statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
-					ResultSet.CONCUR_READ_ONLY);
+
+			statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			statement.isClosed();
 			statement.isPoolable();
 			statement.executeQuery("SHOW TABLES;");
@@ -138,6 +136,7 @@ public class Connection implements Externalizable{
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
+		
 		out.writeUTF(this.database_host);
 		out.writeUTF(this.database_name);
 		out.writeUTF(this.database_password);
@@ -154,7 +153,7 @@ public class Connection implements Externalizable{
 		this.database_port=in.readUTF();	
 		this.database_user=in.readUTF();
 		String temp =in.readUTF();
-
+		
 		this.database_type = DatabaseType.H2;
 		if(temp.equalsIgnoreCase(DatabaseType.MYSQL.toString()))
 			this.database_type = DatabaseType.MYSQL;
@@ -166,13 +165,13 @@ public class Connection implements Externalizable{
 		}
 	}
 
-	/**
-	 * @param input
-	 * @return
-	 */
-	public static String mysqlStrConverter(String input){
-		return input.replace("\\'","'").replace("-","\\-").replace("'","\\'").replace("[","\\[").replace("]","\\]");
-	}
+//	/**
+//	 * @param input
+//	 * @return
+//	 */
+//	public static String mysqlStrConverter(String input){
+//		return input.replace("\\'","'").replace("-","\\-").replace("'","\\'").replace("[","\\[").replace("]","\\]");
+//	}
 
 	/**
 	 * @return
@@ -183,10 +182,10 @@ public class Connection implements Externalizable{
 		this.connection.close();	
 	}
 
-	public void setDatabaseType(DatabaseType dbType) {
-		this.database_type=dbType;
-	}
-
+//	public void setDatabaseType(DatabaseType dbType) {
+//		this.database_type=dbType;
+//	}
+//
 	public DatabaseType getDatabaseType() {
 		return this.database_type;
 	}
