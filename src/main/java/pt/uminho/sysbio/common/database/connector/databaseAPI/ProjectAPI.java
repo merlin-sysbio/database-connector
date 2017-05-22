@@ -253,7 +253,7 @@ public class ProjectAPI {
 		catch (SQLException e) {e.printStackTrace();}
 		return ret;
 	}
-	
+
 	public static boolean checkTableName(Connection connection, String oldName, String newName){
 		
 		try {
