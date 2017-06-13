@@ -15,6 +15,7 @@ import java.sql.Statement;
 import java.util.LinkedList;
 
 import org.h2.jdbcx.JdbcConnectionPool;
+import org.h2.tools.Server;
 
 import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
@@ -60,8 +61,10 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public Connection openConnection() throws SQLException {
 			
 			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
-			JdbcConnectionPool connect = JdbcConnectionPool.create("jdbc:h2:"+path+"/h2Database/"+this.database_name+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;",this.database_user,this.database_password);
+			JdbcConnectionPool connect = JdbcConnectionPool.create("jdbc:h2:"+path+"/h2Database/"+this.database_name+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;MODE=MySQL;DATABASE_TO_UPPER=FALSE;",this.database_user,this.database_password);
+//			JdbcConnectionPool connect = JdbcConnectionPool.create("jdbc:h2:"+path+"/h2Database/"+this.database_name+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;MODE=MySQL;DATABASE_TO_UPPER=FALSE;mv_store=false;AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9090",this.database_user,this.database_password);
 			this.connection=connect.getConnection();
+
 			return this.connection;
 		}
 
