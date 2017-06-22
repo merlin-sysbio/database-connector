@@ -26,7 +26,7 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 	public class MySQLDatabaseAccess implements DatabaseAccess, Externalizable {
 
 		private static final long serialVersionUID = 1L;
-		private String database_host, database_port, database_name, database_user, database_password;
+		private String database_host, database_port, database_name, database_user, database_password, database_path;
 		private Connection connection;
 		private transient MysqlConnectionPoolDataSource dataSource;
 
@@ -45,13 +45,14 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		 * @param port
 		 * @param database
 		 */
-		public MySQLDatabaseAccess(String user, String password, String server, String port, String database) {
+		public MySQLDatabaseAccess(String user, String password, String server, String port, String database, String path) {
 			
 			this.database_host=server;
 			this.database_port=port+"";
 			this.database_name=database;
 			this.database_user=user;
 			this.database_password=password;
+			this.database_path=path;
 			this.dataSource = new MysqlConnectionPoolDataSource();
 			this.dataSource.setUser(user);
 			this.dataSource.setPassword(password);
@@ -68,9 +69,9 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		 * @param port
 		 * @param database
 		 */
-		public MySQLDatabaseAccess(String user, String password, String server, int port, String database) {
+		public MySQLDatabaseAccess(String user, String password, String server, int port, String database, String path) {
 			
-			this(user, password, server, port+"", database);
+			this(user, password, server, port+"", database, path);
 //			this.database_host=server;
 //			this.database_port=port+"";
 //			this.database_name=database;
@@ -610,6 +611,10 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		
 		public DatabaseType get_database_type() {
 			return DatabaseType.MYSQL;
+		}
+		
+		public String get_database_path() {
+			return database_path;
 		}
 
 		/**

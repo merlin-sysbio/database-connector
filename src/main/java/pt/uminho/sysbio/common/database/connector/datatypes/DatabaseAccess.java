@@ -199,6 +199,8 @@ public interface DatabaseAccess {
 	public String get_database_user();
 	
 	public DatabaseType get_database_type();
+	
+	public String get_database_path();
 
 	/**
 	 * @param database_host the database_host to set

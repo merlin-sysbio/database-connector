@@ -12,6 +12,10 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.plaf.synth.SynthSeparatorUI;
+
+import org.h2.tools.Server;
+
 import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
 
@@ -22,6 +26,7 @@ public class DatabaseSchemas {
 	private String host;
 	private String port;
 	private DatabaseType dbType;
+	private String path;
 
 
 	/**
@@ -33,13 +38,14 @@ public class DatabaseSchemas {
 	 * @param port
 	 * @param dbType
 	 */
-	public DatabaseSchemas(String username, String password, String host, String port, DatabaseType dbType){
+	public DatabaseSchemas(String username, String password, String host, String port, DatabaseType dbType, String path){
 
 		this.username = username;
 		this.password = password;
 		this.host = host;
 		this.port = port;
 		this.dbType = dbType;
+		this.path = path;
 	}
 
 	/**
@@ -50,6 +56,7 @@ public class DatabaseSchemas {
 		this.password = databaseBase.get_database_password();
 		this.host = databaseBase.get_database_host();
 		this.port = databaseBase.get_database_port();
+		this.path = databaseBase.get_database_path();
 	}
 
 	/**
@@ -57,8 +64,9 @@ public class DatabaseSchemas {
 	 * 
 	 * @param schema
 	 * @return
+	 * @throws SQLException 
 	 */
-	private Connection createConnection(String schema){
+	private Connection createConnection(String schema) throws SQLException{
 		
 		String driver_class_name;
 		String url_db_connection;
@@ -71,10 +79,10 @@ public class DatabaseSchemas {
 		else {
 			
 			String prefix = "jdbc:h2:";
-			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
+//			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
 			driver_class_name = "org.h2.Driver";
-			url_db_connection = prefix+path+"/h2Database/"+schema+";MODE=MySQL;DATABASE_TO_UPPER=FALSE";
-//			url_db_connection = prefix+path+"/h2Database/"+schema+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;mv_store=false;AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9090";
+			url_db_connection = prefix+path+"/h2Database/"+schema+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE";
+			
 		}
 		
 		Connection connection = null;
@@ -83,6 +91,8 @@ public class DatabaseSchemas {
 
 			Class.forName(driver_class_name).newInstance();
 			connection = (Connection) DriverManager.getConnection(url_db_connection, this.username, this.password);
+			
+//			if (this.dbType.equals(DatabaseType.H2)) { Server server = Server.createTcpServer("-tcpAllowOthers").start();}
 		} 
 		catch (SQLException ex) {
 
@@ -119,16 +129,17 @@ public class DatabaseSchemas {
 			driver_class_name = "com.mysql.jdbc.Driver";
 			url_db_connection = "jdbc:mysql://"+this.host+":"+this.port;
 		}else{
-			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
+//			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
 			driver_class_name = "org.h2.Driver";
-			url_db_connection = "jdbc:h2:"+path+"/h2Database;MODE=MySQL;DATABASE_TO_UPPER=FALSE";
-//			url_db_connection = "jdbc:h2:"+path+"/h2Database;MODE=MySQL;DATABASE_TO_UPPER=FALSE;mv_store=false;AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9090";
+			url_db_connection = "jdbc:h2:"+path+"/h2Database;MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE";
 		}
 		
 		Connection connection = null;
 		try  {
 			Class.forName(driver_class_name).newInstance();
 			connection = (Connection) DriverManager.getConnection(url_db_connection, this.username, this.password);
+			
+//			if (this.dbType.equals(DatabaseType.H2)) { Server server = Server.createTcpServer("-tcpAllowOthers").start();}
 		}
 		catch (InstantiationException e) {
 			e.printStackTrace();
@@ -191,7 +202,7 @@ public class DatabaseSchemas {
 	 * @return
 	 * @throws SQLException
 	 */
-	public boolean checkTable(String schema, String table) {
+	public boolean checkTable(String schema, String table) throws SQLException {
 		
 		Connection connection = this.createConnection(schema);
 		Statement statement = null;
@@ -342,9 +353,9 @@ public class DatabaseSchemas {
 					
 					list.add(rs.getString(1));
 				}
-
+				
 				for(String s: list) {
-					if(checkTable(s,"geneblast") || checkTable(s,"geneHomology")) {
+					if(checkTable(s,"enzymes_annotation_geneHomology") || checkTable(s,"genehomology")) {
 						
 						schemasList.add(s);
 					}

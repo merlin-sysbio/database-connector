@@ -30,7 +30,7 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		 * 
 		 */
 		private static final long serialVersionUID = 1L;
-		private String database_name, database_port, database_user, database_password;
+		private String database_name, database_port, database_user, database_password, database_path;
 		private Connection connection;
 		
 		/**
@@ -45,11 +45,12 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		 * @param password
 		 * @param database_name
 		 */
-		public H2DatabaseAccess(String user, String password, String database_name){
+		public H2DatabaseAccess(String user, String password, String database_name, String database_path){
 			
 			this.database_name=database_name;
 			this.database_user=user;
 			this.database_password=password;
+			this.database_path=database_path;
 		}
 
 		/**
@@ -60,9 +61,9 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		 */
 		public Connection openConnection() throws SQLException {
 			
-			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
-			JdbcConnectionPool connect = JdbcConnectionPool.create("jdbc:h2:"+path+"/h2Database/"+this.database_name+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;MODE=MySQL;DATABASE_TO_UPPER=FALSE;",this.database_user,this.database_password);
-//			JdbcConnectionPool connect = JdbcConnectionPool.create("jdbc:h2:"+path+"/h2Database/"+this.database_name+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;MODE=MySQL;DATABASE_TO_UPPER=FALSE;mv_store=false;AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9090",this.database_user,this.database_password);
+//			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
+//			JdbcConnectionPool connect = JdbcConnectionPool.create("jdbc:h2:"+path+"/h2Database/"+this.database_name+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;MODE=MySQL;DATABASE_TO_UPPER=FALSE;",this.database_user,this.database_password);
+			JdbcConnectionPool connect = JdbcConnectionPool.create("jdbc:h2:"+this.database_path+"/h2Database/"+this.database_name+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE",this.database_user,this.database_password);
 			this.connection=connect.getConnection();
 
 			return this.connection;
@@ -580,6 +581,10 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		
 		public DatabaseType get_database_type() {
 			return DatabaseType.H2;
+		}
+		
+		public String get_database_path() {
+			return database_path;
 		}
 
 		/**
