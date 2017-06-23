@@ -92,7 +92,27 @@ public class ProjectAPI {
 		catch (SQLException e) {e.printStackTrace();}
 		return ret;
 	}
+	
+	/**
+	 * @param connection
+	 * @return
+	 */
+	public static boolean hasDrains(Connection connection) {
 
+		boolean ret = false;
+
+		try  {
+
+			Statement stmt = connection.createStatement();
+
+			ret = ProjectAPI.hasDrains(stmt);
+
+			stmt.close();
+		} 
+		catch (SQLException e) {e.printStackTrace();}
+		return ret;
+	}
+	
 	/**
 	 * @param statement
 	 * @return
@@ -103,6 +123,25 @@ public class ProjectAPI {
 		boolean ret = false;
 
 		String query = "SELECT * FROM reaction WHERE NOT originalReaction;";
+
+		ResultSet rs = statement.executeQuery(query);
+
+		if(rs.next())
+			ret=true;
+
+		return ret;
+	}
+	
+	/**
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static boolean hasDrains(Statement statement) throws SQLException {
+
+		boolean ret = false;
+
+		String query = "SELECT * FROM pathway WHERE code='D0001';";
 
 		ResultSet rs = statement.executeQuery(query);
 
