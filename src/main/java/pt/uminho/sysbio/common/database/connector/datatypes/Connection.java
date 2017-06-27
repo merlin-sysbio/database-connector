@@ -29,7 +29,7 @@ public class Connection implements Externalizable{
 	 */
 	private static final long serialVersionUID = 1L;
 	private java.sql.Connection connection;
-	private String database_host, database_port, database_name, database_user, database_password, database_path;
+	private String database_host, database_port, database_name, database_user, database_password;
 	private DatabaseType database_type;
 	private DatabaseAccess dbAccess;
 
@@ -62,12 +62,11 @@ public class Connection implements Externalizable{
 		this.database_user=user;
 		this.database_password=password;
 		this.database_type=dbType;
-		this.database_path=new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
 
 		if (this.database_type.equals(DatabaseType.MYSQL))
-			this.dbAccess = new MySQLDatabaseAccess(user, password, host, port, databaseName, database_path);
+			this.dbAccess = new MySQLDatabaseAccess(user, password, host, port, databaseName);
 		else
-			this.dbAccess = new H2DatabaseAccess(user, password, databaseName, database_path);
+			this.dbAccess = new H2DatabaseAccess(user, password, databaseName, null);
 
 		this.connection = this.dbAccess.openConnection();
 	}
@@ -87,13 +86,12 @@ public class Connection implements Externalizable{
 		this.database_user=dbAccess.get_database_user();
 		this.database_password=dbAccess.get_database_password();
 		this.database_type=dbAccess.get_database_type();
-		this.database_path=dbAccess.get_database_path();
 		
 
 		if (this.database_type.equals(DatabaseType.MYSQL))
-			this.dbAccess = new MySQLDatabaseAccess(this.database_user, this.database_password, this.database_host, this.database_port, this.database_name, this.database_path);
+			this.dbAccess = new MySQLDatabaseAccess(this.database_user, this.database_password, this.database_host, this.database_port, this.database_name);
 		else
-			this.dbAccess = new H2DatabaseAccess(this.database_user, this.database_password, this.database_name, this.database_path);
+			this.dbAccess = new H2DatabaseAccess(this.database_user, this.database_password, this.database_name, null);
 		
 		this.connection = this.dbAccess.openConnection();
 	}
@@ -168,9 +166,9 @@ public class Connection implements Externalizable{
 			this.database_type = DatabaseType.MYSQL;
 
 		if (this.database_type.equals(DatabaseType.MYSQL)) {
-			this.dbAccess = new MySQLDatabaseAccess(this.database_user, this.database_password, this.database_host, this.database_port, this.database_name, this.database_path);
+			this.dbAccess = new MySQLDatabaseAccess(this.database_user, this.database_password, this.database_host, this.database_port, this.database_name);
 		}else{
-			this.dbAccess = new H2DatabaseAccess(this.database_user, this.database_password, this.database_name, this.database_path);
+			this.dbAccess = new H2DatabaseAccess(this.database_user, this.database_password, this.database_name, null);
 		}
 	}
 

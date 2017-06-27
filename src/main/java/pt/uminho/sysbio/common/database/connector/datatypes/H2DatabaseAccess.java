@@ -15,7 +15,6 @@ import java.sql.Statement;
 import java.util.LinkedList;
 
 import org.h2.jdbcx.JdbcConnectionPool;
-import org.h2.tools.Server;
 
 import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
@@ -51,6 +50,8 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 			this.database_user=user;
 			this.database_password=password;
 			this.database_path=database_path;
+			if(this.database_path==null)
+				this.database_path=new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
 		}
 
 		/**
