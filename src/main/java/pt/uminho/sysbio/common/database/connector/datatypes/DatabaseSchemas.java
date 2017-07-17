@@ -113,7 +113,7 @@ public class DatabaseSchemas {
 	 * @return
 	 * @throws SQLException 
 	 */
-	private Connection createConnection() throws SQLException{
+	private Connection createConnection(){
 		
 		String driver_class_name;
 		String url_db_connection;
@@ -126,15 +126,13 @@ public class DatabaseSchemas {
 			driver_class_name = "org.h2.Driver";
 			url_db_connection = "jdbc:h2:"+path+"/h2Database;MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE";
 		}
-		
 		Connection connection = null;
 		try  {
 			Class.forName(driver_class_name).newInstance();
 			connection = (Connection) DriverManager.getConnection(url_db_connection, this.username, this.password);
-			
-//			if (this.dbType.equals(DatabaseType.H2)) { Server server = Server.createTcpServer("-tcpAllowOthers").start();}
-		}
-		catch (InstantiationException e) {
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} catch (InstantiationException e) {
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {
 			e.printStackTrace();
@@ -448,9 +446,9 @@ public class DatabaseSchemas {
 		//try {
 			
 			boolean isConnected = false;
-
+			
 			Connection connection = this.createConnection();
-
+			
 			if(connection != null) {
 				
 				isConnected=true;
