@@ -320,6 +320,7 @@ public class ProjectAPI {
 		}
 		return false;
 	}
+
 	public static String getReactionName(Connection conn,List<String> reaction){
 		String results = "r";
 		try {
@@ -337,6 +338,44 @@ public class ProjectAPI {
 		}
 		
 		return results;
+	}
+		
+	public static String getOrganismID(Connection conn){
+		
+		String orgID = null;
+		
+		try  {
+
+			Statement stmt = conn.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT organism_id FROM projects WHERE latest_version = TRUE;");
+
+			if(rs.next()){
+				orgID = rs.getString("organism_id");
+				return orgID;
+			}
+			stmt.close();
+		} 
+		catch (SQLException e) {e.printStackTrace();}
+		
+		return null;
+	}
+	
+	public static void updateOrganismID(Connection conn, String orgID) {
+	
+
+		try  {
+
+			Statement stmt = conn.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT * FROM projects WHERE organism_id ="+orgID+";");
+			
+			if (rs.next()){
+				stmt.execute("UPDATE projects SET latest_version = FALSE;");
+				stmt.execute("UPDATE projects SET latest_version = TRUE WHERE organism_id ="+orgID+";");
+			}
+			
+			stmt.close();
+		} 
+		catch (SQLException e) {e.printStackTrace();}
 		
 	}
 }
