@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.List;
 
 import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
 
@@ -319,5 +320,23 @@ public class ProjectAPI {
 		}
 		return false;
 	}
-
+	public static String getReactionName(Connection conn,List<String> reaction){
+		String results = "r";
+		try {
+			Statement stmt = conn.createStatement();
+			
+			for(String names : reaction){
+				ResultSet rs = stmt.executeQuery("SELECT name FROM reaction WHERE idreaction="+names+";");
+				if(rs.next())
+					results += rs.getString("name")+",";
+			}
+		
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return results;
+		
+	}
 }

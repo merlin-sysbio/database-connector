@@ -394,8 +394,10 @@ public class ModelAPI {
 				resultSet = statement.executeQuery("SELECT protein_idprotein FROM enzyme WHERE ecnumber = '"+enzyme+"'");
 
 				boolean go = false;
+				boolean next = resultSet.next();
 
-				if(resultSet.next()) {
+				
+				if(next) {
 
 					idProtein = resultSet.getString(1);
 					resultSet= statement.executeQuery("SELECT inModel FROM enzyme WHERE protein_idprotein="+idProtein+" AND ecnumber='"+enzyme+"'");
@@ -1097,12 +1099,17 @@ public class ModelAPI {
 	 */
 	public static String loadGene(String locusTag, String sequence_id, String geneName, String chromosome, String direction, String left_end, String right_end, Statement statement, DatabaseType databaseType, String informationType) throws SQLException {
 
-		//"SELECT idgene FROM gene WHERE locusTag = '"+locusTag+"' AND sequence_id = '"+sequence_id+"';"
-		String query = "SELECT idgene FROM gene WHERE sequence_id = '"+sequence_id+"';";
+		//"SELECT idgene, origin FROM gene WHERE locusTag = '"+locusTag+"' AND sequence_id = '"+sequence_id+"';"
+		String query = "SELECT idgene, origin FROM gene WHERE sequence_id = '"+sequence_id+"';";
 		
 		ResultSet rs = statement.executeQuery(query);
 		String geneID = null;
 		if(rs.next()) {
+			
+			String informationType_db = rs.getString(2);
+			
+			if(!informationType.equalsIgnoreCase(informationType_db))
+				statement.execute("UPDATE gene SET origin = '"+informationType+"' WHERE sequence_id = '"+sequence_id+"'");
 			
 			geneID = rs.getString(1);
 			query = "SELECT idgene FROM gene WHERE locusTag = '"+locusTag+"' AND sequence_id = '"+sequence_id+"';";
