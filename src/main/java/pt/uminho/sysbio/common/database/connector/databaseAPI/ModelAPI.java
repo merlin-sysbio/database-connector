@@ -1931,6 +1931,18 @@ public class ModelAPI {
 		}
 	}
 
-
+	
+	public static void removeSelectedReaction(Statement statement, String reaction_id){
+		
+		try{
+			
+			statement.execute("DELETE FROM reaction WHERE idreaction="+reaction_id+";");
+		}
+		catch (SQLException ex) {
+	
+			ex.printStackTrace();
+		}
+		
+	}
 
 }
