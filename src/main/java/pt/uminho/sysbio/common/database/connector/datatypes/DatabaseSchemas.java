@@ -46,6 +46,7 @@ public class DatabaseSchemas {
 	 * @param DatabaseSchemas
 	 */
 	public DatabaseSchemas(DatabaseAccess databaseBase) {
+		
 		this.username = databaseBase.get_database_user();
 		this.password = databaseBase.get_database_password();
 		this.host = databaseBase.get_database_host();
