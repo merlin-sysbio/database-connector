@@ -347,7 +347,7 @@ public class DatabaseSchemas {
 				}
 				
 				for(String s: list) {
-					if(checkTable(s,"enzymes_annotation_geneHomology") || checkTable(s,"genehomology")) {
+					if(checkTable(s,"enzymes_annotation_geneHomology") || checkTable(s,"genehomology") || checkTable(s,"geneblast")) {
 						
 						schemasList.add(s);
 					}
