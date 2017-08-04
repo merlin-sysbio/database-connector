@@ -6,7 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
 
@@ -378,4 +380,5 @@ public class ProjectAPI {
 		catch (SQLException e) {e.printStackTrace();}
 		
 	}
+	
 }

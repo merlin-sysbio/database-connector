@@ -14,6 +14,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
+import pt.uminho.sysbio.common.database.connector.databaseAPI.capsules.ReactionsCapsule;
 import pt.uminho.sysbio.common.database.connector.databaseAPI.containers.gpr.GeneAssociation;
 import pt.uminho.sysbio.common.database.connector.databaseAPI.containers.gpr.ModuleCI;
 import pt.uminho.sysbio.common.database.connector.databaseAPI.containers.gpr.ProteinsGPR_CI;
@@ -1944,5 +1945,136 @@ public class ModelAPI {
 		}
 		
 	}
-
+	
+	public static Set<String> checkUndefinedStoichiometry(Statement statement) {
+		
+		Set<String> undefinedStoichiometry = new HashSet<>();
+		
+		try{
+			
+			ResultSet rs = statement.executeQuery("SELECT idreaction FROM reaction INNER JOIN stoichiometry ON idreaction=reaction_idreaction "
+					+ "WHERE stoichiometric_coefficient=0 AND inModel=1 ORDER BY idreaction ASC;");
+			
+			while (rs.next()) {
+				
+				undefinedStoichiometry.add(rs.getString(1));
+			}
+		}
+		catch (SQLException ex) {
+	
+			ex.printStackTrace();
+		}
+		
+		return undefinedStoichiometry;
+	}
+	
+	public static ReactionsCapsule getActiveReactions(Statement statement, boolean encodedOnly, boolean compartimentalized,  DatabaseType dbType) {
+		
+		Map<Integer, String> ids = new TreeMap<Integer,String>(); 
+		HashMap<String,String> namesIndex = new HashMap<String,String>();
+		Set<String> activeReactions = new HashSet<>();
+		HashMap<String,String> formulasIndex = new HashMap<String,String>();
+		List<String> pathwaysList = new ArrayList<String>();
+		Map <String, Integer> pathID = new TreeMap<String, Integer>();
+		Set<String> pathwaysSet=new TreeSet<String>();
+		Integer[] tableColumnsSize = null;
+		
+		ArrayList<Object> reactionsData = new ArrayList<Object>();
+		
+		try {
+			
+			String aux = " WHERE ";
+			if(encodedOnly) {
+	
+				aux = aux.concat(" inModel AND ");
+				tableColumnsSize = new Integer[]{320,150,1000,110,100,75};
+			}
+			else {
+	
+				tableColumnsSize = new Integer[]{320,150,1000,110,100,75,75};
+			}
+	
+			if(compartimentalized) {
+	
+				aux = aux.concat("  NOT originalReaction");
+			}
+			else {
+	
+				aux = aux.concat(" originalReaction");
+			}
+			
+			String aux2 = " CASEWHEN (pathway_name is NULL, 1, 0), ";
+			if(dbType.equals(DatabaseType.MYSQL)) 
+				aux2 = " IF(ISNULL(pathway_name),1,0), ";
+			
+	
+			String view1 , view2;
+	
+			view1 = " reactions_view ";
+			view2 = " reactions_view_noPath_or_noEC ";
+	
+			ResultSet rs = statement.executeQuery(" SELECT * FROM "
+					+ "(SELECT * FROM "+view1+aux+" "
+					+ " UNION "
+					+ " SELECT * FROM "+view2+aux+") as global"
+					+ " ORDER BY " 
+					+ aux2
+					+ " pathway_name, reaction_name");
+	
+			int r=0;
+	
+			while(rs.next()) {
+	
+				ArrayList<Object> temp = new ArrayList<Object>();
+				activeReactions.add(rs.getString(2));
+				ids.put(r,rs.getString(1));
+				r++;
+				ArrayList<Object> ql = new ArrayList<Object>();
+				ql.add("");
+	
+				if(rs.getString(6)!=null) {
+	
+					ql.add(rs.getString(6));
+				}
+				else {
+	
+					ql.add("");
+				}
+	
+				ql.add(rs.getString(2));
+				ql.add(rs.getString(3));
+				ql.add(rs.getString(9));
+				ql.add(rs.getString(12));
+				ql.add(rs.getBoolean(4));
+	//			ql.add(rs.getBoolean(8)); ---------------------generic
+				//if(!encodedOnly) {
+				ql.add(rs.getBoolean(7));
+				//}
+				
+				temp.add(ql);
+				temp.add(rs.getString(1));
+				if(rs.getString(5)==null) {temp.add("0");}
+				else {temp.add(rs.getString(5));}
+				reactionsData.add(temp);
+	
+				namesIndex.put(rs.getString(1), rs.getString(2));
+				formulasIndex.put(rs.getString(1), rs.getString(3));
+	
+				if(rs.getString(6) != null) {
+	
+					pathID.put(rs.getString(6), Integer.parseInt(rs.getString(5)));
+					pathwaysSet.add(rs.getString(6));
+				}
+			}
+	
+			rs.close();
+			statement.close();
+		}
+		catch (SQLException ex) {ex.printStackTrace();}
+		
+		ReactionsCapsule capsule = new ReactionsCapsule(ids, namesIndex, activeReactions, formulasIndex, pathwaysList,
+				pathID, pathwaysSet, tableColumnsSize, reactionsData);
+		
+		return capsule;
+	}
 }
