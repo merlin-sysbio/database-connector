@@ -46,6 +46,7 @@ public class DatabaseSchemas {
 	 * @param DatabaseSchemas
 	 */
 	public DatabaseSchemas(DatabaseAccess databaseBase) {
+		
 		this.username = databaseBase.get_database_user();
 		this.password = databaseBase.get_database_password();
 		this.host = databaseBase.get_database_host();
@@ -346,7 +347,7 @@ public class DatabaseSchemas {
 				}
 				
 				for(String s: list) {
-					if(checkTable(s,"enzymes_annotation_geneHomology") || checkTable(s,"genehomology")) {
+					if(checkTable(s,"enzymes_annotation_geneHomology") || checkTable(s,"genehomology") || checkTable(s,"geneblast")) {
 						
 						schemasList.add(s);
 					}
