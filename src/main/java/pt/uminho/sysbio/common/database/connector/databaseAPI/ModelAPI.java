@@ -1946,19 +1946,27 @@ public class ModelAPI {
 		
 	}
 	
+	/**
+	 * @param statement
+	 * @return
+	 */
 	public static Set<String> checkUndefinedStoichiometry(Statement statement) {
 		
 		Set<String> undefinedStoichiometry = new HashSet<>();
 		
-		try{
+		try {
+			String aux = "";
 			
-			ResultSet rs = statement.executeQuery("SELECT idreaction FROM reaction INNER JOIN stoichiometry ON idreaction=reaction_idreaction "
-					+ "WHERE stoichiometric_coefficient=0 AND inModel=1 ORDER BY idreaction ASC;");
+			if(ProjectAPI.isCompartmentalisedModel(statement))				
+				aux = aux.concat("  NOT originalReaction");
+			else	
+				aux = aux.concat(" originalReaction");
 			
-			while (rs.next()) {
-				
+			ResultSet rs = statement.executeQuery("SELECT name FROM reaction INNER JOIN stoichiometry ON idreaction=reaction_idreaction "
+					+ " WHERE inModel AND stoichiometric_coefficient=0 AND "+aux+" ORDER BY idreaction ASC;");
+			
+			while (rs.next())
 				undefinedStoichiometry.add(rs.getString(1));
-			}
 		}
 		catch (SQLException ex) {
 	
@@ -1984,24 +1992,22 @@ public class ModelAPI {
 		try {
 			
 			String aux = " WHERE ";
-			if(encodedOnly) {
-	
+			if(encodedOnly) //{
 				aux = aux.concat(" inModel AND ");
-				tableColumnsSize = new Integer[]{320,150,1000,110,100,75};
-			}
-			else {
+//				tableColumnsSize = new Integer[]{320,150,1000,110,100,75,75};
+//			}
+//			else {
+//	
+//				tableColumnsSize = new Integer[]{320,150,1000,110,100,75,75};	
+//			}
+			
+			//the first column is ignored here
+			tableColumnsSize = new Integer[]{320,150,1000,110,100,75,75};
 	
-				tableColumnsSize = new Integer[]{320,150,1000,110,100,75,75};
-			}
-	
-			if(compartimentalized) {
-	
+			if(ProjectAPI.isCompartmentalisedModel(statement))				
 				aux = aux.concat("  NOT originalReaction");
-			}
-			else {
-	
+			else	
 				aux = aux.concat(" originalReaction");
-			}
 			
 			String aux2 = " CASEWHEN (pathway_name is NULL, 1, 0), ";
 			if(dbType.equals(DatabaseType.MYSQL)) 

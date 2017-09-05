@@ -82,8 +82,9 @@ public class DatabaseSchemas {
 		Connection connection = null;
 
 		try {
-
+			
 			Class.forName(driver_class_name).newInstance();
+			//System.out.println(url_db_connection);
 			connection = (Connection) DriverManager.getConnection(url_db_connection, this.username, this.password);
 			
 //			if (this.dbType.equals(DatabaseType.H2)) { Server server = Server.createTcpServer("-tcpAllowOthers").start();}
@@ -190,11 +191,11 @@ public class DatabaseSchemas {
 	 * Checks whether a table exists or not in a given database.
 	 * 
 	 * @param schema
-	 * @param table
+	 * @param tablesCheck
 	 * @return
 	 * @throws SQLException
 	 */
-	public boolean checkTable(String schema, String table) throws SQLException {
+	public boolean checkTables(String schema, List<String> tablesCheck) throws SQLException {
 		
 		Connection connection = this.createConnection(schema);
 		Statement statement = null;
@@ -204,23 +205,26 @@ public class DatabaseSchemas {
 		try {
 			
 			statement = connection.createStatement();
-
 			statement.execute( "show tables");
 			rs=statement.getResultSet();
 
 			while(rs.next())
-				if(rs.getString(1).equalsIgnoreCase(table))
+				if(tablesCheck.contains(rs.getString(1).toLowerCase()))
 					result =true;
-			
-			this.closeConnection(connection);
 		}
-		catch (SQLException ex) 
-		{
+		catch (SQLException ex) {
+			
+			rs.close();
+			statement.close();
+			this.closeConnection(connection);
 			ex.printStackTrace();
 			//			System.out.println("SQLException: " + ex.getMessage());
 			//			System.out.println("SQLState: " + ex.getSQLState());
 			//			System.out.println("VendorError: " + ex.getErrorCode());
 		}
+		rs.close();
+		statement.close();
+		this.closeConnection(connection);
 		return result;
 	}
 
@@ -331,27 +335,26 @@ public class DatabaseSchemas {
 
 		List<String> list= new ArrayList<String>();
 		List<String> schemasList = new ArrayList<String>();
-
+		List<String> tablesCheck = new ArrayList<String>();
+		tablesCheck.add("enzymes_annotation_geneHomology");
+		tablesCheck.add("genehomology");
+		tablesCheck.add("geneblast");
+		
 		Connection connection = this.createConnection();
 		ResultSet rs;
 		Statement statement = null;
 
 		try {	
-				statement = (Statement) connection.createStatement();
-				statement.execute( "SHOW DATABASES ");
+				statement = connection.createStatement();
+				statement.execute("SHOW DATABASES ");
 				rs = statement.getResultSet();
 
-				while(rs.next()) {
-					
+				while(rs.next())
 					list.add(rs.getString(1));
-				}
 				
-				for(String s: list) {
-					if(checkTable(s,"enzymes_annotation_geneHomology") || checkTable(s,"genehomology") || checkTable(s,"geneblast")) {
-						
+				for(String s: list)
+					if(checkTables(s, tablesCheck))
 						schemasList.add(s);
-					}
-				}
 		}
 		catch (SQLException ex) {
 			ex.printStackTrace();
