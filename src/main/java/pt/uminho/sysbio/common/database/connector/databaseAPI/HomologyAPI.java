@@ -1063,7 +1063,7 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 	
 			return ret;
 		}
-		
+
 		/**
 		 * Calculate total number of genes.
 		 * @param table
@@ -2121,24 +2121,141 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 			rs.close();
 			return exists;
 		}
+			
+		/**
+		 * Loads data about the transport
+		 * @param stmt
+		 * @param data
+		 * @param idLT
+		 * @throws SQLException
+		 */
+		public static void loadTrasnportInfo (Statement stmt, String[] data, String idLT) throws SQLException {
+			
+			ResultSet rs = stmt.executeQuery("SELECT id FROM sw_hits WHERE tcdb_id='"+data[2]+"' AND acc='"+data[1]+"'");
+
+			if(!rs.next()) {
+
+				stmt.execute("INSERT INTO sw_hits (acc,tcdb_id) VALUES ('"+data[1]+"', '"+data[2]+"')");
+				rs = stmt.executeQuery("SELECT LAST_INSERT_ID();");
+				rs.next();
+			}
+
+			String idHIT = rs.getString(1);
+
+			rs = stmt.executeQuery("SELECT * FROM sw_similarities WHERE sw_report_id="+idLT+" AND sw_hit_id="+idHIT+"");
+
+			if(!rs.next()) {
+
+				stmt.execute("INSERT INTO sw_similarities (sw_report_id,sw_hit_id,similarity) VALUES("+idLT+","+idHIT+","+data[3]+")");
+			}
+
+			rs.close();
+		}		
 		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
+		/**
+		 * Loads Orthologs data
+		 * @param idGene
+		 * @param statement
+		 * @param closestOrthologs
+		 * @param data
+		 * @param ecnumber
+		 * @param modules
+		 * @throws SQLException
+		 */
+		public static void loadOrthologsInfo(String idGene, Statement statement, Map<String, Set<String>> closestOrthologs, String[] data, 
+				String ecnumber, Map<String, Set<String>> modules) throws SQLException {
+			
+			String queryLocus = data[0].split(":")[1];
+			ResultSet rs = null;
+			
+			for (String ortholog : closestOrthologs.get(data[0])) {
+
+				rs = statement.executeQuery("SELECT id FROM orthology WHERE entry_id ='"+ortholog+"' AND (locus_id is null OR locus_id = '')");
+
+				String orthology_id = "";
+
+				if(rs.next()) {
+
+					orthology_id = rs.getString(1);
+					statement.execute("UPDATE orthology SET locus_id = '"+queryLocus+"' WHERE entry_id = '"+ortholog+"';");
+				}
+				else {
+
+					rs = statement.executeQuery("SELECT id FROM orthology WHERE entry_id ='"+ortholog+"' AND locus_id ='"+queryLocus+"';");
+
+					if(!rs.next()) {
+
+						statement.execute("INSERT INTO orthology (entry_id, locus_id) VALUES ('"+ortholog+"', '"+queryLocus+"')");
+						rs = statement.executeQuery("SELECT LAST_INSERT_ID();");
+						rs.next();
+					}
+					orthology_id = rs.getString(1);
+				}
+
+				rs = statement.executeQuery("SELECT * FROM gene_has_orthology WHERE gene_idgene='"+idGene+"' AND orthology_id='"+orthology_id+"'");
+
+				if(rs.next()) {
+
+					System.out.println("Entry exists!! "+idGene+"\t"+orthology_id);
+				}
+				else {
+
+					statement.execute("INSERT INTO gene_has_orthology (gene_idgene,orthology_id, similarity) VALUES("+idGene+","+orthology_id+", "+data[2]+" )");
+				}
+
+				rs = statement.executeQuery("SELECT protein_idprotein FROM enzyme WHERE ecnumber='"+ecnumber+"'");
+				rs.next();
+				int protein_idprotein = rs.getInt(1);
+
+				rs = statement.executeQuery("SELECT module_id, note FROM subunit WHERE gene_idgene='"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"'");
+
+				List<String> modules_ids = new ArrayList<String>();
+				boolean exists = false, noModules=true;
+
+				String note = "unannotated";
+
+				while(rs.next()) {
+
+					exists = true;
+
+					if(rs.getInt(1)>0) {
+
+						noModules = false;
+						modules_ids.add(rs.getString(1));
+					}
+
+					if(rs.getString(2)!=null && !rs.getString(2).equalsIgnoreCase("null"))
+						note = rs.getString(2);
+					else
+						note = "";
+				}
+
+				for(String module_id : modules.get(ortholog)) {
+
+					if(modules_ids.contains(module_id)) {
+
+					}
+					else {
+
+						if(exists) {
+
+							if(noModules) {
+
+								statement.execute("UPDATE subunit SET module_id = "+module_id+" WHERE gene_idgene = '"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"'");
+								noModules = false;
+								modules_ids.add(module_id);
+							}
+						}
+						else {
+
+							statement.execute("INSERT INTO subunit (module_id, gene_idgene, enzyme_ecnumber, enzyme_protein_idprotein, note) " +
+									"VALUES("+module_id+", "+idGene+", '"+ecnumber+"', "+protein_idprotein+", '"+note+"')");
+							//exists = true;
+						}
+
+					}
+				}
+			}
+		rs.close();
+		}
 	}
