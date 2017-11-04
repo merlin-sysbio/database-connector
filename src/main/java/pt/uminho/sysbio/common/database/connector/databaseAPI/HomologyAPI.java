@@ -1117,7 +1117,6 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public static ArrayList<String[]> getSpecificStats(String program, Statement stmt) throws SQLException{
 			
 			ArrayList<String[]> result = new ArrayList<>();
-			String[] list = new String[6];
 			
 			ResultSet rs = stmt.executeQuery("SELECT geneHomology.s_key, locusTag, query, gene, chromosome, organelle " +
 					" FROM geneHomology" +
@@ -1125,6 +1124,8 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 					" WHERE status<>'NO_SIMILARITY' AND (LOWER(program) LIKE "+program+" )");
 			
 			while(rs.next()){
+				String[] list = new String[6];
+				
 				list[0]=rs.getString(1);
 				list[1]=rs.getString(2);
 				list[2]=rs.getString(3);
@@ -1244,7 +1245,6 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public static ArrayList<String[]> getProgram(String query, Statement stmt) throws SQLException{
 			
 			ArrayList<String[]> result = new ArrayList<>();
-			String[] list = new String[4];
 			
 			ResultSet rs =stmt.executeQuery("SELECT ecNumberRank.s_key, ecNumber, rank, program " +
 					" FROM ecNumberRank "+
@@ -1254,6 +1254,8 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 					" ORDER BY program, rank DESC; ");
 
 			while(rs.next()){
+				String[] list = new String[4];
+
 				list[0]=rs.getString(1);
 				list[1]=rs.getString(2);
 				list[2]=rs.getString(3);
@@ -1274,7 +1276,6 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public static ArrayList<String[]> getProductRankData(String locus, Statement stmt) throws SQLException{
 			
 			ArrayList<String[]> result = new ArrayList<>();
-			String[] list = new String[4];
 			
 			ResultSet rs=stmt.executeQuery("SELECT productRank.s_key, productName, rank, program " +
 					"FROM productRank " +
@@ -1284,6 +1285,8 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 					"ORDER BY program, rank DESC;");
 
 			while(rs.next()){
+				String[] list = new String[4];
+
 				list[0]=rs.getString(1);
 				list[1]=rs.getString(2);
 				list[2]=rs.getString(3);
@@ -1357,11 +1360,12 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public static ArrayList<String[]> getCommittedHomologyData(Statement stmt) throws SQLException{
 			
 			ArrayList<String[]> result = new ArrayList<>();
-			String[] list = new String[9];
 			
 			ResultSet rs = stmt.executeQuery("SELECT * FROM homologyData ");
 			
 			while(rs.next()){
+				String[] list = new String[9];
+
 				list[0]=rs.getString(1);
 				list[1]=rs.getString(2);
 				list[2]=rs.getString(3);
@@ -1387,12 +1391,13 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public static ArrayList<String[]> getCommittedHomologyData2(Statement stmt) throws SQLException{
 			
 			ArrayList<String[]> result = new ArrayList<>();
-			String[] list = new String[2];
 			
 			ResultSet rs = stmt.executeQuery("SELECT geneHomology_s_key, otherNames FROM homologyData " +
 					"RIGHT JOIN productList ON (homologyData.s_key = homologyData_s_key);");
 			
 			while(rs.next()){
+				String[] list = new String[2];
+
 				list[0]=rs.getString(1);
 				list[1]=rs.getString(2);
 				
@@ -1410,12 +1415,13 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public static ArrayList<String[]> getCommittedHomologyData3(Statement stmt) throws SQLException{
 			
 			ArrayList<String[]> result = new ArrayList<>();
-			String[] list = new String[2];
 			
 			ResultSet rs = stmt.executeQuery("SELECT geneHomology_s_key, otherECnumbers FROM homologyData " +
 					"RIGHT JOIN ecNumberList ON (homologyData.s_key = homologyData_s_key);");
 			
 			while(rs.next()){
+				String[] list = new String[2];
+
 				list[0]=rs.getString(1);
 				list[1]=rs.getString(2);
 				
@@ -1569,14 +1575,15 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public static ArrayList<String[]> getDataFromecNumberRank(Statement stmt) throws SQLException{
 			
 			ArrayList<String[]> result = new ArrayList<>();
-			String[] list = new String[4];
 			
 			ResultSet rs = stmt.executeQuery("SELECT ecNumberRank.s_key, geneHomology_s_key, ecNumber, rank FROM ecNumberRank;");
 			
 			while(rs.next()){
+				String[] list = new String[4];
+
 				list[0]=rs.getString(1);
 				list[1]=rs.getString(2);
-				list[3]=rs.getString(3);
+				list[2]=rs.getString(3);
 				list[3]=rs.getString(4);
 				
 				result.add(list);
@@ -1593,13 +1600,14 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public static ArrayList<String[]> getEcRank(Statement stmt) throws SQLException{
 			
 			ArrayList<String[]> result = new ArrayList<>();
-			String[] list = new String[2];
 			
 			ResultSet rs = stmt.executeQuery("SELECT ecNumberRank.s_key, taxRank FROM ecNumberRank " +
 					" INNER JOIN ecNumberRank_has_organism ON(ecNumberRank_s_key=ecNumberRank.s_key) " +
 					" INNER JOIN organism ON (organism.s_key=organism_s_key);");
 			
 			while(rs.next()){
+				String[] list = new String[2];
+
 				list[0]=rs.getString(1);
 				list[1]=rs.getString(2);
 				
@@ -1659,11 +1667,12 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public static ArrayList<String[]> getProductRank(Statement stmt) throws SQLException{
 			
 			ArrayList<String[]> result = new ArrayList<>();
-			String[] list = new String[4];
 			
 			ResultSet rs = stmt.executeQuery("SELECT productRank.s_key, geneHomology_s_key, productName, rank FROM productRank;");
 			
 			while(rs.next()){
+				String[] list = new String[4];
+
 				list[0]=rs.getString(1);
 				list[1]=rs.getString(2);
 				list[2]=rs.getString(3);
@@ -1678,12 +1687,13 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public static ArrayList<String[]> getTaxRank(Statement stmt) throws SQLException{
 			
 			ArrayList<String[]> result = new ArrayList<>();
-			String[] list = new String[2];
 			
 			ResultSet rs = stmt.executeQuery("SELECT productRank_s_key, taxRank FROM productRank_has_organism " +
 					" INNER JOIN organism ON(organism.s_key=organism_s_key) ORDER BY productRank_s_key");
 			
 			while(rs.next()){
+				String[] list = new String[2];
+
 				list[0]=rs.getString(1);
 				list[1]=rs.getString(2);
 				
@@ -1724,11 +1734,12 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public static ArrayList<String[]> getProductRank2(Statement stmt) throws SQLException{
 			
 			ArrayList<String[]> result = new ArrayList<>();
-			String[] list = new String[4];
 			
 			ResultSet rs = stmt.executeQuery("SELECT s_key, geneHomology_s_key, productName, rank  FROM productRank");
 			
 			while(rs.next()){
+				String[] list = new String[4];
+
 				list[0]=rs.getString(1);
 				list[1]=rs.getString(2);
 				list[2]=rs.getString(3);
@@ -1749,7 +1760,6 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public static ArrayList<String[]> getGenesInformation(Statement stmt) throws SQLException{
 			
 			ArrayList<String[]> result = new ArrayList<>();
-			String[] list = new String[8];
 			
 			ResultSet rs = stmt.executeQuery("SELECT geneHomology.s_key, locusTag, gene, chromosome, organelle, uniprot_star, program, query" +
 					" FROM geneHomology" +
@@ -1758,6 +1768,8 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 					" ORDER BY locusTag, status DESC;");
 			
 			while(rs.next()){
+				String[] list = new String[8];
+
 				list[0]=rs.getString(1);
 				list[1]=rs.getString(2);
 				list[2]=rs.getString(3);
@@ -1975,12 +1987,13 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public static ArrayList<String[]> getEnzymeProteinID(String idReaction, Statement statement) throws SQLException{
 			
 			ArrayList<String[]> result = new ArrayList<>();
-			String[] list = new String[8];
 			
 			ResultSet rs = statement.executeQuery("SELECT enzyme_protein_idprotein, enzyme_ecnumber FROM reaction_has_enzyme "
 					+ "WHERE reaction_idreaction = "+idReaction+" ;");
 			
 			while(rs.next()){
+				String[] list = new String[2];
+
 				list[0]=rs.getString(1);
 				list[1]=rs.getString(2);
 				

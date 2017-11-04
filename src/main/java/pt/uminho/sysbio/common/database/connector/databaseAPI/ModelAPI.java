@@ -721,13 +721,11 @@ public class ModelAPI {
 					"VALUES("+idReaction+","+idPathway+");");
 
 		rs.close();
-
 		return true;
 	}
 
 	/**
 	 * Determine if compartment information for gene is loaded.
-	 * 
 	 * @param idGene
 	 * @param statement
 	 * @return
@@ -2196,7 +2194,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getAllEnzymes(String originalReaction, String encodedEnzyme, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[8];
 		
 		ResultSet rs = stmt.executeQuery("SELECT protein.name, enzyme.ecnumber," +
 				" COUNT(DISTINCT(reaction_has_enzyme.reaction_idreaction)), enzyme.source, enzyme.inModel, reaction.inModel, idprotein," +
@@ -2211,6 +2208,8 @@ public class ModelAPI {
 				" ORDER BY ecnumber  ASC, reaction.inModel DESC;");
 		
 		while(rs.next()){
+			String[] list = new String[8];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2235,13 +2234,14 @@ public class ModelAPI {
 	public static ArrayList<String[]> getProteinsData(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = stmt.executeQuery("SELECT idprotein, protein.name, ecnumber, optimal_ph, posttranslational_modification " +
 						"FROM enzyme " +
 						"INNER JOIN protein ON protein.idprotein = enzyme.protein_idprotein;");
 		
 		while(rs.next()){
+			String[] list = new String[5];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2263,7 +2263,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getProteinsData2(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = stmt.executeQuery("SELECT enzyme.protein_idprotein, COUNT(gene_idgene) " +
 				"FROM enzyme " +
@@ -2271,6 +2270,8 @@ public class ModelAPI {
 				"GROUP BY enzyme.protein_idprotein;");
 		
 		while(rs.next()){
+			String[] list = new String[2];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -2292,7 +2293,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getReactionsData(String ecnumber, String aux, String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = stmt.executeQuery("SELECT reaction.name, reaction.equation, source, inModel, reversible FROM reaction " +
 				"INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction = reaction.idreaction " +
@@ -2301,6 +2301,8 @@ public class ModelAPI {
 		" ORDER BY inModel DESC, reversible DESC, name");
 		
 		while(rs.next()){
+			String[] list = new String[5];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2324,7 +2326,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getGeneData(String ecnumber, String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[7];
 		
 		ResultSet rs = stmt.executeQuery("SELECT DISTINCT gene.name, gene.locusTag, orthology.entry_id, origin, note, similarity, locus_id FROM enzyme " +
 				"INNER JOIN subunit ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein " +
@@ -2335,6 +2336,8 @@ public class ModelAPI {
 				"AND subunit.enzyme_protein_idprotein = " + id);
 		
 		while(rs.next()){
+			String[] list = new String[7];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2348,7 +2351,6 @@ public class ModelAPI {
 		rs.close();
 		return result;
 	}
-	
 	
 	/**
 	 * Retrieves reactions information from reaction table
@@ -2381,8 +2383,6 @@ public class ModelAPI {
 		return result;		
 		
 	}
-	
-	
 		
 	/**
 	 * Retrieves information from reaction_has_enzyme table
@@ -2395,9 +2395,10 @@ public class ModelAPI {
 		ResultSet rs = stmt.executeQuery("SELECT reaction_idreaction, enzyme_protein_idprotein, enzyme_ecnumber FROM reaction_has_enzyme ORDER BY reaction_idreaction" );
 
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		while(rs.next()) {
+			String[] list = new String[3];
+
 			list[0] = rs.getString(1);
 			list[1] = rs.getString(2);
 			list[2] = rs.getString(3);
@@ -2424,9 +2425,10 @@ public class ModelAPI {
 				"ORDER BY reaction_idreaction" );
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		while(rs.next()) {
+			String[] list = new String[3];
+
 			list[0] = rs.getString(1);
 			list[1] = rs.getString(2);
 			list[2] = rs.getString(3);
@@ -2455,9 +2457,10 @@ public class ModelAPI {
 				"ORDER BY reaction_idreaction;");
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[4];
 		
 		while(rs.next()) {
+			String[] list = new String[4];
+
 			list[0] = rs.getString(1);
 			list[1] = rs.getString(2);
 			list[2] = rs.getString(3);
@@ -2487,9 +2490,10 @@ public class ModelAPI {
 				"WHERE inModel AND " +conditions );
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[9];
 		
 		while(rs.next()) {
+			String[] list = new String[9];
+
 			list[0] = rs.getString(1);
 			list[1] = rs.getString(2);
 			list[2] = rs.getString(3);
@@ -2501,10 +2505,8 @@ public class ModelAPI {
 			list[8] = rs.getString(9);
 			result.add(list);
 		}
-		
 		rs.close();
 		return result;
-				
 	}
 	
 		
@@ -2519,7 +2521,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getPathways(String ecnumber, String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = stmt.executeQuery("SELECT DISTINCT code, name FROM pathway_has_enzyme " +
 				"INNER JOIN pathway ON pathway_has_enzyme.pathway_idpathway = pathway.idpathway " +
@@ -2527,6 +2528,8 @@ public class ModelAPI {
 				"AND pathway_has_enzyme.enzyme_protein_idprotein = " + id);
 		
 		while(rs.next()){
+			String[] list = new String[2];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -2550,9 +2553,10 @@ public class ModelAPI {
 				" WHERE reaction.inModel AND originalReaction="+originalreactions);
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		while(rs.next()) {
+			String[] list = new String[2];
+
 			list[0] = rs.getString("name");
 			list[1] = rs.getString("enzyme_ecnumber");
 			result.add(list);
@@ -2572,7 +2576,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getDataFromSubunit(String ecnumber, String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[4];
 		
 		ResultSet rs = stmt.executeQuery("SELECT DISTINCT gpr_status, reaction,  definition, name FROM subunit " +
 				"INNER JOIN module ON (id = module_id) " +
@@ -2580,6 +2583,8 @@ public class ModelAPI {
 				"AND enzyme_protein_idprotein = " + id);
 		
 		while(rs.next()){
+			String[] list = new String[4];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2602,7 +2607,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getGeneData2(String ecnumber, String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = stmt.executeQuery("SELECT idgene, compartment.name, primaryLocation, score, locusTag " +
 				"FROM gene " +
@@ -2613,6 +2617,8 @@ public class ModelAPI {
 				"AND subunit.enzyme_protein_idprotein = " + id);
 		
 		while(rs.next()){
+			String[] list = new String[5];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getBoolean(3)+"";
@@ -2679,7 +2685,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> countNotTransport(String aux, String aux2, String aux3, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT compound.idcompound, stoichiometry.compartment_idcompartment, " +
 				" COUNT(DISTINCT(idreaction)) AS sum_not_transport "+
@@ -2692,6 +2697,8 @@ public class ModelAPI {
 				" ORDER BY "+aux2+" compound.name, kegg_id ;");
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2714,7 +2721,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> countTransport(String aux, String aux2, String aux3, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT compound.idcompound, stoichiometry.compartment_idcompartment, " +
 				" COUNT(DISTINCT(idreaction)) AS sum_transport "+
@@ -2727,6 +2733,8 @@ public class ModelAPI {
 				" ORDER BY "+aux2+" compound.name, kegg_id ;");
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2774,7 +2782,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getMetabolitesWithBothProperties(String aux, String aux2, String aux3, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[8];
 		
 		ResultSet rs = stmt.executeQuery("SELECT compound.name, formula, COUNT(DISTINCT SIGN(stoichiometric_coefficient)) as counter, compound.idcompound, kegg_id , COUNT(DISTINCT(idreaction)), " +
 				" compartment.name, stoichiometry.compartment_idcompartment " +
@@ -2787,6 +2794,8 @@ public class ModelAPI {
 				" ORDER BY "+aux2+" compound.name, kegg_id ;");
 		
 		while(rs.next()){
+			String[] list = new String[8];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2816,6 +2825,7 @@ public class ModelAPI {
 		String[] result = new String[4];
 		
 		if(rs.next()) {
+
 			result[0] = rs.getString(1);
 			result[1] = rs.getBoolean(2)+"";
 			result[2] = rs.getBoolean(3)+"";
@@ -2985,7 +2995,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getMetabolitesProperties(String aux, String aux2, String aux3, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[8];
 		
 		ResultSet rs = stmt.executeQuery("SELECT compound.name, formula, SIGN(stoichiometric_coefficient) as sign, compound.idcompound, kegg_id , COUNT(DISTINCT(idreaction)), " +
 				" compartment.name, stoichiometry.compartment_idcompartment " +
@@ -2997,6 +3006,8 @@ public class ModelAPI {
 				" ORDER BY "+aux2+" compound.name, kegg_id ;");
 		
 		while(rs.next()){
+			String[] list = new String[8];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -3024,11 +3035,12 @@ public class ModelAPI {
 	public static ArrayList<String[]> getMetabolitesNotInModel(String aux3, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[4];
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM compound WHERE idcompound NOT IN (SELECT compound_idcompound FROM stoichiometry)" + aux3 + ";");
 		
 		while(rs.next()){
+			String[] list = new String[4];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(4);
@@ -3430,7 +3442,6 @@ public class ModelAPI {
 	public static ArrayList<String[]>  getCompoundData(String id, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[6];
 		
 		ResultSet rs = statement.executeQuery("SELECT compound.name, compound.formula, compartment.name, stoichiometric_coefficient, numberofchains, kegg_id FROM stoichiometry " +
 				"INNER JOIN compound ON compound_idcompound = compound.idcompound " +
@@ -3438,6 +3449,8 @@ public class ModelAPI {
 				"WHERE reaction_idreaction = " + id);
 		
 		while(rs.next()){
+			String[] list = new String[6];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -3461,7 +3474,6 @@ public class ModelAPI {
 	public static ArrayList<String[]>  getReactionHasEnzymeData(String id, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = statement.executeQuery("SELECT enzyme_ecnumber, name, inModel, enzyme_protein_idprotein " +
 				" FROM reaction_has_enzyme " +
@@ -3472,6 +3484,8 @@ public class ModelAPI {
 				" WHERE reaction_idreaction = "+id);
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getBoolean(3) +"";
@@ -3492,12 +3506,13 @@ public class ModelAPI {
 	public static ArrayList<String[]>  getReactionData(String id, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[7];
 		
 		ResultSet rs = statement.executeQuery("SELECT isGeneric, isSpontaneous, isNonEnzymatic, lowerBound, upperBound, reversible, name, boolean_rule "
 				+ "FROM reaction WHERE idreaction = " + id);
 		
 		while(rs.next()){
+			String[] list = new String[7];
+
 			list[0]=rs.getBoolean(1) +"";
 			list[1]=rs.getBoolean(2) +"";
 			list[2]=rs.getBoolean(3) +"";
@@ -3534,7 +3549,7 @@ public class ModelAPI {
 				//"INNER JOIN reaction_has_enzyme ON idreaction = reaction_has_enzyme.reaction_idreaction " +
 				"WHERE idreaction="+id);
 		
-		while(rs.next()){
+		if(rs.next()){
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getBoolean(3)+"";
@@ -3743,7 +3758,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getAllGenes(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag, name, count(DISTINCT(module_id)), count(DISTINCT(enzyme_ecnumber)) "+
 				" FROM gene LEFT JOIN subunit ON gene.idgene = gene_idgene "+
@@ -3751,6 +3765,8 @@ public class ModelAPI {
 				" GROUP BY idgene, locusTag;");
 		
 		while(rs.next()){
+			String[] list = new String[5];
+			
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -3773,13 +3789,14 @@ public class ModelAPI {
 	public static ArrayList<String[]> getRegulatoryGenes(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT name, locusTag, idgene FROM subunit JOIN gene " +
 				"ON gene_idgene=idgene WHERE protein_idprotein IN (SELECT protein_idprotein " +
 				"FROM regulatory_event) order by name");
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -3799,7 +3816,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getEncodingGenes(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag, name, count(DISTINCT(module_id)), count(enzyme_ecnumber) "+
 						"FROM gene INNER JOIN subunit ON (gene.idgene = gene_idgene) "+
@@ -3807,6 +3823,8 @@ public class ModelAPI {
 				"GROUP BY locusTag;");
 		
 		while(rs.next()){
+			String[] list = new String[5];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -3828,7 +3846,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getRegulatedGenes(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT DISTINCT gene.name, bnumber, gene.idgene " +
 				"FROM regulatory_event as event, transcription_unit, transcription_unit_gene " +
@@ -3839,6 +3856,8 @@ public class ModelAPI {
 				"order by gene.name");
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -3858,12 +3877,13 @@ public class ModelAPI {
 	public static ArrayList<String[]> getProteinsInModel(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT DISTINCT(idprotein), name, class FROM protein " +
 				"JOIN enzyme ON(enzyme.protein_idprotein=protein.idprotein) where inModel=1 ORDER BY name");
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -3883,12 +3903,13 @@ public class ModelAPI {
 	public static ArrayList<String[]> getEnzymes(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT distinct(idprotein), name, inchi " +
 				"FROM protein JOIN enzyme ON enzyme_protein_idprotein=idprotein ORDER BY name");
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -3908,13 +3929,14 @@ public class ModelAPI {
 	public static ArrayList<String[]> getTFs(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT distinct(idprotein), name, inchi " +
 				"FROM protein " +
 				"JOIN regulatory_event ON enzyme_protein_idprotein=idprotein ORDER BY name");
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -3934,13 +3956,14 @@ public class ModelAPI {
 	public static ArrayList<String[]> getSigmas(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = stmt.executeQuery("SELECT distinct(idprotein), name, iupac_name, inchi, " +
 				"cas_registry_name FROM protein " +
 				"JOIN sigma_promoter ON protein_protein_idprotein=idprotein ORDER BY name");
 		
 		while(rs.next()){
+			String[] list = new String[5];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -3963,12 +3986,13 @@ public class ModelAPI {
 	public static ArrayList<String[]> getGeneInfo(String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = stmt.executeQuery("SELECT name, locusTag FROM gene JOIN subunit ON " +
 				"gene.idgene = subunit.gene_idgene WHERE enzyme_protein_idprotein = " + id);
 		
 		while(rs.next()){
+			String[] list = new String[2];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -4253,13 +4277,14 @@ public class ModelAPI {
 	public static ArrayList<String[]> getReactionHasEnzymeData2(String idreaction, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs= stmt.executeQuery("SELECT enzyme_protein_idprotein, enzyme_ecnumber FROM reaction_has_enzyme " +
 				"INNER JOIN enzyme ON (enzyme_protein_idprotein = enzyme.protein_idprotein AND enzyme_ecnumber = enzyme.ecnumber)"+
 				"WHERE inModel AND reaction_idreaction = "+idreaction);
 		
 		while(rs.next()){
+			String[] list = new String[2];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -4283,7 +4308,6 @@ public class ModelAPI {
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM enzyme WHERE protein_idprotein = "+idProtein+" AND ecnumber = '"+ecnumber+"';");
 		
-
 		if(rs.next()) 
 			exists = true;
 		
@@ -4544,7 +4568,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getDataFromSigmaPromoter2(Statement stmt) throws SQLException{
 
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[4];
 
 		ResultSet rs = stmt.executeQuery("SELECT protein.idprotein, protein.name, gene.idgene, gene.name " +
 	        	"FROM sigma_promoter as event, transcription_unit, transcription_unit_gene AS tug, " +
@@ -4557,6 +4580,8 @@ public class ModelAPI {
 	        	"ORDER BY protein.idprotein");
         
 		while(rs.next()){
+			String[] list = new String[4];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -4578,7 +4603,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getRowInfoSigmaPromoter(String id, Statement stmt) throws SQLException{
 
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 
 		ResultSet rs = stmt.executeQuery("SELECT distinct(gene.idgene), gene.name FROM sigma_promoter AS " +
 				"event, transcription_unit, transcription_unit_gene AS tug, " +
@@ -4591,6 +4615,8 @@ public class ModelAPI {
 				" ORDER BY gene.name");
         
 		while(rs.next()){
+			String[] list = new String[2];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -4706,7 +4732,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getDataFromRegulatoryEvent2(Statement stmt) throws SQLException{
 
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 
 		ResultSet rs = stmt.executeQuery("SELECT protein.name, protein.idprotein, count(gene.idgene) " +
 	        	"FROM regulatory_event as event,transcription_unit, transcription_unit_gene " +
@@ -4719,6 +4744,8 @@ public class ModelAPI {
 	        	"AND gene_idgene=idgene GROUP BY protein.idprotein order by protein.idprotein");
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -4739,7 +4766,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getRowInfoTFs(String id, Statement stmt) throws SQLException{
 
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 
 		ResultSet rs = stmt.executeQuery("SELECT distinct(gene.idgene), gene.name FROM regulatory_event " +
 				"JOIN protein ON regulatory_event.protein_idprotein = protein.idprotein " +
@@ -4748,6 +4774,8 @@ public class ModelAPI {
 				"WHERE idprotein = "+id+" ORDER BY idprotein");
         
 		while(rs.next()){
+			String[] list = new String[2];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -4767,7 +4795,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getTFsData(String id, Statement stmt) throws SQLException{
 
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = stmt.executeQuery("SELECT distinct(gene.idgene), gene.name FROM regulatory_event as event,transcription_unit, " +
 				"transcription_unit_gene AS tug, transcription_unit_promoter as tup, " +
@@ -4779,6 +4806,8 @@ public class ModelAPI {
 				"gene_idgene=idgene AND protein.idprotein = "+id);
         
 		while(rs.next()){
+			String[] list = new String[2];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -4885,13 +4914,14 @@ public class ModelAPI {
 	public static ArrayList<String[]> getProteinComposition(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT gene.idgene, gene.name, protein_composition.subunit " +
 				"FROM subunit JOIN protein_composition ON subunit.enzyme_protein_idprotein = protein_composition.subunit " +
 				"JOIN gene ON idgene = subunit.gene_idgene;");
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -4933,7 +4963,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getReactionHasEnzymeData3(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT reaction_idreaction, enzyme_protein_idprotein, enzyme_ecnumber FROM reaction_has_enzyme "
 				+ " INNER JOIN enzyme on (enzyme.protein_idprotein = enzyme_protein_idprotein AND enzyme.ecnumber = enzyme_ecnumber) "
@@ -4941,6 +4970,8 @@ public class ModelAPI {
 				+ " ORDER BY reaction_idreaction" );
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -4961,7 +4992,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getPathwayHasReactionData(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT reaction_idreaction, pathway_idpathway, pathway.name " +
 				"FROM pathway_has_reaction " +
@@ -4969,6 +4999,8 @@ public class ModelAPI {
 				"ORDER BY reaction_idreaction" );
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -4989,7 +5021,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getReactionHasEnzymeData4(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[4];
 		
 		ResultSet rs = stmt.executeQuery("SELECT DISTINCT reaction_idreaction, name, locusTag, subunit.enzyme_ecnumber " +
 				"FROM reaction_has_enzyme " +
@@ -4999,6 +5030,8 @@ public class ModelAPI {
 				"ORDER BY reaction_idreaction;");
 		
 		while(rs.next()){
+			String[] list = new String[4];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -5021,7 +5054,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getStoichiometry(String conditions, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[9];
 		
 		ResultSet rs = stmt.executeQuery("SELECT idstoichiometry, reaction_idreaction, compound_idcompound, stoichiometry.compartment_idcompartment, " +
 				"stoichiometric_coefficient, numberofchains, compound.name, compound.formula, compound.kegg_id " +
@@ -5031,6 +5063,8 @@ public class ModelAPI {
 				"WHERE inModel AND " +conditions );
 		
 		while(rs.next()){
+			String[] list = new String[9];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -5078,7 +5112,6 @@ public class ModelAPI {
 	public static ArrayList<String[]> getDataFromReaction2(String aux, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT reaction.name, kegg_id, idreaction FROM reaction "
 				+ " INNER JOIN stoichiometry ON stoichiometry.reaction_idreaction = reaction.idreaction "
@@ -5086,6 +5119,8 @@ public class ModelAPI {
 				aux + " AND inModel ");
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -5107,9 +5142,10 @@ public class ModelAPI {
 		
 		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag FROM gene;");
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		while(rs.next()) {
+			String[] list = new String[2];
+
 			list[0] = rs.getString(0);
 			list[1] = rs.getString(2);
 			result.add(list);

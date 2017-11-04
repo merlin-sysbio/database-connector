@@ -296,7 +296,6 @@ public class DatabaseSchemas {
 
 						String text = stat.toString();
 						try  {
-							
 							if (dbType.equals(DatabaseType.H2))
 								text = text.replace("\\'","''");
 							else
@@ -305,7 +304,6 @@ public class DatabaseSchemas {
 						} 
 						catch (SQLException e) {
 
-							System.out.println(text);
 							e.printStackTrace();
 							br.close();
 							throw new Exception();
@@ -407,7 +405,6 @@ public class DatabaseSchemas {
 			return true;
 		}
 		catch (Exception e) {
-
 			e.printStackTrace();
 			return false;
 		}
