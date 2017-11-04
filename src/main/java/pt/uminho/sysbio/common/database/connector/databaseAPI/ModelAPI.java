@@ -2507,32 +2507,7 @@ public class ModelAPI {
 				
 	}
 	
-	
-	
-	/**
-	 * Retrieves information from compartment table
-	 * @param stmt
-	 * @return Map<Compartment_ID, name, abbreviation
-	 * @throws SQLException
-	 */
-	public static Map<String, ArrayList<String>> getCompartmentsInfo (Statement stmt) throws SQLException{
 		
-		ResultSet rs = stmt.executeQuery("SELECT idcompartment, name, abbreviation FROM compartment");
-		
-		Map<String, ArrayList<String>> result = new HashMap<>();
-		ArrayList<String> list = new ArrayList<>();
-		
-		while(rs.next()) {
-			list.add(rs.getString(2));
-			list.add(rs.getString(3));
-			result.put(rs.getString(1),list);
-			
-		}
-		
-		rs.close();
-		return result;
-	}
-	
 	/**
 	 * Get pathways.
 	 * @param ecnumber
