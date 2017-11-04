@@ -802,7 +802,6 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getBestCompartmenForGene(int projectID, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = statement.executeQuery("SELECT psort_report_id, locus_tag, score, abbreviation, name FROM psort_reports_has_compartments " +
 					"INNER JOIN psort_reports ON psort_reports.id=psort_report_id " +
@@ -811,6 +810,7 @@ public class TransportersAPI {
 					"ORDER BY psort_report_id ASC, score DESC;");
 		
 		if (rs.next()){
+			String[] list = new String[5];
 			
 			list[0] = rs.getString(1);
 			list[1] = rs.getString(2);
@@ -836,7 +836,6 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getExistingAnnotation(String uniprotID, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = statement.executeQuery("SELECT directions, equation, transport_systems.reversible, direction, metabolites.name  FROM tcdb_registries " +
 				" INNER JOIN tc_numbers ON (tc_numbers.tc_number = tcdb_registries.tc_number AND tc_numbers.tc_version = tcdb_registries.tc_version )" +
@@ -850,6 +849,7 @@ public class TransportersAPI {
 				" WHERE uniprot_id = '"+uniprotID+"' AND datatype = 'MANUAL'");
 	
 		if (rs.next()){
+			String[] list = new String[5];
 			
 			list[0] = rs.getString(1);
 			list[1] = rs.getString(2);
@@ -874,7 +874,6 @@ public class TransportersAPI {
 	public static ArrayList<String[]> selectMetabolitesOntology (Statement stmt) throws SQLException{
 
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT metabolites_ontology.id, metabolite_id, child_id " + 
 				//, kegg_miriam as child_kegg_miriam, chebi_miriam as child_chebi_miriam " +
@@ -882,6 +881,7 @@ public class TransportersAPI {
 				" INNER JOIN metabolites ON (child_id = metabolites.id)");
 		
 		if (rs.next()){
+			String[] list = new String[3];
 			
 			list[0] = rs.getString(1);
 			list[1] = rs.getString(2);
@@ -909,7 +909,7 @@ public class TransportersAPI {
 		ResultSet rs = stmt.executeQuery("SELECT id, kegg_miriam, chebi_miriam " +
 				" FROM metabolites");
 		
-		if (rs.next()){
+		while(rs.next()){
 			
 			list[0] = rs.getString(1);
 			list[1] = rs.getString(2);
@@ -950,11 +950,11 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getTransportTypeTaxonomyScore(String query, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[4];
 		
 		ResultSet rs = stmt.executeQuery(query);
 		
-		if (rs.next()){
+		while (rs.next()){
+			String[] list = new String[4];
 			
 			list[0] = rs.getString(1);
 			list[1] = rs.getString(2);
@@ -998,7 +998,6 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getGeneToMetaboliteDirectionData(int projectID, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[17];
 		
 		ResultSet rs =	stmt.executeQuery("SELECT gene_id, locus_tag, tc_family, transport_reaction_id, metabolite_id, " +
 				" stoichiometry, direction, metabolite_name, kegg_miriam, chebi_miriam, metabolite_kegg_name, tc_number,"
@@ -1008,6 +1007,7 @@ public class TransportersAPI {
 				" ORDER BY gene_id, transport_reaction_id, uniprot_id,  metabolite_id;");
 		
 		if (rs.next()){
+			String[] list = new String[17];
 			
 			list[0] = rs.getString(1);
 			list[1] = rs.getString(2);
@@ -1161,7 +1161,6 @@ public class TransportersAPI {
 	public static ArrayList<String[]> geneHasTcdbRegestries(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery( "SELECT genes_has_tcdb_registries.gene_id, metabolite_id, SUM(similarity) FROM genes_has_tcdb_registries "
 				+ " INNER JOIN genes_has_metabolites ON genes_has_tcdb_registries.gene_id=genes_has_metabolites.gene_id "
@@ -1170,6 +1169,8 @@ public class TransportersAPI {
 				+ " GROUP BY genes_has_tcdb_registries.gene_id, metabolite_id;");
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -1190,12 +1191,12 @@ public class TransportersAPI {
 	public static ArrayList<String[]> transportTypeID(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[6];
 		
 		ResultSet rs = stmt.executeQuery( "SELECT transport_type_id, metabolite_id, gene_id, transport_type_score_sum, taxonomy_score_sum, frequency "
 				+ "FROM genes_has_metabolites_has_type ORDER BY gene_id, metabolite_id , transport_type_id");
 
-		if (rs.next()){
+		while(rs.next()){
+			String[] list = new String[6];
 			
 			list[0] = rs.getString(1);
 			list[1] = rs.getString(2);
@@ -1221,11 +1222,12 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getMetabolitesGeneScore(String query, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery(query);
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -1246,12 +1248,13 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getChildID(String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[6];
 		
 		ResultSet rs = stmt.executeQuery("SELECT child_id, name, kegg_miriam, kegg_name, chebi_miriam, chebi_name, datatype, metabolites_ontology.id FROM metabolites_ontology"
 				+ " INNER JOIN metabolites ON metabolites.id= child_id WHERE metabolite_id='"+id+"'");
 		
 		while(rs.next()){
+			String[] list = new String[6];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -1414,12 +1417,13 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getTaxonomyData(String tcNumber, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[6];
 		
 		ResultSet rs = statement.executeQuery("SELECT MAX(tc_version), taxonomy_data_id, tc_family, tc_location, affinity, "
 				+ "general_equation_id FROM tc_numbers WHERE tc_number='"+tcNumber+"';");
 
 		while(rs.next()){
+			String[] list = new String[6];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -1502,13 +1506,14 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getSimilarityAndTaxonomyScore(String geneID, String metabolitesID, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = statement.executeQuery("SELECT similarity_score_sum, taxonomy_score_sum, frequency FROM genes_has_metabolites" +
 				" WHERE gene_id='"+geneID+"' AND metabolite_id='"+metabolitesID+"';");
 
 
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -1532,13 +1537,13 @@ public class TransportersAPI {
 	public static ArrayList<String[]> selectGeneHasMetaboliteHasType(String genesID, String metabolitesID, String typeID, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = statement.executeQuery("SELECT transport_type_score_sum,taxonomy_score_sum,frequency FROM genes_has_metabolites_has_type" +
 				" WHERE gene_id='"+genesID+"' AND transport_type_id='"+typeID+"' AND metabolite_id='"+metabolitesID+"';");
 
-
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -1572,13 +1577,14 @@ public class TransportersAPI {
 	public static ArrayList<String[]> loadTcNumberHasTransportSystem(String tcNumberID, int transportSystemID, int tcVersion, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = statement.executeQuery("SELECT * FROM tc_numbers_has_transport_systems" +
 				" WHERE tc_number='"+tcNumberID+"' AND transport_system_id="+transportSystemID+" AND tc_version = "+tcVersion+";");
 
 
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2034,7 +2040,6 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getTmdscData(int transportSystemID, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[7];
 		
 		ResultSet rs = statement.executeQuery("SELECT metabolites.name, direction, stoichiometry, reversible, "
 				+ "kegg_name, chebi_name, synonyms.name FROM transported_metabolites_directions " +
@@ -2045,6 +2050,8 @@ public class TransportersAPI {
 				"WHERE transport_system_id ="+transportSystemID);
 
 		while(rs.next()){
+			String[] list = new String[7];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2228,7 +2235,6 @@ public class TransportersAPI {
 	public static ArrayList<String[]> tracebackReactionAnnotation(int projectID, String locusTag, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = statement.executeQuery("SELECT genes_has_tcdb_registries.uniprot_id, tc_numbers_has_transport_systems.tc_number, metabolites.name, similarity, equation "+
 				"FROM genes "+
@@ -2242,6 +2248,8 @@ public class TransportersAPI {
 				"WHERE project_id = "+projectID+" AND locus_tag = '"+locusTag+"';");
 
 		while(rs.next()){
+			String[] list = new String[5];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2325,11 +2333,12 @@ public class TransportersAPI {
 	public static ArrayList<String[]> selectGeneIdAndUniprotId(Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = statement.executeQuery("SELECT gene_id, uniprot_id FROM genes_has_tcdb_registries;");
 		
 		while(rs.next()){
+			String[] list = new String[2];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -2350,11 +2359,12 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getUniprotVersion(Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = statement.executeQuery("SELECT uniprot_id, version FROM tcdb_registries WHERE latest_version;");
 		
 		while(rs.next()){
+			String[] list = new String[2];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -2374,7 +2384,6 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getOrganismsTaxonomyScore(Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = statement.executeQuery("SELECT uniprot_id, organism, taxonomy FROM tcdb_registries " +
 				" INNER JOIN tc_numbers ON (tcdb_registries.tc_number = tc_numbers.tc_number AND tcdb_registries.tc_version = tc_numbers.tc_version)" +
@@ -2383,6 +2392,8 @@ public class TransportersAPI {
 
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2422,7 +2433,6 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getCandidatesFromDatabase(int projectID, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = statement.executeQuery("SELECT sw_reports.id, locus_tag, similarity, acc, tcdb_id FROM sw_reports " +
 				" INNER JOIN sw_similarities ON sw_reports.id=sw_similarities.sw_report_id " +
@@ -2431,6 +2441,8 @@ public class TransportersAPI {
 				" ORDER BY sw_reports.locus_tag, similarity DESC");
 		
 		while(rs.next()){
+			String[] list = new String[5];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2452,11 +2464,12 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getLatestVersion(Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = statement.executeQuery("SELECT uniprot_id, tc_number, latest_version FROM tcdb_registries;");
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getBoolean(3)+"";
@@ -2476,11 +2489,12 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getAllMetabolitesData(Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[6];
 		
 		ResultSet rs = statement.executeQuery("SELECT * FROM metabolites");
 		
 		while(rs.next()){
+			String[] list = new String[6];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2503,11 +2517,12 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getAllSynonymsData(Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[9];
 		
 		ResultSet rs = statement.executeQuery("SELECT * FROM synonyms JOIN metabolites ON (metabolite_id=metabolites.id);");
 		
 		while(rs.next()){
+			String[] list = new String[9];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2749,7 +2764,6 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getTransportersData(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT id as gene_id, sw_transporters.locus_tag, number_TMD "
 				+ " FROM sw_transporters LEFT JOIN sw_reports ON sw_reports.locus_tag=sw_transporters.locus_tag "
@@ -2758,6 +2772,8 @@ public class TransportersAPI {
 				+ " desc;");
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2798,13 +2814,14 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getMetaboliteFrequencyScore(String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = stmt.executeQuery("SELECT metabolite_id, gene_id, similarity_score_sum, taxonomy_score_sum, frequency FROM genes_has_metabolites "
 				+ " LEFT JOIN genes ON (genes.id = gene_id) "
 				+ "  WHERE locus_tag = '"+ id +"' GROUP BY metabolite_id");
 		
 		while(rs.next()){
+			String[] list = new String[5];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2850,7 +2867,6 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getTransportTypeScore(String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[6];
 		
 		ResultSet rs = stmt.executeQuery("SELECT metabolite_id, gene_id, transport_type_id, transport_type_score_sum, taxonomy_score_sum, "
 				+ "frequency, name FROM genes_has_metabolites_has_type "
@@ -2859,6 +2875,8 @@ public class TransportersAPI {
 				+ " WHERE locus_tag = '"+ id +"';");
 		
 		while(rs.next()){
+			String[] list = new String[6];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2881,7 +2899,6 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getMetabolitesDirectionAndReversibility(String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[8];
 		
 		ResultSet rs = stmt.executeQuery( "SELECT gene_id, transport_type, metabolite_id, metabolite_name, direction, reversible, sum(similarity) as sum_s, kegg_miriam "
 				+ " FROM gene_to_metabolite_direction "
@@ -2889,6 +2906,8 @@ public class TransportersAPI {
 				+ " GROUP BY metabolite_id, transport_type, reversible, direction;");
 		
 		while(rs.next()){
+			String[] list = new String[8];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2944,11 +2963,12 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getSwTransportersData(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[6];
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM sw_transporters");
 		
 		while(rs.next()){
+			String[] list = new String[6];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2965,13 +2985,14 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getDataFromReactionForTransp(Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[12];
 		
 		ResultSet rs = statement.executeQuery("SELECT name, equation, reversible, inModel, isGeneric, isSpontaneous, "
 				+ "isNonEnzymatic, source, idreaction, lowerBound, upperBound, notes " +
 				" FROM reaction WHERE source = 'TRANSPORTERS' AND originalReaction;");
 		
 		while(rs.next()){
+			String[] list = new String[12];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getBoolean(3)+"";
@@ -3000,13 +3021,14 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getEnzymesReactions(Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[12];
 		
 		ResultSet rs = statement.executeQuery("SELECT idreaction, enzyme_ecnumber, enzyme_protein_idprotein FROM reaction " +
 				"INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction = idreaction " +
 				"WHERE (source <> 'TRANSPORTERS' AND reaction_has_enzyme.enzyme_ecnumber IS NOT NULL AND originalReaction)");
 		
 		while(rs.next()){
+			String[] list = new String[12];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -3028,7 +3050,6 @@ public class TransportersAPI {
 		
 		Map<String, List<String>> enzymesReactions = new HashMap<String, List<String>>();
 		List<String> reactionsIDs = null;
-
 		
 		ResultSet rs = statement.executeQuery("SELECT idreaction, enzyme_ecnumber, enzyme_protein_idprotein FROM reaction " +
 				"INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction = idreaction " +
@@ -3081,13 +3102,14 @@ public class TransportersAPI {
 	public static ArrayList<String[]> getAllFromStoichiometry(Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[12];
 		
 		ResultSet rs = statement.executeQuery("SELECT * FROM stoichiometry "
 				+ " INNER JOIN reaction ON stoichiometry.reaction_idreaction = reaction.idreaction " +
 				" WHERE source = 'TRANSPORTERS' AND originalReaction;");
 
 		while(rs.next()){
+			String[] list = new String[12];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);

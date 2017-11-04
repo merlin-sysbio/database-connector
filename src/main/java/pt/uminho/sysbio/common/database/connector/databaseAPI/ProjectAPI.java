@@ -424,7 +424,6 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getRowInfo(String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = stmt.executeQuery("SELECT c.name, pc.score FROM psort_reports_has_compartments  AS pc "
 				+ " INNER JOIN compartments AS c ON pc.compartment_id=c.id "
@@ -432,6 +431,7 @@ public class ProjectAPI {
 				+ " WHERE pr.locus_tag='"+id+"' ORDER BY pc.score DESC");
 		
 		while(rs.next()){
+			String[] list = new String[2];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -451,11 +451,11 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getCompoundIDsFromStoichiometry(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = stmt.executeQuery("SELECT compound_idcompound, stoichiometric_coefficient FROM stoichiometry;");
 		
 		while(rs.next()){
+			String[] list = new String[2];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -474,11 +474,11 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getAllFromCompound(String table, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
 		
 		while(rs.next()){
+			String[] list = new String[5];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -500,11 +500,11 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getCompoundInformation(String table, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[6];
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM "+ table + " ORDER BY entry_type, name");
 		
 		while(rs.next()){
+			String[] list = new String[6];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -647,7 +647,6 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getCompoundInformation2(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = stmt.executeQuery("SELECT compound.name, compound.formula, COUNT(reaction_idreaction) AS numR, kegg_id, idcompound "+
 				" FROM compound " +
@@ -656,6 +655,7 @@ public class ProjectAPI {
 				" ORDER BY kegg_id, numR DESC;");
 		
 		while(rs.next()){
+			String[] list = new String[5];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -677,7 +677,6 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getCompoundWithBiologicalRoles(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[6];
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM compound "
 				+ " WHERE idcompound NOT IN (SELECT DISTINCT(compound_idcompound) FROM stoichiometry) "
@@ -685,6 +684,7 @@ public class ProjectAPI {
 				+ " ORDER BY kegg_id;");
 		
 		while(rs.next()){
+			String[] list = new String[6];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -708,7 +708,6 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getCompoundReactions(String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[4];
 		
 		ResultSet rs = stmt.executeQuery("SELECT compound.name, compound.formula, reaction.name, reaction.equation "+
 				"FROM (stoichiometry " +
@@ -719,6 +718,7 @@ public class ProjectAPI {
 				"WHERE idcompound = '"+id+"';");
 		
 		while(rs.next()){
+			String[] list = new String[4];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -740,11 +740,11 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getCompoundStats(String table, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM "+table);
 		
 		while(rs.next()){
+			String[] list = new String[5];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -767,11 +767,11 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getAllFromPathWay(String table, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM "+table);
 		
 		while(rs.next()){
+			String[] list = new String[3];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -791,11 +791,11 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getPathwayID(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT idpathway, code, name FROM pathway ORDER BY name;");
 		
 		while(rs.next()){
+			String[] list = new String[3];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -858,7 +858,6 @@ public class ProjectAPI {
 	public static ArrayList<String[]> countReactions(String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT distinct(reaction.idreaction), name, equation " +
 				"FROM pathway_has_reaction " +
@@ -867,6 +866,7 @@ public class ProjectAPI {
 				"ORDER BY name;");
 		
 		while(rs.next()){
+			String[] list = new String[3];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -887,7 +887,6 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getDataFromEnzyme(String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[4];
 		
 		ResultSet rs = stmt.executeQuery("SELECT distinct(enzyme.ecnumber), protein.name, class, inModel FROM enzyme " +
 				"INNER JOIN pathway_has_enzyme ON pathway_has_enzyme.enzyme_ecnumber = enzyme.ecnumber " +
@@ -896,6 +895,7 @@ public class ProjectAPI {
 				"ORDER BY enzyme.ecnumber;");
 		
 		while(rs.next()){
+			String[] list = new String[4];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -997,11 +997,11 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getReactionsData(String aux, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM reaction"+aux);
 		
 		while(rs.next()){
+			String[] list = new String[3];
 			list[0]=rs.getString(2);
 			list[1]=rs.getString(3);
 			list[2]=rs.getString(4);
@@ -1076,11 +1076,11 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getPathways(String query, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = statement.executeQuery(query);
 		
 		while(rs.next()){
+			String[] list = new String[3];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -1415,7 +1415,6 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getPathwayHasEnzymeData(String aux, int pathwayID, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[7];
 		
 		ResultSet rs = stmt.executeQuery("SELECT reaction_has_enzyme.enzyme_ecnumber, reaction_has_enzyme.enzyme_protein_idprotein, reaction.inModel, reaction.name, enzyme.inModel, protein.name, kegg_id "
 				+ " FROM pathway_has_enzyme "+
@@ -1431,6 +1430,7 @@ public class ProjectAPI {
 				" AND pathway_has_enzyme.pathway_idpathway = "+pathwayID+" AND pathway_has_reaction.pathway_idpathway = "+pathwayID);
 		
 		while(rs.next()){
+			String[] list = new String[7];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getBoolean(3)+"";
@@ -1456,7 +1456,6 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getReactionsList(String aux, String aux2, int pathwayID, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = statement.executeQuery("SELECT reaction.name, kegg_id FROM pathway_has_reaction "
 				+ " INNER JOIN reaction ON (pathway_has_reaction.reaction_idreaction = reaction.idreaction) "
@@ -1466,6 +1465,7 @@ public class ProjectAPI {
 				" AND inModel " + aux2 + " AND pathway_idpathway = "+pathwayID);
 		
 		while(rs.next()){
+			String[] list = new String[2];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -1679,12 +1679,12 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getDataFromSubunit(String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT protein.name, protein.class, enzyme_ecnumber FROM subunit JOIN protein ON " +
 						"subunit.enzyme_protein_idprotein = protein.idprotein WHERE subunit.gene_idgene = "+id);
 		
 		while(rs.next()){
+			String[] list = new String[3];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -1705,13 +1705,13 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getDataFromGeneHasOrthology(String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT entry_id, locus_id, similarity FROM gene_has_orthology " +
 				" JOIN orthology ON orthology_id = orthology.id " +
 				" WHERE gene_idgene = "+id);
 		
 		while(rs.next()){
+			String[] list = new String[3];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -1732,8 +1732,7 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getDataFromGene(String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[4];
-		
+	
 		ResultSet rs = stmt.executeQuery("SELECT idgene, compartment.name, primaryLocation, score " +
 				" FROM gene " +
 				" INNER JOIN gene_has_compartment ON (idgene = gene_has_compartment.gene_idgene) " +
@@ -1741,6 +1740,7 @@ public class ProjectAPI {
 				" WHERE idgene = " + id);
 		
 		while(rs.next()){
+			String[] list = new String[4];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getBoolean(3)+"";
@@ -2084,11 +2084,11 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getAllProteins(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT idprotein, name, class FROM protein ORDER BY name");
 		
 		while(rs.next()){
+			String[] list = new String[3];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2107,7 +2107,6 @@ public class ProjectAPI {
 	public static ArrayList<String[]> loadData(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[7];
 		
 		ResultSet rs = stmt.executeQuery("SELECT protein_idprotein, promoter_idpromoter, ri_function_idri_function, " +
 				"binding_site_position, protein.name, promoter.name, " +
@@ -2117,6 +2116,7 @@ public class ProjectAPI {
 				"ORDER BY protein_idprotein,promoter_idpromoter");
 		
 		while(rs.next()){
+			String[] list = new String[7];
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2141,11 +2141,12 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getAllFromPromoters(String aux, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[4];
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM " + aux);
 		
 		while(rs.next()){
+			String[] list = new String[4];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2270,7 +2271,6 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getAllGenes(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[5];
 		
 		ResultSet rs = stmt.executeQuery("SELECT distinct(idgene), gene.name, gene.sequence_idSequence, transcription_direction, boolean_rule "
 				+ "FROM gene JOIN subunit ON gene.idgene = subunit.gene_idgene JOIN protein "
@@ -2278,6 +2278,8 @@ public class ProjectAPI {
 				+ "ON protein.idprotein = sigma_promoter.protein_idprotein");
 		
 		while(rs.next()){
+			String[] list = new String[5];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2300,11 +2302,12 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getAllFromTF(String table, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
 		
 		while(rs.next()){
+			String[] list = new String[2];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -2436,11 +2439,12 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getAllFromTU(String table, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
 		
 		while(rs.next()){
+			String[] list = new String[2];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -2485,11 +2489,12 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getAllFromProteinComposition(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM protein_composition;");
 		
 		while(rs.next()){
+			String[] list = new String[2];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -2529,13 +2534,14 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getReactionIdAndPathwayID(Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = statement.executeQuery("SELECT reaction_idreaction, pathway_idpathway FROM pathway_has_reaction"+
 				"  INNER JOIN reaction ON pathway_has_reaction.reaction_idreaction = reaction.idreaction " +
 				" WHERE source = 'TRANSPORTERS' AND originalReaction;");
 		
 		while(rs.next()){
+			String[] list = new String[2];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -2556,13 +2562,14 @@ public class ProjectAPI {
 	public static ArrayList<String[]> getReactions(String conditions, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();	
-		String[] list = new String[9];
 		
 		ResultSet rs = stmt.executeQuery("SELECT DISTINCT idreaction, name, equation, reversible, compartment_idcompartment, "
 				+ "notes, lowerBound, upperBound, boolean_rule " +
 				"FROM reaction WHERE inModel AND " +conditions );
 		
 		while(rs.next()){
+			String[] list = new String[9];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
@@ -2589,22 +2596,16 @@ public class ProjectAPI {
 	public static Pair<ArrayList<String[]>, Integer> getAllFromTable(String table, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();	
-		String[] list = new String[9];
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM "+table);
 		
 		int ncols = rs.getMetaData().getColumnCount();
 		
+		
 		while(rs.next()){
-			list[0]=rs.getString(1);
-			list[1]=rs.getString(2);
-			list[2]=rs.getString(3);
-			list[3]=rs.getBoolean(4)+"";
-			list[4]=rs.getString(5);
-			list[5]=rs.getString(6);
-			list[6]=rs.getString(7);
-			list[7]=rs.getString(8);
-			list[8]=rs.getString(9);
+			String[] list = new String[ncols];
+			for(int i=0;i<ncols;i++)
+				list[i]=rs.getString(i+1);
 			
 			result.add(list);
 		}
@@ -2745,7 +2746,7 @@ public class ProjectAPI {
 		
 		String res = "";
 		
-		ResultSet rs = statement.executeQuery("SELECT * FROM organism where organism = '"+ aux +"';");
+		ResultSet rs = statement.executeQuery("SELECT * FROM organism where organism = '"+ aux);
 
 		
 		if(rs.next())

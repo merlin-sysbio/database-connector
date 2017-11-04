@@ -46,7 +46,6 @@ public class CompartmentsAPI {
 	public static ArrayList<String[]> getReactantsInCompartment(String aux, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = stmt.executeQuery("SELECT compartment.name, count(distinct(compound_idcompound)) " +
 				"FROM stoichiometry " +
@@ -56,6 +55,8 @@ public class CompartmentsAPI {
 				"GROUP BY compartment.name");
 		
 		while(rs.next()){
+			String[] list = new String[2];
+			
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -75,7 +76,6 @@ public class CompartmentsAPI {
 	public static ArrayList<String[]> getProductsInCompartment(String aux, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[2];
 		
 		ResultSet rs = stmt.executeQuery("SELECT compartment.name, count(distinct(compound_idcompound)) " +
 				"FROM stoichiometry " +
@@ -85,6 +85,8 @@ public class CompartmentsAPI {
 				"GROUP BY compartment.name");
 		
 		while(rs.next()){
+			String[] list = new String[2];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			
@@ -245,11 +247,12 @@ public class CompartmentsAPI {
 	public static ArrayList<String[]> getCompartments2(Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT idcompartment, name, abbreviation FROM compartment");
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[1]=rs.getString(3);
@@ -269,11 +272,12 @@ public class CompartmentsAPI {
 	public static ArrayList<String[]> getCompartmentDataByName(String aux, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
-		String[] list = new String[3];
 		
 		ResultSet rs = stmt.executeQuery("SELECT idcompartment, name, abbreviation FROM compartment"+aux);
 		
 		while(rs.next()){
+			String[] list = new String[3];
+
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[1]=rs.getString(3);
