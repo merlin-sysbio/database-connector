@@ -330,8 +330,6 @@ public class CompartmentsAPI {
 				
 		return id;
 	}
-	
-	
 
 	/**
 	 * Retrieves information from compartment table
