@@ -14,6 +14,7 @@ import java.util.List;
 
 import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.sysbio.merlin.utilities.DatabaseFilesPaths;
 
 public class DatabaseSchemas {
 
@@ -305,6 +306,7 @@ public class DatabaseSchemas {
 						catch (SQLException e) {
 
 							e.printStackTrace();
+							System.out.println(text);
 							br.close();
 							throw new Exception();
 						}
@@ -477,17 +479,10 @@ public class DatabaseSchemas {
 			
 			Connection connection = this.createConnection();
 			Statement statement = (Statement) connection.createStatement();
+			
 			if (this.dbType.equals(DatabaseType.H2)) {
-				String[] filePath = new String[6];;
-				String path = FileUtils.getCurrentLibDirectory()+"/../utilities";
 				
-				filePath[0]=path +"/schema_model.sql";
-				filePath[1]=path +"/schema_enzymes_annotation.sql";
-				filePath[2]=path +"/schema_interpro.sql";
-				filePath[3]=path +"/schema_transporters_annotation.sql";
-				filePath[4]=path +"/schema_compartments_annotation.sql";
-				filePath[5]=path +"/schema_transporters_identification.sql";
-				filePath[6]=path +"/triage_database.sql";
+				String[] filePath= DatabaseFilesPaths.getPathsList(false);
 				
 				this.cleanSchema(database, filePath);
 			}
