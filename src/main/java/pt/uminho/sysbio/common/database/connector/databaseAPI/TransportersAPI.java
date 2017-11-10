@@ -809,7 +809,7 @@ public class TransportersAPI {
 					"WHERE project_id = "+projectID+" "+
 					"ORDER BY psort_report_id ASC, score DESC;");
 		
-		if (rs.next()){
+		while (rs.next()){
 			String[] list = new String[5];
 			
 			list[0] = rs.getString(1);
@@ -848,7 +848,7 @@ public class TransportersAPI {
 				" INNER JOIN metabolites ON (transported_metabolites_directions.metabolite_id = metabolites.id) " +
 				" WHERE uniprot_id = '"+uniprotID+"' AND datatype = 'MANUAL'");
 	
-		if (rs.next()){
+		while (rs.next()){
 			String[] list = new String[5];
 			
 			list[0] = rs.getString(1);
@@ -880,7 +880,7 @@ public class TransportersAPI {
 				" FROM metabolites_ontology " +
 				" INNER JOIN metabolites ON (child_id = metabolites.id)");
 		
-		if (rs.next()){
+		while (rs.next()){
 			String[] list = new String[3];
 			
 			list[0] = rs.getString(1);
@@ -1006,7 +1006,7 @@ public class TransportersAPI {
 				" WHERE project_id = "+projectID+" " +
 				" ORDER BY gene_id, transport_reaction_id, uniprot_id,  metabolite_id;");
 		
-		if (rs.next()){
+		while (rs.next()){
 			String[] list = new String[17];
 			
 			list[0] = rs.getString(1);
@@ -1253,7 +1253,7 @@ public class TransportersAPI {
 				+ " INNER JOIN metabolites ON metabolites.id= child_id WHERE metabolite_id='"+id+"'");
 		
 		while(rs.next()){
-			String[] list = new String[6];
+			String[] list = new String[8];
 
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
@@ -2875,7 +2875,7 @@ public class TransportersAPI {
 				+ " WHERE locus_tag = '"+ id +"';");
 		
 		while(rs.next()){
-			String[] list = new String[6];
+			String[] list = new String[7];
 
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
@@ -2883,6 +2883,7 @@ public class TransportersAPI {
 			list[3]=rs.getString(4);
 			list[4]=rs.getString(5);
 			list[5]=rs.getString(6);
+			list[6]=rs.getString(7);
 			
 			result.add(list);
 		}
