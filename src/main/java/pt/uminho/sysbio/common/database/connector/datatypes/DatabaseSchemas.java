@@ -74,7 +74,7 @@ public class DatabaseSchemas {
 		else {
 			
 			String prefix = "jdbc:h2:";
-			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
+			String path = new File(FileUtils.getCurrentLibDirectory()).getParentFile().getParent();
 			driver_class_name = "org.h2.Driver";
 			url_db_connection = prefix+path+"/h2Database/"+schema+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE";
 			
@@ -125,7 +125,7 @@ public class DatabaseSchemas {
 			driver_class_name = "com.mysql.jdbc.Driver";
 			url_db_connection = "jdbc:mysql://"+this.host+":"+this.port;
 		}else{
-			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
+			String path = new File(FileUtils.getCurrentLibDirectory()).getParentFile().getParent();
 			driver_class_name = "org.h2.Driver";
 			url_db_connection = "jdbc:h2:"+path+"/h2Database;MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE";
 		}
