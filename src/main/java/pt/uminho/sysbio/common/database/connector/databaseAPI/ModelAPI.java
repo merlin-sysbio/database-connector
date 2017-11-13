@@ -3419,14 +3419,19 @@ public class ModelAPI {
 	 * @return String
 	 * @throws SQLException
 	 */
-	public static String getBooleanRuleFromReaction(String id, Statement statement) throws SQLException{
+	public static String[] getBooleanRuleFromReaction(String id, Statement statement) throws SQLException{
 		
-		String res="";
+		String[] res = new String[2];
 		
+		res[0] = "0";
+		res[1] = null;
+				
 		ResultSet rs = statement.executeQuery("SELECT boolean_rule FROM reaction WHERE idreaction = " + id);
 
-		while(rs.next()) 
-			res=rs.getString(1);
+		if(rs.next()){
+			res[0] = "1";
+			res[1] = rs.getString(1);
+		}
 		
 		rs.close();
 		return res;
