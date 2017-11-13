@@ -51,7 +51,7 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 			this.database_password=password;
 			this.database_path=database_path;
 			if(this.database_path==null)
-				this.database_path=new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
+				this.database_path=new File(FileUtils.getCurrentLibDirectory()).getParentFile().getParent();
 		}
 
 		/**
