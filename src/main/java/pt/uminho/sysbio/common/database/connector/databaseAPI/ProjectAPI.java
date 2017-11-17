@@ -1033,11 +1033,17 @@ public class ProjectAPI {
 				"GROUP BY reaction_idreaction, stoichiometric_coefficient");
 		
 		while(rs.next()) {
-	
-			if(Double.parseDouble(rs.getString(1))<0)
+			
+//			if(Double.parseDouble(rs.getString(1))<0)
+//				nreactants += rs.getDouble(2);
+//			else if(Double.parseDouble(rs.getString(1))>0)
+//				nproducts += rs.getDouble(2);
+			
+			if(rs.getString(1).startsWith("-"))
 				nreactants += rs.getDouble(2);
-			else if(Double.parseDouble(rs.getString(1))>0)
-				nproducts += rs.getDouble(2);
+			else
+				nproducts += rs.getDouble(2);	
+			
 		}
 		
 		res.setA(nreactants);
@@ -1958,14 +1964,14 @@ public class ProjectAPI {
 	 * @return double
 	 * @throws SQLException
 	 */
-	public static double countProteinsSynonyms(Statement stmt) throws SQLException{
+	public static int countProteinsSynonyms(Statement stmt) throws SQLException{
 		
-		double snumproteins = 0.0;
+		int snumproteins = 0;
 		
 		ResultSet rs = stmt.executeQuery("SELECT count(*) FROM aliases where class = 'p'");
 		
 		if(rs.next())
-			snumproteins = rs.getDouble(1);
+			snumproteins = rs.getInt(1);
 		
 		rs.close();
 		return snumproteins;

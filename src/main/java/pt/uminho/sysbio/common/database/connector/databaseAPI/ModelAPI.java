@@ -2330,10 +2330,10 @@ public class ModelAPI {
 		ResultSet rs = stmt.executeQuery("SELECT DISTINCT gene.name, gene.locusTag, orthology.entry_id, origin, note, similarity, locus_id FROM enzyme " +
 				"INNER JOIN subunit ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein " +
 				"INNER JOIN gene ON gene.idgene = subunit.gene_idgene " +
-				"INNER JOIN gene_has_orthology ON gene.idgene = gene_has_orthology.gene_idgene " +
-				"INNER JOIN orthology ON orthology.id = orthology_id " +
+				"LEFT JOIN gene_has_orthology ON gene.idgene = gene_has_orthology.gene_idgene " +
+				"LEFT JOIN orthology ON orthology.id = orthology_id " +
 				"WHERE subunit.enzyme_ecnumber = '" + ecnumber+"' " +
-				"AND subunit.enzyme_protein_idprotein = " + id);
+				"AND subunit.enzyme_protein_idprotein = " + id+";");
 		
 		while(rs.next()){
 			String[] list = new String[7];
@@ -2345,7 +2345,7 @@ public class ModelAPI {
 			list[4]=rs.getString(5);
 			list[5]=rs.getString(6);
 			list[6]=rs.getString(7);
-			
+
 			result.add(list);
 		}
 		rs.close();
@@ -4191,7 +4191,6 @@ public class ModelAPI {
 	public static boolean checkAliasExistence(String idNewProtein, String name, Statement stmt) throws SQLException{
 		
 		boolean exists = false;
-		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM aliases WHERE class='p' AND  alias='" + name +"' AND  entity=" + idNewProtein);
 
 		if(rs.next()) 
