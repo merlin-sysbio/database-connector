@@ -333,6 +333,7 @@ public class CompartmentsAPI {
 
 	/**
 	 * Retrieves information from compartment table
+	 * 
 	 * @param stmt
 	 * @return Map<Compartment_ID, name, abbreviation
 	 * @throws SQLException
@@ -353,6 +354,28 @@ public class CompartmentsAPI {
 		
 		rs.close();
 		return result;
+	}
+	
+	/**
+	 * Method to get the locusTag foa a given query.
+	 * 
+	 * @param query
+	 * @param stmt
+	 * @return String with locusTag for a given query
+	 * @throws SQLException
+	 */
+	public static Map<String, String> getAllLocusTag(Statement statement) throws SQLException{
+		
+		Map<String, String> results = new HashMap<>();
+		
+		ResultSet rs = statement.executeQuery("SELECT query, locusTag FROM geneHomology;");
+		
+		while(rs.next()) 
+			results.put(rs.getString(1), rs.getString(2));
+			
+		rs.close();
+		
+		return results;
 	}
 	
 }

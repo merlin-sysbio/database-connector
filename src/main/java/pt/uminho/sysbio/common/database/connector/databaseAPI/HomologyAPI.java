@@ -1260,6 +1260,8 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 				list[1]=rs.getString(2);
 				list[2]=rs.getString(3);
 				list[3]=rs.getString(4);
+				
+				result.add(list);
 			}
 				
 			rs.close();
@@ -1291,6 +1293,8 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 				list[1]=rs.getString(2);
 				list[2]=rs.getString(3);
 				list[3]=rs.getString(4);
+				
+				result.add(list);
 			}
 				
 			rs.close();
