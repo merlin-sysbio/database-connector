@@ -391,36 +391,37 @@ public class ProjectAPI {
 		return null;
 	}
 	
+	
 	/**
 	 * Update organismID.
 	 * @param conn
 	 * @param orgID
 	 */
 	public static void updateOrganismID(Connection conn, String orgID) {
-	
-		int version = 1;
-		
-		try  {
+	    
+        int version = 1;
+        
+        try  {
 
-			Statement stmt = conn.createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT * FROM projects WHERE organism_id ="+orgID+";");
-			
-			if (rs.next()){
-				stmt.execute("UPDATE projects SET latest_version = FALSE;");
-				stmt.execute("UPDATE projects SET latest_version = TRUE WHERE organism_id ="+orgID+";");
-			}
-			else{
-				long time = System.currentTimeMillis();
-				Timestamp timestamp = new Timestamp(time);
-				stmt.execute("INSERT INTO projects (organism_id, date, latest_version, version) VALUES('"+orgID+"','"+timestamp+"',true,'"+ version +"');");
-				updateOrganismID(conn, orgID);
-			}
-			
-			stmt.close();
-		} 
-		catch (SQLException e) {e.printStackTrace();}
-		
-	}
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM projects WHERE organism_id ="+orgID+";");
+            
+            if (rs.next()){
+                stmt.execute("UPDATE projects SET latest_version = FALSE;");
+                stmt.execute("UPDATE projects SET latest_version = TRUE WHERE organism_id ="+orgID+";");
+            }
+            else{
+                long time = System.currentTimeMillis();
+                Timestamp timestamp = new Timestamp(time);
+                stmt.execute("INSERT INTO projects (organism_id, date, latest_version, version) VALUES('"+orgID+"','"+timestamp+"',true,'"+ version +"');");
+                updateOrganismID(conn, orgID);
+            }
+            
+            stmt.close();
+        } 
+        catch (SQLException e) {e.printStackTrace();}
+        
+    }
 	
 	/**
 	 * @param id
