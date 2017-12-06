@@ -398,7 +398,8 @@ public class ProjectAPI {
 	 */
 	public static void updateOrganismID(Connection conn, String orgID) {
 	
-
+		int version = 1;
+		
 		try  {
 
 			Statement stmt = conn.createStatement();
@@ -407,6 +408,12 @@ public class ProjectAPI {
 			if (rs.next()){
 				stmt.execute("UPDATE projects SET latest_version = FALSE;");
 				stmt.execute("UPDATE projects SET latest_version = TRUE WHERE organism_id ="+orgID+";");
+			}
+			else{
+				long time = System.currentTimeMillis();
+				Timestamp timestamp = new Timestamp(time);
+				stmt.execute("INSERT INTO projects (organism_id, date, latest_version, version) VALUES('"+orgID+"','"+timestamp+"',true,'"+ version +"');");
+				updateOrganismID(conn, orgID);
 			}
 			
 			stmt.close();

@@ -16,17 +16,16 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
-import pt.uminho.sysbio.common.database.connector.databaseAPI.capsules.ReactionsCapsule;
-import pt.uminho.sysbio.common.database.connector.databaseAPI.containers.gpr.GeneAssociation;
-import pt.uminho.sysbio.common.database.connector.databaseAPI.containers.gpr.ModuleCI;
-import pt.uminho.sysbio.common.database.connector.databaseAPI.containers.gpr.ProteinsGPR_CI;
-import pt.uminho.sysbio.common.database.connector.databaseAPI.containers.gpr.ReactionProteinGeneAssociation;
-import pt.uminho.sysbio.common.database.connector.databaseAPI.containers.gpr.ReactionsGPR_CI;
 import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
 import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.sysbio.merIin.utilities.capsules.ReactionsCapsule;
+import pt.uminho.sysbio.merlin.utilities.containers.gpr.GeneAssociation;
+import pt.uminho.sysbio.merlin.utilities.containers.gpr.ModuleCI;
+import pt.uminho.sysbio.merlin.utilities.containers.gpr.ProteinsGPR_CI;
+import pt.uminho.sysbio.merlin.utilities.containers.gpr.ReactionProteinGeneAssociation;
+import pt.uminho.sysbio.merlin.utilities.containers.gpr.ReactionsGPR_CI;
 
 
 /**
@@ -1432,29 +1431,37 @@ public class ModelAPI {
 
 
 	/**
-	 * Get locus tag from model. 
+	 * Get sequenceIds from model. 
 	 * 
-	 * @param conn
-	 * @param query
+	 * @param statement
 	 * @return
 	 * @throws SQLException 
 	 */
-	public static List<String> checkDatabase(Connection conn, String query) throws SQLException {
+	public static Map<String, List<String>> getSequenceIds(Statement statement) throws SQLException {
 
-		List<String> ret = new ArrayList<String>();
+		Map<String, List<String>> ret = new HashMap<>();
 
-		Statement stmt = conn.createStatement();
-
-		ResultSet rs = stmt.executeQuery("SELECT locusTag FROM gene " +
+		ResultSet rs = statement.executeQuery("SELECT entry_id, sequence_id FROM gene " +
 				"INNER JOIN gene_has_orthology ON (idgene = gene_idgene)" +
-				"INNER JOIN orthology ON (orthology_id = orthology.id)" +
-				" WHERE entry_id ='"+query+"'");
+				"INNER JOIN orthology ON (orthology_id = orthology.id);");
+		
+		while (rs.next()){
+			
+			List<String> sequences = new ArrayList<>();
+			
+			if(ret.containsKey(rs.getString(1))) {
+				
+				sequences = ret.get(rs.getString(1));
+				sequences.add(rs.getString(2));
+				ret.put(rs.getString(1), sequences);
+			}
+			else {
+				
+				sequences.add(rs.getString(2));
+				ret.put(rs.getString(1), sequences);
+			}
+		}
 
-		while (rs.next())
-			ret.add(rs.getString(1));
-
-		stmt.close();
-		stmt=null;
 		rs.close();
 		return ret;
 	}
@@ -1478,9 +1485,36 @@ public class ModelAPI {
 		while(rs.next())
 			ec_numbers.add(rs.getString(1));
 
-		rs.close();
-		stmt.close();
+		////////// fill sequence_id column 
+//		Map<String, String> sequenceIDs = new HashMap<>();
+//		
+//		
+//		rs = stmt.executeQuery("SELECT locusTag, query FROM geneHomology;");
+//		
+//		while(rs.next())
+//			sequenceIDs.put(rs.getString(1), rs.getString(2));
+//		
+//		List<String> locus = new ArrayList<>();
+//		
+//		rs = stmt.executeQuery("SELECT locusTag FROM gene;");
+//		
+//		while(rs.next())
+//			locus.add(rs.getString(1));
+//		
+//		System.out.println(sequenceIDs);
+//		System.out.println(locus);
+//		
+//		for (String locusTag : locus){
+//			if (sequenceIDs.containsKey(locusTag))
+//				System.out.println("UPDATE gene SET sequence_id = '"+ sequenceIDs.get(locusTag) + "' WHERE locusTag = '" + locusTag + "';");
+//				stmt.execute("UPDATE gene SET sequence_id = '"+ sequenceIDs.get(locusTag) + "' WHERE locusTag = '" + locusTag + "';");
+//		}
+//		
+		////////////////////////////
+		
 
+		rs.close();
+		
 		return ec_numbers;
 	}
 
@@ -1542,8 +1576,8 @@ public class ModelAPI {
 							String idModule = rs.getString(1);
 
 							for(String gene : geneAssociation.getGenes()) {
-
-								rs = stmt.executeQuery("SELECT * FROM orthology WHERE entry_id='"+gene+"'");
+								
+								rs = stmt.executeQuery("SELECT * FROM orthology WHERE entry_id='"+gene+"';");
 
 								boolean noEntry = true;
 								Set<Integer> ids = new HashSet<>();
@@ -1555,20 +1589,18 @@ public class ModelAPI {
 								}
 
 								if(noEntry) { 
-
-									stmt.execute("INSERT INTO orthology (entry_id) VALUES('"+gene+"')");
+									
+									stmt.execute("INSERT INTO orthology (entry_id) VALUES('"+gene+"');");
 									rs = stmt.executeQuery("SELECT LAST_INSERT_ID();");
 									rs.next();
 									ids.add(rs.getInt(1));
 								}
 
 								for (int idGene : ids) {
-
-									rs = stmt.executeQuery("SELECT * FROM module_has_orthology WHERE module_id="+idModule+" AND orthology_id = "+idGene+"");
+									rs = stmt.executeQuery("SELECT * FROM module_has_orthology WHERE module_id="+idModule+" AND orthology_id = "+idGene+";");
 
 									if(!rs.next()) {
-
-										stmt.execute("INSERT INTO module_has_orthology (module_id, orthology_id) VALUES('"+idModule+"', '"+idGene+"')");
+										stmt.execute("INSERT INTO module_has_orthology (module_id, orthology_id) VALUES('"+idModule+"', '"+idGene+"');");
 										rs = stmt.executeQuery("SELECT LAST_INSERT_ID();");
 										rs.next();
 									}
@@ -5190,5 +5222,29 @@ public class ModelAPI {
 		statement.execute("DELETE FROM geneHomology WHERE query ='"+query+"'");
 			
 	}
+	
+	/**
+	 * get a map with all locusTag and respective geneid
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, Integer> getGeneIds(Statement statement) throws SQLException{
+		
+		Map<String, Integer> result = new HashMap<>();
+		
+		ResultSet rs = statement.executeQuery("SELECT sequence_id, idgene FROM gene;");
+		
+		while(rs.next())
+			result.put(rs.getString(1), rs.getInt(2));
+		
+		return result;
+		
+	}
+	
+	
+	
+	
 	
 }	

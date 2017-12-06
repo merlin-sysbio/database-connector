@@ -16,18 +16,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
 
 import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
 import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 
 /**
  * @author Oscar Dias
- *
- */
-/**
- * @author davidelagoa
  *
  */
 public class TransportersAPI {
@@ -37,18 +33,13 @@ public class TransportersAPI {
 	 * Set transport alignments as processed.
 	 * 
 	 * @param idLocusTag
-	 * @param conn
-	 * @param status 
+	 * @param status
+	 * @param statement
 	 * @throws SQLException
 	 */
-	public static void setProcessed(String idLocusTag, Connection conn, String status) throws SQLException {
+	public static void setProcessed(String idLocusTag, String status, Statement statement) throws SQLException {
 
-		Statement stmt = conn.createStatement();
-
-		stmt.execute("UPDATE sw_reports SET status='"+status+"'  WHERE id =" +idLocusTag);
-
-		stmt.close();
-		stmt=null;
+		statement.execute("UPDATE sw_reports SET status='"+status+"'  WHERE id =" +idLocusTag);
 	}
 
 	/**
@@ -105,30 +96,19 @@ public class TransportersAPI {
 	 * @param locus_tag
 	 * @param matrix
 	 * @param tmd
-	 * @param conn
-	 * @param locus_ids
 	 * @param status
 	 * @param project_id
-	 * @return
+	 * @param statement
 	 * @throws SQLException
 	 */
-	public static String loadTransportAlignmentsGenes(String locus_tag, String matrix, int tmd, Connection conn, ConcurrentHashMap<String,String> locus_ids, String status, int project_id) throws SQLException {
-
-		String result = null;
-		if(locus_ids.contains(locus_tag)) {
-
-			result=locus_ids.get(locus_tag);
-		}
-		else {
+	public static void loadTransportAlignmentsGenes(String locus_tag, String matrix, int tmd, String status, int project_id, Statement statement) throws SQLException {
 
 			Date sqlToday = new Date((new java.util.Date()).getTime());
-			Statement stmt = conn.createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT id, number_TMD FROM sw_reports WHERE locus_tag='"+locus_tag+"' AND project_id = "+project_id);
+			ResultSet rs = statement.executeQuery("SELECT id, number_TMD FROM sw_reports WHERE locus_tag='"+locus_tag+"' AND project_id = "+project_id);
 
 			if(rs.next()) {
-				result = rs.getString(1);
 
-				stmt.execute("UPDATE sw_reports SET "
+				statement.execute("UPDATE sw_reports SET "
 						+ " date = '"+sqlToday+"', "
 						+ " matrix= '"+matrix+"', "
 						+ " number_TMD = '"+tmd+"', "
@@ -138,18 +118,13 @@ public class TransportersAPI {
 			}
 			else{
 
-				stmt.execute("INSERT INTO sw_reports (locus_tag, date, matrix, number_TMD, project_id, status) " +
+				statement.execute("INSERT INTO sw_reports (locus_tag, date, matrix, number_TMD, project_id, status) " +
 						"VALUES ('"+locus_tag+"','"+sqlToday+"','"+matrix+"','"+tmd+"',"+project_id+",'"+status+"')");
-				rs = stmt.executeQuery("SELECT LAST_INSERT_ID()");
+				rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
 				rs.next();
-				result = rs.getString(1);
 			}
 
 			rs.close();
-			stmt=null;
-			locus_ids.put(locus_tag,result);
-		}
-		return result;
 	}
 
 	/**
@@ -217,18 +192,15 @@ public class TransportersAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static Set<String> retrieveProcessedTransportAlignmentGenes(Connection conn) throws SQLException{
+	public static Set<String> retrieveProcessedTransportAlignmentGenes(Statement statement) throws SQLException{
 
 		Set<String> processedGenes  = new HashSet<String>();
 
-		Statement statement = conn.createStatement();
-
-		ResultSet rs = statement.executeQuery("SELECT locus_tag FROM sw_reports WHERE status <> 'PROCESSING'");
+		ResultSet rs = statement.executeQuery("SELECT locus_tag FROM sw_reports WHERE status <> 'PROCESSED'");
 
 		while(rs.next())
 			processedGenes.add(rs.getString(1));
 
-		statement.close();
 		return processedGenes;
 	}
 
@@ -2765,18 +2737,20 @@ public class TransportersAPI {
 		
 		ArrayList<String[]> result = new ArrayList<>();
 		
-		ResultSet rs = stmt.executeQuery("SELECT id as gene_id, sw_transporters.locus_tag, number_TMD "
-				+ " FROM sw_transporters LEFT JOIN sw_reports ON sw_reports.locus_tag=sw_transporters.locus_tag "
+		ResultSet rs = stmt.executeQuery("SELECT id as gene_id, sw_transporters.locus_tag, number_TMD, sw_transporters.tcdb_id,"
+				+ " sw_transporters.acc FROM sw_transporters LEFT JOIN sw_reports ON sw_reports.locus_tag=sw_transporters.locus_tag "
 				+ " GROUP BY sw_reports.locus_tag "
 				+ " ORDER BY sw_transporters.locus_tag "//, sw_transporters.similarity "
 				+ " desc;");
 		
 		while(rs.next()){
-			String[] list = new String[3];
+			String[] list = new String[5];
 
-			list[0]=rs.getString(1);
-			list[1]=rs.getString(2);
-			list[2]=rs.getString(3);
+			list[0]=rs.getString(1); // gene_id
+			list[1]=rs.getString(2); // locus_tag
+			list[2]=rs.getString(3); // number_TMD
+			list[3]=rs.getString(4); // tcdb_id
+			list[4]=rs.getString(5); // accession
 			
 			result.add(list);
 		}
@@ -3162,5 +3136,73 @@ public class TransportersAPI {
 		return exists;
 	}
 	
+	
+	/**
+	 * Method for retrieving gene identifiers on the transport alignments.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, Integer> getTransportAlignmentGenes(Statement statement) throws SQLException{
+
+		Map<String, Integer> processedGenes  = new HashMap<>();
+
+		ResultSet rs = statement.executeQuery("SELECT locus_tag, id FROM sw_reports'");
+
+		while(rs.next())
+			processedGenes.put(rs.getString(1), rs.getInt(2));
+
+		return processedGenes;
+	}
+	
+	/**
+	 * Loads data about the transporter
+	 * 
+	 * @param alignmentContainer
+	 * @param geneID
+	 * @param stmt
+	 * @throws SQLException
+	 */
+	public static void loadTransportInfo (AlignmentCapsule alignmentContainer, int geneID, Statement stmt) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT id FROM sw_hits WHERE tcdb_id='"+alignmentContainer.getTcdbID()+"' AND acc='"+alignmentContainer.getTarget()+"'");
+
+		if(!rs.next()) {
+
+			stmt.execute("INSERT INTO sw_hits (acc,tcdb_id) VALUES ('"+ alignmentContainer.getTarget() +"', '"+ alignmentContainer.getTcdbID() +"')");
+			rs = stmt.executeQuery("SELECT LAST_INSERT_ID();");
+			rs.next();
+		}
+
+		int idHIT = rs.getInt(1);
+
+		rs = stmt.executeQuery("SELECT * FROM sw_similarities WHERE sw_report_id="+geneID+" AND sw_hit_id="+idHIT+"");
+
+		if(!rs.next()) {
+
+			stmt.execute("INSERT INTO sw_similarities (sw_report_id,sw_hit_id,similarity) VALUES("+geneID+","+idHIT+","+alignmentContainer.getScore()+")");
+		}
+
+		rs.close();
+	}
+	
+	/**
+	 * Loads data about the transporters
+	 * 
+	 * @param alignmentContainerSet
+	 * @param statement
+	 * @throws SQLException
+	 */
+	public static void loadTransportersInfo (List<AlignmentCapsule> alignmentContainerSet, Statement statement) throws SQLException {
+		
+		Map<String, Integer> genesIDs  = TransportersAPI.getTransportAlignmentGenes(statement);
+		
+		for (AlignmentCapsule alignmentContainer : alignmentContainerSet){
+			
+			TransportersAPI.loadTransportInfo(alignmentContainer, genesIDs.get(alignmentContainer.getQuery()), statement);
+			TransportersAPI.setProcessed(alignmentContainer.getQuery(), "PROCESSED", statement);
+		}
+	}
 	
 }
