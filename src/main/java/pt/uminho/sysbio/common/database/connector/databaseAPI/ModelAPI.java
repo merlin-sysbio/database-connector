@@ -1485,34 +1485,6 @@ public class ModelAPI {
 		while(rs.next())
 			ec_numbers.add(rs.getString(1));
 
-		////////// fill sequence_id column 
-//		Map<String, String> sequenceIDs = new HashMap<>();
-//		
-//		
-//		rs = stmt.executeQuery("SELECT locusTag, query FROM geneHomology;");
-//		
-//		while(rs.next())
-//			sequenceIDs.put(rs.getString(1), rs.getString(2));
-//		
-//		List<String> locus = new ArrayList<>();
-//		
-//		rs = stmt.executeQuery("SELECT locusTag FROM gene;");
-//		
-//		while(rs.next())
-//			locus.add(rs.getString(1));
-//		
-//		System.out.println(sequenceIDs);
-//		System.out.println(locus);
-//		
-//		for (String locusTag : locus){
-//			if (sequenceIDs.containsKey(locusTag))
-//				System.out.println("UPDATE gene SET sequence_id = '"+ sequenceIDs.get(locusTag) + "' WHERE locusTag = '" + locusTag + "';");
-//				stmt.execute("UPDATE gene SET sequence_id = '"+ sequenceIDs.get(locusTag) + "' WHERE locusTag = '" + locusTag + "';");
-//		}
-//		
-		////////////////////////////
-		
-
 		rs.close();
 		
 		return ec_numbers;

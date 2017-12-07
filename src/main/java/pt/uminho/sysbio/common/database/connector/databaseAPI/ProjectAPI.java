@@ -417,6 +417,7 @@ public class ProjectAPI {
                 updateOrganismID(conn, orgID);
             }
             
+            rs.close();
             stmt.close();
         } 
         catch (SQLException e) {e.printStackTrace();}
