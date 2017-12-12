@@ -371,20 +371,15 @@ public class ProjectAPI {
 	 * @param conn
 	 * @return
 	 */
-	public static String getOrganismID(Connection conn){
-		
-		String orgID = null;
+	public static String getOrganismID(Statement statement){
 		
 		try  {
 
-			Statement stmt = conn.createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT organism_id FROM projects WHERE latest_version = TRUE;");
+			ResultSet rs = statement.executeQuery("SELECT organism_id FROM projects WHERE latest_version = TRUE;");
 
 			if(rs.next()){
-				orgID = rs.getString("organism_id");
-				return orgID;
+				return rs.getString("organism_id");
 			}
-			stmt.close();
 		} 
 		catch (SQLException e) {e.printStackTrace();}
 		
@@ -924,6 +919,29 @@ public class ProjectAPI {
 	public static void executeQuery(String query, Statement stmt) throws SQLException{
 		
 		stmt.execute(query);
+	}
+	
+	/**
+	 * Get last insertID.
+	 * 
+	 * @param query
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String getLastInsertID(String query, Statement stmt) throws SQLException{
+		
+		String idNew = "";
+		
+		stmt.execute(query);
+		
+		ResultSet rs = stmt.executeQuery("SELECT LAST_INSERT_ID()");
+		
+		if(rs.next())
+			idNew = rs.getString(1);
+		
+		rs.close();
+		return idNew;
 	}
 	
 	/**
@@ -1843,26 +1861,6 @@ public class ProjectAPI {
 		
 		rs.close();
 		return next;
-	}
-	
-	/**
-	 * Get last insertID.
-	 * @param idChromosome
-	 * @param stmt
-	 * @return String
-	 * @throws SQLException
-	 */
-	public static String getLastInsertID(Statement stmt) throws SQLException{
-		
-		String idNew = "";
-		
-		ResultSet rs = stmt.executeQuery("SELECT LAST_INSERT_ID()");
-		
-		if(rs.next())
-			idNew = rs.getString(1);
-		
-		rs.close();
-		return idNew;
 	}
 	
 	/**
