@@ -922,14 +922,14 @@ public class ProjectAPI {
 	}
 	
 	/**
-	 * Get last insertID.
+	 *Execute and get last insertID.
 	 * 
 	 * @param query
 	 * @param stmt
 	 * @return
 	 * @throws SQLException
 	 */
-	public static String getLastInsertID(String query, Statement stmt) throws SQLException{
+	public static String executeAndGetLastInsertID(String query, Statement stmt) throws SQLException{
 		
 		String idNew = "";
 		
