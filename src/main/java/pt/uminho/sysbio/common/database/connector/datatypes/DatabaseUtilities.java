@@ -28,7 +28,7 @@ public class DatabaseUtilities {
 	private static Map<String, String> sqlTokens;
 	private static Pattern sqlTokenPattern;
 
-	
+
 	/**
 	 * @param boolean_string
 	 * @return
@@ -140,7 +140,7 @@ public class DatabaseUtilities {
 		return s;
 	}
 
-	public static void h2CleanDatabaseFiles() throws SQLException {
+	public static void h2CleanDatabaseFiles() {
 
 		String driver_class_name;
 		String url_db_connection;
@@ -148,29 +148,21 @@ public class DatabaseUtilities {
 		String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
 		driver_class_name = "org.h2.Driver";
 		//url_db_connection = "jdbc:h2://"+this.host+":"+this.port;
-		url_db_connection = "jdbc:h2:"+path+"/h2Database;MODE=MySQL;DATABASE_TO_UPPER=FALSE";
+		url_db_connection = "jdbc:h2:"+path+"/h2Database;MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE";
 
 		Connection connection = null;
 
 		try{
 			Class.forName(driver_class_name).newInstance();
 			connection = (Connection) DriverManager.getConnection(url_db_connection, "root", "password");
-		}
-		catch (InstantiationException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
 
-		List<String> list = new ArrayList<String>();
-		ResultSet rs;
-		Statement statement = null;
 
-		try{
+			List<String> list = new ArrayList<String>();
+			ResultSet rs;
+			Statement statement = null;
+
 			statement = (Statement) connection.createStatement();
-			statement.execute( "SHOW DATABASES ");
+			statement.execute( "SHOW DATABASES;");
 			rs = statement.getResultSet();
 
 			while(rs.next()) {
@@ -186,12 +178,18 @@ public class DatabaseUtilities {
 				for (File fileEntry : h2directory.listFiles())
 					if (!list.contains(fileEntry.getName()))
 						fileEntry.delete();
+			connection.close();
+		}
+		catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 
-		}
-		catch (SQLException ex) {
-			ex.printStackTrace();
-		}
-		connection.close();
 	}
 
 

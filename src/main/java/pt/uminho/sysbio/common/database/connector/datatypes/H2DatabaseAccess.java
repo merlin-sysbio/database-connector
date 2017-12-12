@@ -38,6 +38,19 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		public H2DatabaseAccess() {
 			super();
 		}
+		
+		/**
+		 * @param user
+		 * @param password
+		 * @param database_name
+		 */
+		public H2DatabaseAccess(String user, String password, String database_name){
+			
+			this.database_name=database_name;
+			this.database_user=user;
+			this.database_password=password;
+			this.database_path=new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
+		}
 
 		/**
 		 * @param user
