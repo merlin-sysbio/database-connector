@@ -11,11 +11,4 @@ public class Enumerators {
 		MYSQL
 	}
 	
-	
-	public enum ModuleType {
-
-		Complex,
-		Pathway
-	}
-	
 }

@@ -4,7 +4,6 @@
 package pt.uminho.sysbio.common.database.connector.datatypes;
 
 import java.io.Externalizable;
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -15,7 +14,6 @@ import java.sql.Statement;
 
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 
-import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
 
 /**

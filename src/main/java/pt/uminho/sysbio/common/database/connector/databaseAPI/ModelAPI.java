@@ -1,12 +1,15 @@
 package pt.uminho.sysbio.common.database.connector.databaseAPI;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,15 +17,15 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
-import pt.uminho.sysbio.common.database.connector.databaseAPI.capsules.ReactionsCapsule;
-import pt.uminho.sysbio.common.database.connector.databaseAPI.containers.gpr.GeneAssociation;
-import pt.uminho.sysbio.common.database.connector.databaseAPI.containers.gpr.ModuleCI;
-import pt.uminho.sysbio.common.database.connector.databaseAPI.containers.gpr.ProteinsGPR_CI;
-import pt.uminho.sysbio.common.database.connector.databaseAPI.containers.gpr.ReactionProteinGeneAssociation;
-import pt.uminho.sysbio.common.database.connector.databaseAPI.containers.gpr.ReactionsGPR_CI;
 import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
 import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.sysbio.merIin.utilities.capsules.ReactionsCapsule;
+import pt.uminho.sysbio.merlin.utilities.containers.gpr.GeneAssociation;
+import pt.uminho.sysbio.merlin.utilities.containers.gpr.ModuleCI;
+import pt.uminho.sysbio.merlin.utilities.containers.gpr.ProteinsGPR_CI;
+import pt.uminho.sysbio.merlin.utilities.containers.gpr.ReactionProteinGeneAssociation;
+import pt.uminho.sysbio.merlin.utilities.containers.gpr.ReactionsGPR_CI;
 
 
 /**
@@ -717,13 +720,11 @@ public class ModelAPI {
 					"VALUES("+idReaction+","+idPathway+");");
 
 		rs.close();
-
 		return true;
 	}
 
 	/**
 	 * Determine if compartment information for gene is loaded.
-	 * 
 	 * @param idGene
 	 * @param statement
 	 * @return
@@ -761,8 +762,7 @@ public class ModelAPI {
 				" FROM reaction " 
 				+ " WHERE source "+aux+" 'TRANSPORTERS' AND originalReaction;"
 				);
-
-
+		
 		while (rs.next()) {
 
 			String name = rs.getString(1);
@@ -971,7 +971,7 @@ public class ModelAPI {
 	/**
 	 * Method for retrieving compartments identifiers from compartments abbreviations.
 	 * 
-	 * @return
+	 * @return Map<String,String>
 	 * @throws SQLException 
 	 */
 	public static Map<String,String> getCompartmentAbbIdMap(Statement statement) throws SQLException {
@@ -990,7 +990,7 @@ public class ModelAPI {
 	 * Method for returning existing compartments.
 	 * 
 	 * @param statement
-	 * @return
+	 * @return Set<String>
 	 * @throws SQLException
 	 */
 	public static Set<String> getCompartments(Statement statement) throws SQLException {
@@ -1011,7 +1011,7 @@ public class ModelAPI {
 	 * 
 	 * @param ecNumber
 	 * @param statement
-	 * @return
+	 * @return List<String>
 	 * @throws SQLException
 	 */
 	public static List<String> getEnzymeCompartments(String ecNumber, Statement statement) throws SQLException {
@@ -1066,7 +1066,7 @@ public class ModelAPI {
 	 * @param sequence_id
 	 * @param statement
 	 * @param informationType
-	 * @return
+	 * @return String
 	 * @throws SQLException
 	 */
 	public static String loadGeneLocusFromHomologyData (String sequence_id, Statement statement, DatabaseType databaseType, String informationType) throws SQLException {
@@ -1095,7 +1095,7 @@ public class ModelAPI {
 	 * @param chromosome
 	 * @param statement
 	 * @param informationType
-	 * @return
+	 * @return String
 	 * @throws SQLException
 	 */
 	public static String loadGene(String locusTag, String sequence_id, String geneName, String chromosome, String direction, String left_end, String right_end, Statement statement, DatabaseType databaseType, String informationType) throws SQLException {
@@ -1270,7 +1270,7 @@ public class ModelAPI {
 	/**
 	 * @param stmt
 	 * @param sequence_id
-	 * @return
+	 * @return String
 	 * @throws SQLException 
 	 */
 	public static String getLocusTagFromHomologyData(Statement stmt, String sequence_id) throws SQLException {
@@ -1431,29 +1431,37 @@ public class ModelAPI {
 
 
 	/**
-	 * Get locus tag from model. 
+	 * Get sequenceIds from model. 
 	 * 
-	 * @param conn
-	 * @param query
+	 * @param statement
 	 * @return
 	 * @throws SQLException 
 	 */
-	public static List<String> checkDatabase(Connection conn, String query) throws SQLException {
+	public static Map<String, List<String>> getSequenceIds(Statement statement) throws SQLException {
 
-		List<String> ret = new ArrayList<String>();
+		Map<String, List<String>> ret = new HashMap<>();
 
-		Statement stmt = conn.createStatement();
-
-		ResultSet rs = stmt.executeQuery("SELECT locusTag FROM gene " +
+		ResultSet rs = statement.executeQuery("SELECT entry_id, sequence_id FROM gene " +
 				"INNER JOIN gene_has_orthology ON (idgene = gene_idgene)" +
-				"INNER JOIN orthology ON (orthology_id = orthology.id)" +
-				" WHERE entry_id ='"+query+"'");
+				"INNER JOIN orthology ON (orthology_id = orthology.id);");
+		
+		while (rs.next()){
+			
+			List<String> sequences = new ArrayList<>();
+			
+			if(ret.containsKey(rs.getString(1))) {
+				
+				sequences = ret.get(rs.getString(1));
+				sequences.add(rs.getString(2));
+				ret.put(rs.getString(1), sequences);
+			}
+			else {
+				
+				sequences.add(rs.getString(2));
+				ret.put(rs.getString(1), sequences);
+			}
+		}
 
-		while (rs.next())
-			ret.add(rs.getString(1));
-
-		stmt.close();
-		stmt=null;
 		rs.close();
 		return ret;
 	}
@@ -1478,8 +1486,7 @@ public class ModelAPI {
 			ec_numbers.add(rs.getString(1));
 
 		rs.close();
-		stmt.close();
-
+		
 		return ec_numbers;
 	}
 
@@ -1541,8 +1548,8 @@ public class ModelAPI {
 							String idModule = rs.getString(1);
 
 							for(String gene : geneAssociation.getGenes()) {
-
-								rs = stmt.executeQuery("SELECT * FROM orthology WHERE entry_id='"+gene+"'");
+								
+								rs = stmt.executeQuery("SELECT * FROM orthology WHERE entry_id='"+gene+"';");
 
 								boolean noEntry = true;
 								Set<Integer> ids = new HashSet<>();
@@ -1554,20 +1561,18 @@ public class ModelAPI {
 								}
 
 								if(noEntry) { 
-
-									stmt.execute("INSERT INTO orthology (entry_id) VALUES('"+gene+"')");
+									
+									stmt.execute("INSERT INTO orthology (entry_id) VALUES('"+gene+"');");
 									rs = stmt.executeQuery("SELECT LAST_INSERT_ID();");
 									rs.next();
 									ids.add(rs.getInt(1));
 								}
 
 								for (int idGene : ids) {
-
-									rs = stmt.executeQuery("SELECT * FROM module_has_orthology WHERE module_id="+idModule+" AND orthology_id = "+idGene+"");
+									rs = stmt.executeQuery("SELECT * FROM module_has_orthology WHERE module_id="+idModule+" AND orthology_id = "+idGene+";");
 
 									if(!rs.next()) {
-
-										stmt.execute("INSERT INTO module_has_orthology (module_id, orthology_id) VALUES('"+idModule+"', '"+idGene+"')");
+										stmt.execute("INSERT INTO module_has_orthology (module_id, orthology_id) VALUES('"+idModule+"', '"+idGene+"');");
 										rs = stmt.executeQuery("SELECT LAST_INSERT_ID();");
 										rs.next();
 									}
@@ -1933,6 +1938,10 @@ public class ModelAPI {
 	}
 
 	
+	/** Remove the selected reaction.
+	 * @param statement
+	 * @param reaction_id
+	 */
 	public static void removeSelectedReaction(Statement statement, String reaction_id){
 		
 		try{
@@ -1947,8 +1956,9 @@ public class ModelAPI {
 	}
 	
 	/**
+	 * Check undefined Stoichiometry.
 	 * @param statement
-	 * @return
+	 * @return Set<String>
 	 */
 	public static Set<String> checkUndefinedStoichiometry(Statement statement) {
 		
@@ -1976,6 +1986,14 @@ public class ModelAPI {
 		return undefinedStoichiometry;
 	}
 	
+	/**
+	 * Get active reactions.
+	 * @param statement
+	 * @param encodedOnly
+	 * @param compartimentalized
+	 * @param dbType
+	 * @return
+	 */
 	public static ReactionsCapsule getActiveReactions(Statement statement, boolean encodedOnly, boolean compartimentalized,  DatabaseType dbType) {
 		
 		Map<Integer, String> ids = new TreeMap<Integer,String>(); 
@@ -2083,4 +2101,3122 @@ public class ModelAPI {
 		
 		return capsule;
 	}
-}
+	
+	/**
+	 * Get enzymes statistics.
+	 * @param originalReaction
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static ArrayList<Integer> getEnzymesStats(String originalReaction, Statement stmt) throws SQLException{
+		
+		ArrayList<Integer> result = new ArrayList<>();
+		
+		int enz_num=0,hom_num=0,kegg_num=0,man_num=0,trans_num=0;
+		int encoded_enz=0, encoded_hom=0, encoded_kegg=0, encoded_man=0, encoded_trans=0;
+		
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT(ecnumber), ecnumber, protein_idprotein, optimal_ph, posttranslational_modification, enzyme.inModel, enzyme.source, idprotein, protein.name," +
+				"class, inchi, molecular_weight, molecular_weight_exp, molecular_weight_kd, molecular_weight_seq, pi," +
+				"reaction.inModel " +
+				" FROM enzyme "+
+				" INNER JOIN protein ON protein.idprotein = enzyme.protein_idprotein " +
+				" INNER JOIN reaction_has_enzyme ON ecnumber = reaction_has_enzyme.enzyme_ecnumber " +
+				" AND protein.idprotein = reaction_has_enzyme.enzyme_protein_idprotein " +
+				" INNER JOIN reaction ON reaction.idreaction = reaction_has_enzyme.reaction_idreaction " +
+				originalReaction+" AND reaction.inModel IS NOT null;");			
+
+		while(rs.next()) {
+
+			if(rs.getString("source").equalsIgnoreCase("TRANSPORTERS")) {
+
+				trans_num++;
+
+				if(rs.getBoolean("enzyme.inModel"))
+					encoded_trans++;
+			}
+			else {
+
+				if(rs.getString("source").equalsIgnoreCase("KEGG")) {
+
+					kegg_num++;
+
+					if(rs.getBoolean("enzyme.inModel")){
+
+						encoded_kegg++;
+						encoded_enz++;
+
+					}
+				}
+
+				if(rs.getString("source").equalsIgnoreCase("HOMOLOGY")) {
+
+					hom_num++;
+
+					if(rs.getBoolean("enzyme.inModel")){
+
+						encoded_hom++;
+						encoded_enz++;
+					}
+				}
+
+				if(rs.getString("source").equalsIgnoreCase("MANUAL")) {
+
+					man_num++;
+
+					if(rs.getBoolean("enzyme.inModel")){
+
+						encoded_man++;
+						encoded_enz++;
+					}
+				}
+
+				enz_num++;
+			}
+		}
+		result.add(enz_num);
+		result.add(hom_num);
+		result.add(kegg_num);
+		result.add(man_num);
+		result.add(trans_num);
+		result.add(encoded_enz);
+		result.add(encoded_hom);
+		result.add(encoded_kegg);
+		result.add(encoded_man);
+		result.add(encoded_trans);
+		
+		//array structure: [enz_num, hom_num, kegg_num, man_num, trans_num, encoded_enz, encoded_hom, encoded_kegg, encoded_man, encoded_trans]
+		return result;
+	}
+	
+	/**
+	 * Get all enzymes.
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getAllEnzymes(String originalReaction, String encodedEnzyme, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT protein.name, enzyme.ecnumber," +
+				" COUNT(DISTINCT(reaction_has_enzyme.reaction_idreaction)), enzyme.source, enzyme.inModel, reaction.inModel, idprotein," +
+				" count(DISTINCT(reaction.inModel))" +
+				" FROM enzyme " +
+				" INNER JOIN protein ON protein.idprotein = enzyme.protein_idprotein " +
+				" INNER JOIN reaction_has_enzyme ON ecnumber = reaction_has_enzyme.enzyme_ecnumber " +
+				" AND protein.idprotein = reaction_has_enzyme.enzyme_protein_idprotein " +
+				" INNER JOIN reaction ON reaction.idreaction = reaction_has_enzyme.reaction_idreaction" +
+				originalReaction+encodedEnzyme+
+				" GROUP BY idprotein, ecnumber, reaction.inModel " +
+				" ORDER BY ecnumber  ASC, reaction.inModel DESC;");
+		
+		while(rs.next()){
+			String[] list = new String[8];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getString(4);
+			list[4]=rs.getBoolean(5)+"";
+			list[5]=rs.getBoolean(6)+"";
+			list[6]=rs.getString(7);
+			list[7]=rs.getString(8);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get proteins data.
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getProteinsData(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT idprotein, protein.name, ecnumber, optimal_ph, posttranslational_modification " +
+						"FROM enzyme " +
+						"INNER JOIN protein ON protein.idprotein = enzyme.protein_idprotein;");
+		
+		while(rs.next()){
+			String[] list = new String[5];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getString(4);
+			list[4]=rs.getString(5);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get proteins data.
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getProteinsData2(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT enzyme.protein_idprotein, COUNT(gene_idgene) " +
+				"FROM enzyme " +
+				"INNER JOIN subunit ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein " +
+				"GROUP BY enzyme.protein_idprotein;");
+		
+		while(rs.next()){
+			String[] list = new String[2];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get reactions data.
+	 * @param ecnumber
+	 * @param aux
+	 * @param id
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getReactionsData(String ecnumber, String aux, String id, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT reaction.name, reaction.equation, source, inModel, reversible FROM reaction " +
+				"INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction = reaction.idreaction " +
+				"WHERE reaction_has_enzyme.enzyme_ecnumber = '" + ecnumber+"' " +
+				"AND reaction_has_enzyme.enzyme_protein_idprotein = " + id + aux+ "" +
+		" ORDER BY inModel DESC, reversible DESC, name");
+		
+		while(rs.next()){
+			String[] list = new String[5];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getBoolean(4)+"";
+			list[4]=rs.getBoolean(5)+"";
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get gene data.
+	 * @param ecnumber
+	 * @param id
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getGeneData(String ecnumber, String id, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT gene.name, gene.locusTag, orthology.entry_id, origin, note, similarity, locus_id FROM enzyme " +
+				"INNER JOIN subunit ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein " +
+				"INNER JOIN gene ON gene.idgene = subunit.gene_idgene " +
+				"LEFT JOIN gene_has_orthology ON gene.idgene = gene_has_orthology.gene_idgene " +
+				"LEFT JOIN orthology ON orthology.id = orthology_id " +
+				"WHERE subunit.enzyme_ecnumber = '" + ecnumber+"' " +
+				"AND subunit.enzyme_protein_idprotein = " + id+";");
+		
+		while(rs.next()){
+			String[] list = new String[7];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getString(4);
+			list[4]=rs.getString(5);
+			list[5]=rs.getString(6);
+			list[6]=rs.getString(7);
+
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Retrieves reactions information from reaction table
+	 * @param stmt
+	 * @param conditions
+	 * @return Reaction_ID, name, equation, reversible, compartment_idcompartment, notes, lowerBound, upperBound
+	 * @throws SQLException
+	 */		
+	public static Map<String, ArrayList<String>> getReactions (Statement stmt, String conditions) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT idreaction, name, equation, reversible, compartment_idcompartment, notes, lowerBound, upperBound " +
+				"FROM reaction WHERE inModel AND " +conditions );
+		
+		Map<String, ArrayList<String>> result = new HashMap<>();
+		ArrayList<String> list = new ArrayList<>();
+		
+		while(rs.next()) {
+			list.add(rs.getString(2));
+			list.add(rs.getString(3));
+			list.add(rs.getBoolean(4)+"");
+			list.add(rs.getString(5));
+			list.add(rs.getString(6));
+			list.add(rs.getString(7));
+			list.add(rs.getString(8));
+			result.put(rs.getString(1),list);
+			
+		}
+		
+		rs.close();
+		return result;		
+		
+	}
+		
+	/**
+	 * Retrieves information from reaction_has_enzyme table
+	 * @param stmt
+	 * @return reaction_idreaction, enzyme_protein_idprotein, enzyme_ecnumber
+	 * @throws SQLException
+	 */		
+	public static ArrayList<String[]> getEnzymeHasReaction (Statement stmt) throws SQLException{
+	
+		ResultSet rs = stmt.executeQuery("SELECT reaction_idreaction, enzyme_protein_idprotein, enzyme_ecnumber FROM reaction_has_enzyme ORDER BY reaction_idreaction" );
+
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		while(rs.next()) {
+			String[] list = new String[3];
+
+			list[0] = rs.getString(1);
+			list[1] = rs.getString(2);
+			list[2] = rs.getString(3);
+			result.add(list);
+		}
+		
+		rs.close();
+		return result;
+		
+	}	
+	
+	
+	/**
+	 * Retrieves information from pathways_has_enzyme and pathway table
+	 * @param stmt
+	 * @return reaction_idreaction, pathway_idpathway, pathway.name
+	 * @throws SQLException
+	 */	
+	public static ArrayList<String[]> getReactionPathway (Statement stmt) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT reaction_idreaction, pathway_idpathway, pathway.name " +
+				"FROM pathway_has_reaction " +
+				"INNER JOIN pathway ON (pathway_idpathway = pathway.idpathway)" +
+				"ORDER BY reaction_idreaction" );
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		while(rs.next()) {
+			String[] list = new String[3];
+
+			list[0] = rs.getString(1);
+			list[1] = rs.getString(2);
+			list[2] = rs.getString(3);
+			result.add(list);
+		}
+		rs.close();
+		return result;			
+	}	
+	
+	
+	
+	/**
+	 * Retrieves information from reaction_has_enzyme and subunit and gene table
+	 * @param stmt
+	 * @return reaction_idreaction, name, locusTag, subunit.enzyme_ecnumber
+	 * @throws SQLException
+	 */	
+	public static ArrayList<String[]> getReactionHasEnzyme (Statement stmt) throws SQLException{
+		
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT reaction_idreaction, name, locusTag, subunit.enzyme_ecnumber " +
+				"FROM reaction_has_enzyme " +
+				"INNER JOIN subunit ON (subunit.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein "
+				+ "AND subunit.enzyme_ecnumber = reaction_has_enzyme.enzyme_ecnumber) " +
+				"INNER JOIN gene ON (gene_idgene = gene.idgene) " +
+				"WHERE (note is null OR note NOT LIKE 'unannotated') " +
+				"ORDER BY reaction_idreaction;");
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		while(rs.next()) {
+			String[] list = new String[4];
+
+			list[0] = rs.getString(1);
+			list[1] = rs.getString(2);
+			list[2] = rs.getString(3);
+			list[3] = rs.getString(4);
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	
+	/**
+	 * Retrieves information from reaction and stoichiometry and compound table
+	 * @param stmt
+	 * @param conditions
+	 * @return idstoichiometry, reaction_idreaction, compound_idcompound, stoichiometry.compartment_idcompartment, " +
+				"stoichiometric_coefficient, numberofchains, compound.name, compound.formula, compound.kegg_id
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getStoichiometryInfo (Statement stmt, String conditions) throws SQLException{
+		
+		ResultSet rs = stmt.executeQuery("SELECT idstoichiometry, reaction_idreaction, compound_idcompound, stoichiometry.compartment_idcompartment, " +
+				"stoichiometric_coefficient, numberofchains, compound.name, compound.formula, compound.kegg_id " +
+				"FROM reaction " +
+				"INNER JOIN stoichiometry ON (stoichiometry.reaction_idreaction = idreaction) " +
+				"INNER JOIN compound ON (stoichiometry.compound_idcompound = compound.idcompound) " +
+				"WHERE inModel AND " +conditions );
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		while(rs.next()) {
+			String[] list = new String[9];
+
+			list[0] = rs.getString(1);
+			list[1] = rs.getString(2);
+			list[2] = rs.getString(3);
+			list[3] = rs.getString(4);
+			list[4] = rs.getString(5);
+			list[5] = rs.getString(6);
+			list[6] = rs.getString(7);
+			list[7] = rs.getString(8);
+			list[8] = rs.getString(9);
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+		
+	/**
+	 * Get pathways.
+	 * @param ecnumber
+	 * @param id
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getPathways(String ecnumber, String id, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT code, name FROM pathway_has_enzyme " +
+				"INNER JOIN pathway ON pathway_has_enzyme.pathway_idpathway = pathway.idpathway " +
+				"WHERE pathway_has_enzyme.enzyme_ecnumber = '" + ecnumber+"' " +
+				"AND pathway_has_enzyme.enzyme_protein_idprotein = " + id);
+		
+		while(rs.next()){
+			String[] list = new String[2];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	
+	/**
+	 * @param stmt
+	 * @param originalreactions
+	 * @return ArrayList<String[]>  name, enzyme_ecnumber
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getReactionsFromModel (Statement stmt, boolean originalreactions) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM reaction " +
+				"INNER JOIN reaction_has_enzyme  ON (reaction_idreaction = reaction.idreaction) " +
+				" WHERE reaction.inModel AND originalReaction="+originalreactions);
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		while(rs.next()) {
+			String[] list = new String[2];
+
+			list[0] = rs.getString("name");
+			list[1] = rs.getString("enzyme_ecnumber");
+			result.add(list);
+		}	
+			
+		return result;			
+	}
+	
+	/**
+	 * Get data from subunit table.
+	 * @param ecnumber
+	 * @param id
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getDataFromSubunit(String ecnumber, String id, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT gpr_status, reaction,  definition, name FROM subunit " +
+				"INNER JOIN module ON (id = module_id) " +
+				"WHERE enzyme_ecnumber = '" + ecnumber+"' " +
+				"AND enzyme_protein_idprotein = " + id);
+		
+		while(rs.next()){
+			String[] list = new String[4];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getString(4);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get gene table data.
+	 * @param ecnumber
+	 * @param id
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getGeneData2(String ecnumber, String id, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT idgene, compartment.name, primaryLocation, score, locusTag " +
+				"FROM gene " +
+				"INNER JOIN gene_has_compartment ON (idgene = gene_has_compartment.gene_idgene) " +
+				"INNER JOIN compartment ON (idcompartment = compartment_idcompartment)" +
+				"INNER JOIN subunit ON subunit.gene_idgene = idgene " +
+				"WHERE subunit.enzyme_ecnumber = '" + ecnumber+"' " +
+				"AND subunit.enzyme_protein_idprotein = " + id);
+		
+		while(rs.next()){
+			String[] list = new String[5];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getBoolean(3)+"";
+			list[3]=rs.getString(4);
+			list[4]=rs.getString(5);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Gets compounds that participate in reactions.
+	 * @param aux
+	 * @param stmt
+	 * @return reactants, products, reactionsReactants, productsReactants
+	 * @throws SQLException
+	 */
+	public static ArrayList<Set<String>> getCompoundsReactions(String aux, Statement stmt) throws SQLException{
+		
+		ArrayList<Set<String>> result = new ArrayList<>();
+		Set<String> reactants = new HashSet<String>();
+		Set<String> products = new HashSet<String>();
+		Set<String> reactionsReactants = new HashSet<String>();
+		Set<String> productsReactants = new HashSet<String>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT compound_idcompound,stoichiometric_coefficient,reaction_idreaction " +
+				"FROM stoichiometry "+
+				"INNER JOIN reaction ON (reaction.idreaction=reaction_idreaction) "+
+				aux+";");
+		
+		while(rs.next()) {
+
+			if(rs.getString(2).startsWith("-")){
+				
+				reactants.add(rs.getString(1));
+				reactionsReactants.add(rs.getString(3));
+			}
+			else {
+			
+				products.add(rs.getString(1));productsReactants.add(rs.getString(3));
+			}
+		}
+		
+		result.add(reactants);
+		result.add(products);
+		result.add(reactionsReactants);
+		result.add(productsReactants);
+		
+		rs.close();
+		return result;
+	}
+	
+	/**Count not transporters.
+	 * @param aux
+	 * @param aux2
+	 * @param aux3
+	 * @param id
+	 * @param stmt
+	 * @return ArrayList<String[]> 
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> countNotTransport(String aux, String aux2, String aux3, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT compound.idcompound, stoichiometry.compartment_idcompartment, " +
+				" COUNT(DISTINCT(idreaction)) AS sum_not_transport "+
+				" FROM compound " +
+				" LEFT JOIN stoichiometry ON compound_idcompound=idcompound " +
+				" INNER JOIN compartment ON stoichiometry.compartment_idcompartment=compartment.idcompartment " +
+				" INNER JOIN reaction ON (reaction.idreaction=reaction_idreaction) "+
+				aux + aux3 +" AND reaction.name NOT LIKE 'T%' "+
+				" GROUP BY compound.name, kegg_id, stoichiometry.compartment_idcompartment "+
+				" ORDER BY "+aux2+" compound.name, kegg_id ;");
+		
+		while(rs.next()){
+			String[] list = new String[3];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Count transporters.
+	 * @param aux
+	 * @param aux2
+	 * @param aux3
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> countTransport(String aux, String aux2, String aux3, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT compound.idcompound, stoichiometry.compartment_idcompartment, " +
+				" COUNT(DISTINCT(idreaction)) AS sum_transport "+
+				" FROM compound " +
+				" LEFT JOIN stoichiometry ON compound_idcompound=idcompound " +
+				" INNER JOIN compartment ON stoichiometry.compartment_idcompartment=compartment.idcompartment " +
+				" INNER JOIN reaction ON (reaction.idreaction=reaction_idreaction) "+
+				aux+ aux3 +" AND reaction.name LIKE 'T%' "+
+				" GROUP BY compound.name, kegg_id, stoichiometry.compartment_idcompartment "+
+				" ORDER BY "+aux2+" compound.name, kegg_id ;");
+		
+		while(rs.next()){
+			String[] list = new String[3];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get compounds reversibilities.
+	 * @param aux
+	 * @param aux2
+	 * @param aux3
+	 * @param stmt
+	 * @return Set<Integer>
+	 * @throws SQLException
+	 */
+	public static Set<Integer> getReversibilities(String aux, Statement stmt) throws SQLException{
+		
+		Set<Integer> reversibleCompounds = new HashSet<>();
+
+		ResultSet reversibilities = stmt.executeQuery("SELECT DISTINCT(compound_idcompound) as c, reversible "
+				+ " FROM stoichiometry "
+				+ " INNER JOIN reaction ON (reaction.idreaction=reaction_idreaction) "
+				+ " "+aux+" AND reversible ORDER BY c;");
+		
+		while(reversibilities.next())					
+			reversibleCompounds.add(reversibilities.getInt("c"));
+		
+		reversibilities.close();
+		return reversibleCompounds;
+	}
+	
+	/**
+	 * calculate which metabolites have both properties (product and reactant).
+	 * @param aux
+	 * @param aux2
+	 * @param aux3
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getMetabolitesWithBothProperties(String aux, String aux2, String aux3, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT compound.name, formula, COUNT(DISTINCT SIGN(stoichiometric_coefficient)) as counter, compound.idcompound, kegg_id , COUNT(DISTINCT(idreaction)), " +
+				" compartment.name, stoichiometry.compartment_idcompartment " +
+				" FROM compound " +
+				" LEFT JOIN stoichiometry ON compound_idcompound=idcompound " +
+				" INNER JOIN compartment ON stoichiometry.compartment_idcompartment=compartment.idcompartment " +
+				" INNER JOIN reaction ON (reaction.idreaction=reaction_idreaction) "+
+				aux+ aux3 +
+				" GROUP BY compound.name, kegg_id, stoichiometry.compartment_idcompartment "+
+				" ORDER BY "+aux2+" compound.name, kegg_id ;");
+		
+		while(rs.next()){
+			String[] list = new String[8];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getString(4);
+			list[4]=rs.getString(5);
+			list[5]=rs.getString(6);
+			list[6]=rs.getString(7);
+			list[7]=rs.getString(8);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Retrieves information about the intended reactions
+	 * @param stmt
+	 * @param name
+	 * @return String [Notes, isSpontaneous, isNonEnzymatic, source]
+	 * @throws SQLException
+	 */
+	public static String[] getReactionsInfo(Statement stmt, String name) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT notes, isSpontaneous, isNonEnzymatic, source FROM reaction  WHERE reaction.name='"+name+"'");
+		
+		String[] result = new String[4];
+		
+		if(rs.next()) {
+
+			result[0] = rs.getString(1);
+			result[1] = rs.getBoolean(2)+"";
+			result[2] = rs.getBoolean(3)+"";
+			result[3] = rs.getString(4);
+		}
+		
+		return result;
+		
+	}
+	
+	
+	
+	/**
+	 * @param statement
+	 * @param removed
+	 * @param reactionsToKeep
+	 * @param notes_map
+	 * @throws SQLException
+	 */
+	public static void removeReactionsFromModel(PreparedStatement statement, Set<String> removed, Set<String> reactionsToKeep, Map<String, String> notes_map) throws SQLException {
+
+		int i = 0;
+		for (String name : removed) {
+
+			if(!reactionsToKeep.contains(name)) {
+
+				String note = "";
+
+				if(notes_map.containsKey(name)) {
+
+					note = notes_map.get(name)+ " | ";
+				}
+
+				note += "Removed by GPR tool";
+
+				statement.setString(1, "false");
+				statement.setString(2, note);
+				statement.setString(3, name);
+
+				statement.addBatch();
+
+				if ((i + 1) % 1000 == 0) {
+
+					statement.executeBatch(); // Execute every 1000 items.
+				}
+				i++;
+			}
+		}
+		statement.executeBatch();
+	}
+	
+	
+	/**
+	 * @param stmt
+	 * @param kept
+	 * @return Map<String, String> notes_map
+	 * @throws SQLException
+	 */
+	public static Map<String, String> createNotesMap(Statement stmt, Set<String> kept) throws SQLException{
+				
+		Map<String, String> notes_map = new HashMap<>();
+		
+		for (String name : kept) {
+
+			ResultSet rs = stmt.executeQuery("SELECT notes FROM reaction WHERE reaction.name='"+name+"'");
+
+			if(rs.next() && rs.getString(1)!=null && !rs.getString(1).isEmpty())
+				notes_map.put(name, rs.getString(1));
+		}
+		return notes_map;
+	}
+	
+	/**
+	 * Update Reaction table with reaction's annotation
+	 * @param statement
+	 * @param kept
+	 * @param annotations
+	 * @param notes_map
+	 * @throws SQLException
+	 */
+	public static void updateReactionTable(PreparedStatement statement, Set<String> kept, Map<String, String> annotations, 
+			Map<String, String>notes_map) throws SQLException {
+		
+		int i = 0;
+		for (String name : kept) {
+
+			//String note = "GENE_ASSOCIATION: " + this.annotations.get(name)+" | GPR set from tool";
+			String note = annotations.get(name);
+
+			String old_note = "GPR set from tool";
+			
+			if(notes_map.containsKey(name)) {
+				
+				old_note = notes_map.get(name);
+
+				if(!old_note.contains("GPR set from tool"))
+					old_note = old_note.trim().concat(" | GPR set from tool");
+			}
+
+			statement.setString(1, note);
+			statement.setString(2, old_note);
+			statement.setString(3, name);
+			statement.addBatch();
+
+			if ((i + 1) % 1000 == 0) {
+
+				statement.executeBatch(); // Execute every 1000 items.
+			}
+			i++;
+		}
+		statement.executeBatch();
+	}
+	
+	
+	/**
+	 * Update Reaction table with reaction's annotation
+	 * @param statement
+	 * @param keptWithDifferentAnnotation
+	 * @param annotations
+	 * @param notes_map
+	 * @throws SQLException
+	 */
+	public static void updateReactionTableWithDifferentAnnotation (PreparedStatement statement, Set<String> keptWithDifferentAnnotation,
+			Map<String, String> annotations, Map<String, String>notes_map) throws SQLException {
+		
+		int i = 0;
+		for (String name : keptWithDifferentAnnotation) {
+
+			//String note = "GENE_ASSOCIATION: " + this.annotations.get(name)+" | New Annotation. GPR set from tool.";
+			String note = annotations.get(name);
+
+			String old_note = "New Annotation. GPR set from tool";
+			
+			if(notes_map.containsKey(name)) {
+				
+				old_note = notes_map.get(name);
+
+				if(!old_note.contains("New Annotation. GPR set from tool"))
+					old_note = old_note.trim().concat(" | GPR set from tool");
+			}
+
+			statement.setString(1, note);
+			statement.setString(2, old_note);
+			statement.setString(3, name);
+			statement.addBatch();
+
+			if ((i + 1) % 1000 == 0) {
+
+				statement.executeBatch(); // Execute every 1000 items.
+			}
+			i++;
+		}
+		statement.executeBatch();
+	}
+	
+	
+	
+	/**
+	 * Calculate metabolites that have one property.
+	 * @param aux
+	 * @param aux2
+	 * @param aux3
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getMetabolitesProperties(String aux, String aux2, String aux3, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT compound.name, formula, SIGN(stoichiometric_coefficient) as sign, compound.idcompound, kegg_id , COUNT(DISTINCT(idreaction)), " +
+				" compartment.name, stoichiometry.compartment_idcompartment " +
+				" FROM compound " +
+				" LEFT JOIN stoichiometry ON compound_idcompound=idcompound " +
+				" INNER JOIN compartment ON stoichiometry.compartment_idcompartment=compartment.idcompartment " +
+				" INNER JOIN reaction ON (reaction.idreaction=reaction_idreaction) "+ aux + aux3 + 
+				" GROUP BY compound.name, kegg_id, stoichiometry.compartment_idcompartment, SIGN(stoichiometric_coefficient) " +
+				" ORDER BY "+aux2+" compound.name, kegg_id ;");
+		
+		while(rs.next()){
+			String[] list = new String[8];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getString(4);
+			list[4]=rs.getString(5);
+			list[5]=rs.getString(6);
+			list[6]=rs.getString(7);
+			list[7]=rs.getString(8);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get metabolites not in model selected by entry_type.
+	 * @param aux
+	 * @param aux2
+	 * @param aux3
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getMetabolitesNotInModel(String aux3, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM compound WHERE idcompound NOT IN (SELECT compound_idcompound FROM stoichiometry)" + aux3 + ";");
+		
+		while(rs.next()){
+			String[] list = new String[4];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(4);
+			list[3]=rs.getString(6);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get reactions.
+	 * @param aux
+	 * @param rec
+	 * @param compartment
+	 * @param stmt
+	 * @return ArrayList<String>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String> getReactions(String aux, String rec, String compartment, Statement stmt) throws SQLException{
+		
+		ArrayList<String> ql = new ArrayList<String>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT distinct(idreaction), reaction.name, equation, source, inModel, reversible FROM reaction " +
+				"INNER JOIN stoichiometry ON reaction.idreaction = stoichiometry.reaction_idreaction " +
+				"INNER JOIN  compartment ON compartment.idcompartment =  stoichiometry.compartment_idcompartment " +
+				aux+" AND compartment.name='"+compartment+"' " +
+				" AND stoichiometry.compound_idcompound = '"+rec+"' "+
+				" ORDER BY inModel DESC, source, reversible DESC, name ASC");
+		
+		while(rs.next()) {
+			ql.add(rs.getString(2));
+			ql.add(rs.getString(3));
+			ql.add(rs.getString(4));
+
+			if(rs.getBoolean(5))
+				ql.add(rs.getBoolean(5)+"");
+			else
+				ql.add("-");
+
+			if(rs.getBoolean(6))
+				ql.add(rs.getBoolean(6)+"");
+			else
+				ql.add("-");
+		}
+			
+		rs.close();
+		return ql;
+	}
+	
+	/**
+	 * Count distinct reactions in model.
+	 * @param stmt
+	 * @return int
+	 * @throws SQLException
+	 */
+	public static int countReactionsInModel(String aux, Statement statement) throws SQLException{
+		
+		int res = 0;
+		
+		ResultSet rs = statement.executeQuery("SELECT COUNT(DISTINCT(idreaction)) FROM reaction "+aux+" AND  inModel;");
+		
+		while(rs.next())
+			res = rs.getInt(1);
+		
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Count distinct KEGG reactions.
+	 * @param stmt
+	 * @return int
+	 * @throws SQLException
+	 */
+	public static int countReactionsKEGG(String aux, Statement statement) throws SQLException{
+		
+		int res = 0;
+		
+		ResultSet rs = statement.executeQuery("SELECT COUNT(DISTINCT(idreaction)) FROM reaction "+aux+" AND source='KEGG';");
+		
+		while(rs.next())
+			res = rs.getInt(1);
+		
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Count distinct KEGG reactions in model.
+	 * @param aux
+	 * @param statement
+	 * @return int
+	 * @throws SQLException
+	 */
+	public static int countReactionsInModelKEGG(String aux, Statement statement) throws SQLException{
+		
+		int res = 0;
+		
+		ResultSet rs = statement.executeQuery("SELECT COUNT(DISTINCT(idreaction)) FROM reaction "+aux+" AND inModel AND source ='KEGG'");
+		
+		while(rs.next())
+			res = rs.getInt(1);
+		
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Count distinct reactions in model inserted by homology.
+	 * @param aux
+	 * @param statement
+	 * @return int
+	 * @throws SQLException
+	 */
+	public static int countReactionsInModelHomology(String aux, Statement statement) throws SQLException{
+		
+		int res = 0;
+		
+		ResultSet rs = statement.executeQuery("SELECT COUNT(DISTINCT(idreaction)) FROM reaction "+aux+" AND inModel AND source ='HOMOLOGY'");
+		
+		while(rs.next())
+			res = rs.getInt(1);
+		
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Count distinct reactions in model inserted by Transporters annotation tool.
+	 * @param aux
+	 * @param statement
+	 * @return int
+	 * @throws SQLException
+	 */
+	public static int countReactionsInModelTransporters(String aux, Statement statement) throws SQLException{
+		
+		int res = 0;
+		
+		ResultSet rs = statement.executeQuery("SELECT COUNT(DISTINCT(idreaction)) FROM reaction "+aux+" AND inModel AND source='TRANSPORTERS'");
+		
+		while(rs.next())
+			res = rs.getInt(1);
+		
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Count distinct reactions inserted by Transporters annotation tool.
+	 * @param aux
+	 * @param statement
+	 * @return int
+	 * @throws SQLException
+	 */
+	public static int countReactionsTransporters(String aux, Statement statement) throws SQLException{
+		
+		int res = 0;
+		
+		ResultSet rs = statement.executeQuery("SELECT COUNT(DISTINCT(idreaction)) FROM reaction "+aux+" AND source='TRANSPORTERS'");
+		
+		while(rs.next())
+			res = rs.getInt(1);
+		
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Count distinct reactions in model inserted manually.
+	 * @param aux
+	 * @param statement
+	 * @return int
+	 * @throws SQLException
+	 */
+	public static int countReactionsInModelManual(String aux, Statement statement) throws SQLException{
+		
+		int res = 0;
+		
+		ResultSet rs = statement.executeQuery("SELECT COUNT(DISTINCT(idreaction)) FROM reaction "+aux+" AND inModel AND source='MANUAL'");
+		
+		while(rs.next())
+			res = rs.getInt(1);
+		
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Count pathways with associated reactions.
+	 * @param aux
+	 * @param statement
+	 * @return int
+	 * @throws SQLException
+	 */
+	public static int countPathwayHasReaction(String aux, Statement statement) throws SQLException{
+		
+		int res = 0;
+		
+		ResultSet rs = statement.executeQuery("SELECT count(distinct(idreaction)) FROM reaction JOIN pathway_has_reaction ON idreaction = reaction_idreaction "+aux);
+		
+		while(rs.next())
+			res = rs.getInt(1);
+		
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Get locusTag and name from gene table.
+	 * @param statement
+	 * @return ArrayList<String> 
+	 * @throws SQLException
+	 */
+	public static ArrayList<String> getGenesModel(Statement statement) throws SQLException{
+		
+		ArrayList<String> lls = new ArrayList<String>();
+		
+		ResultSet rs = statement.executeQuery("SELECT locusTag, name FROM gene;");
+
+		while(rs.next())
+			if(rs.getString(2) == null || rs.getString(2).trim().isEmpty())
+				lls.add(rs.getString(1));
+			else
+				lls.add(rs.getString(2)+"_"+rs.getString(1));
+
+		rs.close();
+		return lls;
+	}
+	
+	/**
+	 * Get data from enzyme table.
+	 * @param statement
+	 * @return ArrayList<String> 
+	 * @throws SQLException
+	 */
+	public static ArrayList<String> getEnzymesModel(Statement statement) throws SQLException{
+		
+		ArrayList<String> lls = new ArrayList<String>();
+		
+		ResultSet rs = statement.executeQuery("SELECT ecnumber, protein_idprotein, protein.name FROM enzyme " +
+				" INNER JOIN protein ON protein.idprotein = protein_idprotein " +
+				"ORDER BY ecnumber");
+
+		while(rs.next()) 
+			lls.add(rs.getString(1)+"___"+rs.getString(3)+"___"+rs.getString(2));
+
+		rs.close();
+		return lls;
+	}
+	
+	/**
+	 * Get data from reaction_has_enzyme table.
+	 * @param rowID
+	 * @param statement
+	 * @return Set<String>
+	 * @throws SQLException
+	 */
+	public static Set<String> getEnzymesForReaction(String rowID, Statement statement) throws SQLException{
+		
+		Set<String> res = new TreeSet<String>();
+		
+		ResultSet rs = statement.executeQuery(
+				"SELECT enzyme_ecnumber, enzyme_protein_idprotein, protein.name " +
+						" FROM reaction_has_enzyme " +
+						" INNER JOIN protein ON protein.idprotein = enzyme_protein_idprotein " +
+						" WHERE reaction_idreaction = "+rowID);
+
+		while(rs.next()) 
+			res.add(rs.getString(1)+"___"+rs.getString(3)+"___"+rs.getString(2));
+		
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Get pathways by rowID.
+	 * @param rowID
+	 * @param statement
+	 * @return String[]
+	 * @throws SQLException
+	 */
+	public static String[] getPathwaysByRowID(String rowID, Statement statement) throws SQLException{
+		
+		String[] res = new String[0];
+		
+		ResultSet rs = statement.executeQuery(
+				"SELECT pathway.name FROM pathway " +
+						" INNER JOIN pathway_has_reaction ON (pathway_has_reaction.pathway_idpathway=pathway.idpathway ) " +
+						" WHERE reaction_idreaction = "+rowID);
+
+		boolean exists = rs.last();
+
+		if(exists) {
+
+			res = new String[rs.getRow()];
+			rs.beforeFirst();
+
+			int col=0;
+			while(rs.next()) {
+
+				res[col] = rs.getString(1);
+				col++;
+			}
+		}
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Get pathwayID from pathway table.
+	 * @param aux
+	 * @param statement
+	 * @return List<String>
+	 * @throws SQLException
+	 */
+	public static List<String> getPathways2(String aux, Statement statement) throws SQLException{
+		
+		List<String> lls = new ArrayList<String>();
+		
+		ResultSet rs = statement.executeQuery("SELECT DISTINCT(idpathway), pathway.name FROM pathway " +
+						aux+ " ORDER BY name;");
+
+		while(rs.next())
+			lls.add(rs.getString(2));
+		
+		rs.close();
+		return lls;
+	}
+	
+	/**
+	 * Get pathwayID from pathway table.
+	 * @param query
+	 * @param statement
+	 * @return int
+	 * @throws SQLException
+	 */
+	public static int getPathwayID(String query, Statement statement) throws SQLException{
+		
+		int res=-1;
+		
+		ResultSet rs = statement.executeQuery(query);
+
+		while(rs.next()) 
+			res = rs.getInt(1);
+		
+		rs.close();
+		return res;
+	}	
+	
+	/**
+	 * Get pathway code.
+	 * @param query
+	 * @param statement
+	 * @return String
+	 * @throws SQLException
+	 */
+	public static String getPathwayCode(String query, Statement statement) throws SQLException{
+		
+		String res="";
+		
+		ResultSet rs = statement.executeQuery(query);
+
+		while(rs.next()) 
+			res=rs.getString(1);
+		
+		rs.close();
+		return res;
+	}	
+	
+	/**
+	 * Get boolean_rule from reaction for a given reactionID.
+	 * @param id
+	 * @param statement
+	 * @return String
+	 * @throws SQLException
+	 */
+	public static String[] getBooleanRuleFromReaction(String id, Statement statement) throws SQLException{
+		
+		String[] res = new String[2];
+		
+		res[0] = "0";
+		res[1] = null;
+				
+		ResultSet rs = statement.executeQuery("SELECT boolean_rule FROM reaction WHERE idreaction = " + id);
+
+		if(rs.next()){
+			res[0] = "1";
+			res[1] = rs.getString(1);
+		}
+		
+		rs.close();
+		return res;
+	}	
+	
+	/**
+	 * Get data from compound table for a given reactionID.
+	 * @param id
+	 * @param statement
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]>  getCompoundData(String id, Statement statement) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = statement.executeQuery("SELECT compound.name, compound.formula, compartment.name, stoichiometric_coefficient, numberofchains, kegg_id FROM stoichiometry " +
+				"INNER JOIN compound ON compound_idcompound = compound.idcompound " +
+				"INNER JOIN compartment ON compartment_idcompartment = idcompartment " +
+				"WHERE reaction_idreaction = " + id);
+		
+		while(rs.next()){
+			String[] list = new String[6];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getString(4);
+			list[4]=rs.getString(5);
+			list[5]=rs.getString(6);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get data from reaction_has_enzyme table for a given reactionID.
+	 * @param id
+	 * @param statement
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]>  getReactionHasEnzymeData(String id, Statement statement) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = statement.executeQuery("SELECT enzyme_ecnumber, name, inModel, enzyme_protein_idprotein " +
+				" FROM reaction_has_enzyme " +
+				" INNER JOIN enzyme ON reaction_has_enzyme.enzyme_protein_idprotein = enzyme.protein_idprotein "
+				+ "AND reaction_has_enzyme.enzyme_ecnumber = enzyme.ecnumber " +
+				" INNER JOIN protein ON reaction_has_enzyme.enzyme_protein_idprotein = protein.idprotein "
+				+ "AND reaction_has_enzyme.enzyme_ecnumber = enzyme.ecnumber " +
+				" WHERE reaction_idreaction = "+id);
+		
+		while(rs.next()){
+			String[] list = new String[3];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getBoolean(3) +"";
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 *  Get data from reaction table for a given reactionID.
+	 * @param id
+	 * @param statement
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]>  getReactionData(String id, Statement statement) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = statement.executeQuery("SELECT isGeneric, isSpontaneous, isNonEnzymatic, lowerBound, upperBound, reversible, name, boolean_rule "
+				+ "FROM reaction WHERE idreaction = " + id);
+		
+		while(rs.next()){
+			String[] list = new String[7];
+
+			list[0]=rs.getBoolean(1) +"";
+			list[1]=rs.getBoolean(2) +"";
+			list[2]=rs.getBoolean(3) +"";
+			list[3]=rs.getString(4);
+			list[4]=rs.getString(5);
+			list[5]=rs.getBoolean(6) +"";
+			list[6]=rs.getString(7);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get data from reaction table.
+	 * @param id
+	 * @param statement
+	 * @return String[]
+	 * @throws SQLException
+	 */
+	public static String[] getReactionData2(String id, Statement statement) throws SQLException{
+		
+		String[] list = new String[12];
+		
+		ResultSet rs = statement.executeQuery(
+				"SELECT reaction.name, equation, reversible, "
+				//+ " pathway.name, enzyme_ecnumber,"
+				+ " inModel, compartment.name, isSpontaneous, isNonEnzymatic, isGeneric, lowerBound, upperBound, source, boolean_rule " +
+				"FROM reaction " +
+				//"INNER JOIN pathway_has_reaction ON idreaction = pathway_has_reaction.reaction_idreaction " +
+				//"INNER JOIN pathway ON pathway_idpathway = pathway.idpathway " +
+				"INNER JOIN compartment ON idcompartment = compartment_idcompartment " +
+				//"INNER JOIN reaction_has_enzyme ON idreaction = reaction_has_enzyme.reaction_idreaction " +
+				"WHERE idreaction="+id);
+		
+		if(rs.next()){
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getBoolean(3)+"";
+			list[3]=rs.getBoolean(4)+"";
+			list[4]=rs.getString(5);
+			list[5]=rs.getBoolean(6)+"";
+			list[6]=rs.getBoolean(7)+"";
+			list[7]=rs.getBoolean(8)+"";
+			list[8]=rs.getString(9);
+			list[9]=rs.getString(10);
+			list[10]=rs.getString(11);
+			list[11]=rs.getString(12);
+		}
+		rs.close();
+		return list;
+	}
+	
+	/**
+	 * Get data from stoichiometry data.
+	 * @param id
+	 * @param statement
+	 * @return String[]
+	 * @throws SQLException
+	 */
+	public static String[] getStoichiometryData(String id, Statement statement) throws SQLException{
+		
+		String[] list = new String[4];
+		
+		ResultSet rs = statement.executeQuery("SELECT compartment.name, stoichiometric_coefficient, numberofchains, compound_idcompound " +
+				"FROM stoichiometry " +
+				"INNER JOIN compartment ON idcompartment = compartment_idcompartment " +
+				"WHERE reaction_idreaction = '" + id+"'");
+		
+		if(rs.next()){
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getString(4);
+			
+		}
+		rs.close();
+		return list;
+	}
+	
+	/**
+	 * Get reactionID for a given pathway, ecNumber and idProtein.
+	 * @param pathway
+	 * @param ecNumber
+	 * @param idProtein
+	 * @param statement
+	 * @return Set<String>
+	 * @throws SQLException
+	 */
+	public static Set<String> getReactionsID(String pathway, String ecNumber, String idProtein, Statement statement) throws SQLException{
+		
+		Set<String> reactionsID = new TreeSet<String>();
+		
+		ResultSet rs = statement.executeQuery("SELECT reaction_has_enzyme.reaction_idreaction FROM pathway_has_enzyme " +
+				"INNER JOIN reaction_has_enzyme ON pathway_has_enzyme.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein "
+				+ "AND pathway_has_enzyme.enzyme_ecnumber = reaction_has_enzyme.enzyme_ecnumber " +
+				"INNER JOIN pathway_has_reaction ON pathway_has_enzyme.pathway_idpathway = pathway_has_reaction.pathway_idpathway " +
+				"WHERE reaction_has_enzyme.reaction_idreaction = pathway_has_reaction.reaction_idreaction " +
+				"AND pathway_has_enzyme.enzyme_ecnumber = '"+ecNumber+"' AND pathway_has_enzyme.enzyme_protein_idprotein = '"+idProtein
+				+"' AND pathway_has_enzyme.pathway_idpathway = "+pathway);
+		
+		while(rs.next()) 
+			reactionsID.add(rs.getString(1));
+			
+		rs.close();
+		return reactionsID;
+	}
+	
+	/**
+	 * Get PathwayID for a given rowID, ecNumber and idProtein.
+	 * @param pathway
+	 * @param ecNumber
+	 * @param idProtein
+	 * @param statement
+	 * @return Set<String>
+	 * @throws SQLException
+	 */
+	public static Set<String> getPathwayID2(String rowID, String ecNumber, String idProtein, Statement statement) throws SQLException{
+		
+		Set<String> pathwayID = new TreeSet<String>();
+		
+		ResultSet rs = statement.executeQuery("SELECT pathway_has_enzyme.pathway_idpathway FROM pathway_has_enzyme " +
+				"INNER JOIN reaction_has_enzyme ON pathway_has_enzyme.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein "
+				+ "AND pathway_has_enzyme.enzyme_ecnumber = reaction_has_enzyme.enzyme_ecnumber " +
+				"INNER JOIN pathway_has_reaction ON pathway_has_enzyme.pathway_idpathway = pathway_has_reaction.pathway_idpathway " +
+				"WHERE reaction_has_enzyme.reaction_idreaction = pathway_has_reaction.reaction_idreaction " +
+				"AND pathway_has_enzyme.enzyme_ecnumber = '"+ecNumber+"'  AND pathway_has_enzyme.enzyme_protein_idprotein = '"+idProtein+"' "
+						+ "AND reaction_has_enzyme.reaction_idreaction = "+rowID);
+
+		while(rs.next()) 
+			pathwayID.add(rs.getString(1));
+			
+		rs.close();
+		return pathwayID;
+	}
+	
+	/**
+	 * Get existing metabolitesID by rowID.
+	 * @param rowID
+	 * @param statement
+	 * @return Map<String,Pair<String,Pair<String,String>>>
+	 * @throws SQLException
+	 */
+	public static Map<String,Pair<String,Pair<String,String>>> getExistingMetabolitesID(String rowID, Statement statement) throws SQLException{
+		
+		Map<String,Pair<String,Pair<String,String>>> existingMetabolitesID = new HashMap<>();
+		
+		ResultSet rs = statement.executeQuery("SELECT compound_idcompound, idstoichiometry, stoichiometric_coefficient, compartment_idcompartment "
+				+ "FROM stoichiometry WHERE reaction_idreaction = "+rowID);
+
+
+		while(rs.next()) {
+			
+			if(rs.getString(3).startsWith("-"))
+				existingMetabolitesID.put("-"+rs.getString(1), new Pair<>(rs.getString(2), new Pair<>(rs.getString(3), rs.getString(4))));
+			else
+				existingMetabolitesID.put(rs.getString(1), new Pair<>(rs.getString(2), new Pair<>(rs.getString(3), rs.getString(4))));
+		}
+			
+		rs.close();
+		return existingMetabolitesID;
+	}
+	
+	/**
+	 * Get stoichiometryID from stoichiometry table.
+	 * @param rowID
+	 * @param m
+	 * @param idCompartment
+	 * @param metabolite
+	 * @param statement
+	 * @return String
+	 * @throws SQLException
+	 */
+	public static String getStoichiometryID(String rowID, String m, String idCompartment, String metabolite, Statement statement) throws SQLException{
+		
+		String idstoichiometry = "";
+		
+		ResultSet rs = statement.executeQuery("SELECT idstoichiometry FROM stoichiometry "
+				+ " WHERE reaction_idreaction = "+rowID+" "
+				+ " AND compound_idcompound = " + m.replace("-", "")
+				+ " AND compartment_idcompartment = " + idCompartment
+				+ " AND stoichiometric_coefficient = '" + metabolite + "'");
+
+		if(rs.next())
+			idstoichiometry = rs.getString(1);
+			
+		rs.close();
+		return idstoichiometry;
+	}
+	
+	/**
+	 * Check if a reaction is reversible and in model.
+	 * @param reactionID
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Pair<Boolean, Boolean> checkReactionIsReversibleAndInModel(String reactionID, Statement statement) throws SQLException{
+		
+		Pair<Boolean, Boolean> res = new Pair<>(false, false);
+		
+		ResultSet rs = statement.executeQuery("SELECT reversible, isGeneric, inModel FROM reaction WHERE idreaction='"+reactionID+"';");
+
+		if(rs.next()){
+			res.setA(rs.getBoolean(1));
+			res.setB(rs.getBoolean(3));
+		}
+			
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Get equation and source from reaction table for a given reactionID.
+	 * @param reactionID
+	 * @param statement
+	 * @return Pair<String, String>
+	 * @throws SQLException
+	 */
+	public static Pair<String, String> getEquationAndSourceFromReaction(String reactionID, Statement statement) throws SQLException{
+		
+		Pair<String, String> res = new Pair<>("", "");
+		
+		ResultSet rs = statement.executeQuery("SELECT equation, source FROM reaction WHERE idreaction='"+reactionID+"';");
+
+		if(rs.next()){
+			res.setA(rs.getString(1));
+			res.setB(rs.getString(3));
+		}
+			
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Get all genes.
+	 * @param id
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getAllGenes(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag, name, count(DISTINCT(module_id)), count(DISTINCT(enzyme_ecnumber)) "+
+				" FROM gene LEFT JOIN subunit ON gene.idgene = gene_idgene "+
+				" LEFT JOIN enzyme ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein "+
+				" GROUP BY idgene, locusTag;");
+		
+		while(rs.next()){
+			String[] list = new String[5];
+			
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getString(4);
+			list[4]=rs.getString(5);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get all genes.
+	 * @param id
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getRegulatoryGenes(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT name, locusTag, idgene FROM subunit JOIN gene " +
+				"ON gene_idgene=idgene WHERE protein_idprotein IN (SELECT protein_idprotein " +
+				"FROM regulatory_event) order by name");
+		
+		while(rs.next()){
+			String[] list = new String[3];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get encoding genes.
+	 * @param stmt
+	 * @return ArrayList<String[]> 
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getEncodingGenes(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag, name, count(DISTINCT(module_id)), count(enzyme_ecnumber) "+
+						"FROM gene INNER JOIN subunit ON (gene.idgene = gene_idgene) "+
+						"INNER JOIN enzyme ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein "+
+				"GROUP BY locusTag;");
+		
+		while(rs.next()){
+			String[] list = new String[5];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getString(4);
+			list[4]=rs.getString(5);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get regulated genes.
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getRegulatedGenes(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT gene.name, bnumber, gene.idgene " +
+				"FROM regulatory_event as event, transcription_unit, transcription_unit_gene " +
+				"AS tug, transcription_unit_promoter as tup, promoter,gene WHERE " +
+				"event.promoter_idpromoter=idpromoter AND tup.promoter_idpromoter=idpromoter AND " +
+				"tup.transcription_unit_idtranscription_unit=idtranscription_unit AND " +
+				"tug.transcription_unit_idtranscription_unit=idtranscription_unit AND gene_idgene=idgene " +
+				"order by gene.name");
+		
+		while(rs.next()){
+			String[] list = new String[3];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get proteins that are in Model.
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getProteinsInModel(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT(idprotein), name, class FROM protein " +
+				"JOIN enzyme ON(enzyme.protein_idprotein=protein.idprotein) where inModel=1 ORDER BY name");
+		
+		while(rs.next()){
+			String[] list = new String[3];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get enzymes.
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getEnzymes(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT distinct(idprotein), name, inchi " +
+				"FROM protein JOIN enzyme ON enzyme_protein_idprotein=idprotein ORDER BY name");
+		
+		while(rs.next()){
+			String[] list = new String[3];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get data from protein table.
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getTFs(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT distinct(idprotein), name, inchi " +
+				"FROM protein " +
+				"JOIN regulatory_event ON enzyme_protein_idprotein=idprotein ORDER BY name");
+		
+		while(rs.next()){
+			String[] list = new String[3];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get data from protein table.
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getSigmas(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT distinct(idprotein), name, iupac_name, inchi, " +
+				"cas_registry_name FROM protein " +
+				"JOIN sigma_promoter ON protein_protein_idprotein=idprotein ORDER BY name");
+		
+		while(rs.next()){
+			String[] list = new String[5];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getString(4);
+			list[4]=rs.getString(5);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get gene information (name, locusTag).
+	 * @param id
+	 * @param stmt
+	 * @return ArrayList<String[]> 
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getGeneInfo(String id, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT name, locusTag FROM gene JOIN subunit ON " +
+				"gene.idgene = subunit.gene_idgene WHERE enzyme_protein_idprotein = " + id);
+		
+		while(rs.next()){
+			String[] list = new String[2];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get all from protein.
+	 * @param id
+	 * @param stmt
+	 * @return ArrayList<String[]> 
+	 * @throws SQLException
+	 */
+	public static Set<String> getAllFromProtein(String aux, Statement stmt) throws SQLException{
+		
+		Set<String> proteins = new HashSet<String>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM protein"+aux);
+		
+		while(rs.next())
+			proteins.add(rs.getString(1));
+			
+		rs.close();
+		return proteins;
+	}
+	
+	/**
+	 * Get enzyme ECnumber and check if is in Model for a given proteinID.
+	 * @param id
+	 * @param stmt
+	 * @return ArrayList<String[]> 
+	 * @throws SQLException
+	 */
+	public static Pair<List<String>, Boolean[]> getECnumber(String proteinID, Statement stmt) throws SQLException{
+		
+		List<String> enzymesIDs = new ArrayList<String>();
+		Pair<List<String>, Boolean[]> res = new Pair<List<String>, Boolean[]>(enzymesIDs, null);
+		
+		ResultSet rs = stmt.executeQuery( "SELECT ecnumber, inModel FROM enzyme WHERE protein_idprotein ="+proteinID);
+		
+		int i = 0;
+		rs.last();
+		Boolean[] inModel = new Boolean[rs.getRow()];
+		rs.beforeFirst();
+		while(rs.next()) {
+
+			enzymesIDs.add(i,rs.getString(1));
+			inModel[i] = rs.getBoolean(2);
+		}
+		
+		res.setA(enzymesIDs);
+		res.setB(inModel);
+			
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Get protein data.
+	 * @param id
+	 * @param stmt
+	 * @return String[][]
+	 * @throws SQLException
+	 */
+	public static String[][] getProteinData(String id, Statement stmt) throws SQLException{
+		
+		String[][] res = null;
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM protein WHERE idprotein ="+id);
+		
+		ResultSetMetaData rsmd = rs.getMetaData();
+		rs.last();
+		res = new String[rs.getRow()][rsmd.getColumnCount()];
+		rs.first();
+		int row=0;
+
+		while(row<res.length) {
+
+			int col=1;
+			while(col<rsmd.getColumnCount()+1) {
+
+				res[row][col-1] = rs.getString(col);
+				col++;
+			}
+			rs.next();
+			row++;
+		}
+			
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Get enzyme ECnumber and check if is in Model for a given proteinID.
+	 * @param proteinID
+	 * @param stmt
+	 * @return String[]
+	 * @throws SQLException
+	 */
+	public static String[] getECnumber2(String proteinID, Statement stmt) throws SQLException{
+		
+		String[] list = new String[2];
+		
+		String temp = "", tempBoolean="";
+		
+		ResultSet rs = stmt.executeQuery( "SELECT ecnumber, inModel FROM enzyme WHERE protein_idprotein ="+proteinID);
+		
+		while(rs.next()) {
+			
+			temp+=(rs.getString(1)+";");
+			
+			if(rs.getString(2).equals("1"))
+				tempBoolean+=("true;");
+			else
+				tempBoolean+=("false;");
+		}
+
+		list[0] = temp;
+		list[1] = tempBoolean;
+		
+		rs.close();
+		return list;
+	}
+	
+	/**
+	 * Get synonyms.
+	 * @param proteinID
+	 * @param stmt
+	 * @return String[][]
+	 * @throws SQLException
+	 */
+	public static String[][] getSynonyms(String proteinID, Statement stmt) throws SQLException{
+		
+		String[][] res = null; 
+		
+		ResultSet rs = stmt.executeQuery("SELECT alias FROM aliases where class = 'p' AND entity ="+proteinID);
+		
+		ResultSetMetaData rsmd = rs.getMetaData();
+		rs.last();
+		res = new String[rs.getRow()][rsmd.getColumnCount()];
+		rs.first();
+
+		int row=0;
+		while(row<res.length)
+		{
+			int col=1;
+			while(col<rsmd.getColumnCount()+1)
+			{
+
+				res[row][col-1] = rs.getString(col);
+				col++;
+			}
+			rs.next();
+			row++;
+		}
+		
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Get proteinID for a given name and class.
+	 * @param classString
+	 * @param name
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String getProteinID(String classString, String name, Statement stmt) throws SQLException{
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM protein WHERE name='" + name + "' AND class = '"+classString+"'");
+		String idNewProtein = "";
+		if(rs.next()) 
+			idNewProtein = rs.getString(1);
+		
+		rs.close();
+		return idNewProtein;
+	}
+	
+	/**
+	 * Check if an entry for a given name and entity exists in aliases table.
+	 * @param idNewProtein
+	 * @param name
+	 * @param stmt
+	 * @return boolean
+	 * @throws SQLException
+	 */
+	public static boolean checkAliasExistence(String idNewProtein, String name, Statement stmt) throws SQLException{
+		
+		boolean exists = false;
+		ResultSet rs = stmt.executeQuery("SELECT * FROM aliases WHERE class='p' AND  alias='" + name +"' AND  entity=" + idNewProtein);
+
+		if(rs.next()) 
+			exists = true;
+		
+		rs.close();
+		return exists;
+	}
+	
+	/**
+	 * Check if an entry for a given proteinID and ECnumber exists in enzyme table.
+	 * @param idNewProtein
+	 * @param id
+	 * @param stmt
+	 * @return boolean
+	 * @throws SQLException
+	 */
+	public static boolean checkEnzymeInModelExistence(String idNewProtein, String id, Statement stmt) throws SQLException{
+		
+		boolean exists = false;
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM enzyme " +
+				"WHERE inModel=true AND  source='MANUAL' " +
+				"AND  protein_idprotein=" + idNewProtein+" AND ecnumber ='"+id+"'");
+
+		if(rs.next()) 
+			exists = true;
+		
+		rs.close();
+		return exists;
+	}
+
+	/**
+	 * Get reactions IDs for a given ProteinID and ecnumber.
+	 * @param proteinID
+	 * @param ec
+	 * @param stmt
+	 * @return Set<String>
+	 * @throws SQLException
+	 */
+	public static Set<String> getReactionsIDs(String proteinID, String ec, Statement stmt) throws SQLException{
+		
+		Set<String> reactionsIDs = new HashSet<String>();
+		
+		ResultSet rs= stmt.executeQuery("SELECT DISTINCT idreaction FROM reaction " +
+				"INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction = idreaction " +
+				"INNER JOIN pathway_has_reaction ON reaction.idreaction = pathway_has_reaction.reaction_idreaction  " +
+				"WHERE pathway_has_reaction.reaction_idreaction = idreaction " +
+				"AND reaction_has_enzyme.enzyme_protein_idprotein = "+proteinID +" " +
+				"AND reaction_has_enzyme.enzyme_ecnumber = '"+ec+"'");
+		
+		while(rs.next()) 
+			reactionsIDs.add(rs.getString(1));
+		
+		rs.close();
+		return reactionsIDs;
+	}
+	
+	/**
+	 * Get reactions IDs for a given ProteinID and ecnumber.
+	 * @param reactionsIDs
+	 * @param proteinID
+	 * @param ec
+	 * @param stmt
+	 * @return Set<String>
+	 * @throws SQLException
+	 */
+	public static Set<String> getReactionsIDs2(Set<String> reactionsIDs, String proteinID, String ec, Statement stmt) throws SQLException{
+		
+		ResultSet rs= stmt.executeQuery("SELECT DISTINCT idreaction FROM reactions_view_noPath_or_noEC " +
+				"INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction=idreaction " +
+				"WHERE enzyme_protein_idprotein = "+proteinID+" AND enzyme_ecnumber = '"+ec+"'");
+		
+		while(rs.next()) 
+			reactionsIDs.add(rs.getString(1));
+		
+		rs.close();
+		return reactionsIDs;
+	}
+	
+	/**
+	 * Get data from reaction_has_enzyme table for a given idreaction.
+	 * @param idreaction
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getReactionHasEnzymeData2(String idreaction, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs= stmt.executeQuery("SELECT enzyme_protein_idprotein, enzyme_ecnumber FROM reaction_has_enzyme " +
+				"INNER JOIN enzyme ON (enzyme_protein_idprotein = enzyme.protein_idprotein AND enzyme_ecnumber = enzyme.ecnumber)"+
+				"WHERE inModel AND reaction_idreaction = "+idreaction);
+		
+		while(rs.next()){
+			String[] list = new String[2];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Check existence of entries in enzime table for a given proteinID and ECnumber.
+	 * @param idProtein
+	 * @param ecnumber
+	 * @param stmt
+	 * @return boolean
+	 * @throws SQLException
+	 */
+	public static boolean checkEnzyme(String idProtein, String ecnumber, Statement stmt) throws SQLException{
+		
+		boolean exists = false;
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM enzyme WHERE protein_idprotein = "+idProtein+" AND ecnumber = '"+ecnumber+"';");
+		
+		if(rs.next()) 
+			exists = true;
+		
+		rs.close();
+		return exists;
+	}	
+	
+	/**
+	 * Get data from regulatory_event table.
+	 * @param qls
+	 * @param stmt
+	 * @return HashMap<String,String[]>
+	 * @throws SQLException
+	 */
+	public static HashMap<String,String[]> getDataFromRegulatoryEvent(HashMap<String,String[]> qls, Statement stmt) throws SQLException{
+		
+		ResultSet rs = stmt.executeQuery("SELECT promoter_idpromoter, COUNT(protein_idprotein) FROM regulatory_event " +
+				"GROUP BY promoter_idpromoter ORDER BY promoter_idpromoter");
+			
+		while(rs.next())
+			qls.get(rs.getString(1))[2] = rs.getString(2);
+		
+		rs.close();
+		return qls;
+	}
+	
+	/**
+	 * Get data from sigma_promoter table.
+	 * @param qls
+	 * @param stmt
+	 * @return HashMap<String,String[]>
+	 * @throws SQLException
+	 */
+	public static HashMap<String,String[]> getDataFromSigmaPromoter(HashMap<String,String[]> qls, Statement stmt) throws SQLException{
+		
+		ResultSet rs = stmt.executeQuery("SELECT promoter_idpromoter, COUNT(protein_idprotein) FROM sigma_promoter " +
+				"GROUP BY promoter_idpromoter ORDER BY promoter_idpromoter");
+			
+		while(rs.next())
+			qls.get(rs.getString(1))[3] = rs.getString(2);
+		
+		rs.close();
+		return qls;
+	}
+
+	/**
+	 * Get data from transcription_unit_promoter table.
+	 * @param qls
+	 * @param stmt
+	 * @return HashMap<String,String[]>
+	 * @throws SQLException
+	 */
+	public static HashMap<String,String[]> getDataFromTranscriptUnitPromoter(HashMap<String,String[]> qls, Statement stmt) throws SQLException{
+		
+		ResultSet rs = stmt.executeQuery("SELECT promoter_idpromoter, COUNT(transcription_unit_idtranscription_unit) " +
+				"FROM transcription_unit_promoter GROUP BY promoter_idpromoter ORDER BY promoter_idpromoter");
+			
+		while(rs.next())
+			qls.get(rs.getString(1))[4] = rs.getString(2);
+		
+		rs.close();
+		return qls;
+	}
+	
+	/**
+	 * Calculate number of promoters with with regulations by TFs.
+	 * @param stmt
+	 * @return String with the value
+	 * @throws SQLException
+	 */
+	public static String countPromoterWithRegulationsByTFs(Statement stmt) throws SQLException{
+		
+		String res = "";
+		
+		ResultSet rs = stmt.executeQuery("SELECT count(distinct(transcription_unit_promoter.promoter_idpromoter)) " +
+				"FROM transcription_unit_promoter " +
+				"JOIN regulatory_event ON " +
+				"transcription_unit_promoter.promoter_idpromoter = regulatory_event.promoter_idpromoter");
+		
+		if(rs.next())
+			res = rs.getString(1);
+		
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Count number of promoters and number of promoters with no name associated.
+	 * @param stmt
+	 * @return Integer[]
+	 * @throws SQLException
+	 */
+	public static Integer[] countPromoters(Statement stmt) throws SQLException{
+		
+		Integer[] list = new Integer[3];
+		
+		int num=0;
+		int noname=0;
+		int noap=0;
+		
+		ResultSet rs = stmt.executeQuery("SELECT protein_idprotein, promoter_idpromoter, ri_function_idri_function, " +
+				"binding_site_position, protein.name, promoter.name, " +
+				"symbol FROM regulatory_event JOIN protein ON protein_idprotein = " +
+				"idprotein JOIN promoter ON promoter_idpromoter = idpromoter " +
+				"JOIN ri_function ON ri_function_idri_function = idri_function " +
+				"ORDER BY protein_idprotein,promoter_idpromoter");
+		
+		while(rs.next()) {
+			num++;
+			if(rs.getString(2)==null) noname++;
+			if(rs.getString(3)==null) noap++;
+        }
+		
+		list[0] = num;
+		list[1] = noname;
+		list[2] = noap;
+		
+		rs.close();
+		return list;
+	}
+	
+	/**
+	 * Get data from reaction table.
+	 * @param aux
+	 * @param ecnumber
+	 * @param stmt
+	 * @return Set<String>
+	 * @throws SQLException
+	 */
+	public static Set<String> getDataFromReaction(String aux, String ecnumber, Statement stmt) throws SQLException{
+		
+		Set<String> reactionsIDs = new HashSet<String>();
+		
+		ResultSet rs= stmt.executeQuery("SELECT DISTINCT idreaction FROM reaction " +
+				"INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction = idreaction " +
+				//"INNER JOIN pathway_has_enzyme ON pathway_has_enzyme.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein  " +
+				"INNER JOIN pathway_has_reaction ON idreaction = pathway_has_reaction.reaction_idreaction  " +
+				"WHERE pathway_has_reaction.reaction_idreaction = idreaction " +
+				aux+
+				"AND reaction_has_enzyme.enzyme_ecnumber = '"+ecnumber+"'");
+		
+		while(rs.next())
+			reactionsIDs.add(rs.getString(1));
+			
+		rs.close();
+		return reactionsIDs;
+	}
+	
+	/**
+	 * Get data from reactions_view_noPath_or_noEC table.
+	 * @param reactionsIDs
+	 * @param aux
+	 * @param ecnumber
+	 * @param stmt
+	 * @return Set<String>
+	 * @throws SQLException
+	 */
+	public static Set<String> getDataFromReactionsViewNoPathOrNoEc(Set<String> reactionsIDs, String aux, String ecnumber, Statement stmt) throws SQLException{
+		
+		ResultSet rs= stmt.executeQuery("SELECT DISTINCT idreaction FROM reactions_view_noPath_or_noEC " +
+				"INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction=idreaction " +
+				"WHERE enzyme_ecnumber = '"+ecnumber+"'"+aux);
+		
+		while(rs.next())
+			reactionsIDs.add(rs.getString(1));
+			
+		rs.close();
+		return reactionsIDs;
+	}
+	
+	/**
+	 * Get statistics of sigma factors.
+	 * @param table
+	 * @param stmt
+	 * @return Integer[]
+	 * @throws SQLException
+	 */
+	public static Integer[] countSigmaFactors(String table, Statement stmt) throws SQLException{
+		
+		Integer[] list = new Integer[3];
+		
+		LinkedList<String> proteinsids = new LinkedList<String>();
+		LinkedList<String> promotersids = new LinkedList<String>();
+		
+		int num=0;
+		int nproteins=0;
+		int npromoter=0;
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM "+ table);
+		
+		while(rs.next())
+        {
+			num++;
+			if(!proteinsids.contains(rs.getString(1)))
+			{
+				nproteins++;
+				proteinsids.add(rs.getString(1));
+			}
+			if(!promotersids.contains(rs.getString(2)))
+			{
+				npromoter++;
+				promotersids.add(rs.getString(2));
+			}
+        }
+		
+		list[0] = num;
+		list[1] = nproteins;
+		list[2] = npromoter;
+		
+		rs.close();
+		return list;
+	}
+	
+	/**
+	 * Get data from Sigma_Promoter table.
+	 * @param stmt
+	 * @return HashMap<String,ArrayList<String[]>>
+	 * @throws SQLException
+	 */
+	public static HashMap<String,ArrayList<String[]>> getDataFromSigmaPromoter(Statement stmt) throws SQLException{
+		
+		HashMap<String,ArrayList<String[]>> index = new HashMap<String,ArrayList<String[]>>();
+		
+		ArrayList<String> check = new ArrayList<String>();
+
+        ResultSet rs = stmt.executeQuery("SELECT idprotein, gene.idgene, gene.name " +
+       		"FROM sigma_promoter JOIN protein ON sigma_promoter.protein_idprotein = protein.idprotein " +
+       		"JOIN subunit ON protein.idprotein = subunit.protein_idprotein " +
+       		"JOIN gene ON gene.idgene = subunit.gene_idgene " +
+       		"ORDER BY idprotein");
+        
+        while(rs.next()) {
+        	if(!check.contains(rs.getString(1)+"."+rs.getString(2)))
+        	{
+        		check.add(rs.getString(1)+"."+rs.getString(2));
+        		if(index.containsKey(rs.getString(1)))
+        			index.get(rs.getString(1)).add(new String[]{rs.getString(1),rs.getString(2),rs.getString(3)});
+        		
+        		else
+        		{
+        			ArrayList<String[]> lis = new ArrayList<String[]>();
+        			lis.add(new String[]{rs.getString(1),rs.getString(2),rs.getString(3)});
+        			index.put(rs.getString(1),lis);
+        		}
+        	}
+        }
+		rs.close();
+		return index;
+	}
+	
+	
+	/**
+	 * Get data from Sigma_Promoter table.
+	 * @param stmt
+	 * @return ArrayList<String[]> 
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getDataFromSigmaPromoter2(Statement stmt) throws SQLException{
+
+		ArrayList<String[]> result = new ArrayList<>();
+
+		ResultSet rs = stmt.executeQuery("SELECT protein.idprotein, protein.name, gene.idgene, gene.name " +
+	        	"FROM sigma_promoter as event, transcription_unit, transcription_unit_gene AS tug, " +
+	        	"transcription_unit_promoter as tup, promoter,gene,protein " +
+	        	"WHERE protein_idprotein=idprotein AND event.promoter_idpromoter=idpromoter " +
+	        	"AND tup.promoter_idpromoter=idpromoter AND " +
+	        	"tup.transcription_unit_idtranscription_unit=idtranscription_unit AND " +
+	        	"tug.transcription_unit_idtranscription_unit=idtranscription_unit AND " +
+	        	"gene_idgene=idgene " +
+	        	"ORDER BY protein.idprotein");
+        
+		while(rs.next()){
+			String[] list = new String[4];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getString(4);
+			
+			result.add(list);
+		}
+		
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get row informations from sigma_promoter table for a given proteinID.
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getRowInfoSigmaPromoter(String id, Statement stmt) throws SQLException{
+
+		ArrayList<String[]> result = new ArrayList<>();
+
+		ResultSet rs = stmt.executeQuery("SELECT distinct(gene.idgene), gene.name FROM sigma_promoter AS " +
+				"event, transcription_unit, transcription_unit_gene AS tug, " +
+				"transcription_unit_promoter AS tup, promoter,gene,protein " +
+				"WHERE protein_idprotein=idprotein AND event.promoter_idpromoter=idpromoter " +
+				"AND tup.promoter_idpromoter=idpromoter AND " +
+				"tup.transcription_unit_idtranscription_unit=idtranscription_unit AND " +
+				"tug.transcription_unit_idtranscription_unit=idtranscription_unit AND " +
+				"gene_idgene=idgene AND protein.idprotein = " + id +
+				" ORDER BY gene.name");
+        
+		while(rs.next()){
+			String[] list = new String[2];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			
+			result.add(list);
+		}
+		
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Count number of regulated genes.
+	 * @param stmt
+	 * @return String
+	 * @throws SQLException
+	 */
+	public static String countNumberOfRegulatedGenes(Statement stmt) throws SQLException{
+
+		String value = "";
+		
+		ResultSet rs = stmt.executeQuery("SELECT count(distinct(gene.idgene)) " +
+				"FROM regulatory_event as event, transcription_unit, " +
+				"transcription_unit_gene AS tug, transcription_unit_promoter " +
+				"as tup, promoter,gene WHERE event.promoter_idpromoter=idpromoter " +
+				"AND tup.promoter_idpromoter=idpromoter AND " +
+				"tup.transcription_unit_idtranscription_unit=idtranscription_unit " +
+				"AND tug.transcription_unit_idtranscription_unit=idtranscription_unit " +
+				"AND gene_idgene=idgene");
+        
+		if(rs.next())
+			value = rs.getString(1);
+		
+		rs.close();
+		return value;
+	}
+	
+	/**
+	 * Calculate TFs encoded by multiple genes.
+	 * @param stmt
+	 * @return String
+	 * @throws SQLException
+	 */
+	public static int countTFsEncodedByGenes(Statement stmt) throws SQLException{
+
+		int numultiplegene=0;
+		
+		ResultSet rs = stmt.executeQuery("SELECT count(distinct(gene.idgene)) " +
+				"FROM regulatory_event as event, transcription_unit, " +
+				"transcription_unit_gene AS tug, transcription_unit_promoter " +
+				"as tup, promoter,gene WHERE event.promoter_idpromoter=idpromoter " +
+				"AND tup.promoter_idpromoter=idpromoter AND " +
+				"tup.transcription_unit_idtranscription_unit=idtranscription_unit " +
+				"AND tug.transcription_unit_idtranscription_unit=idtranscription_unit " +
+				"AND gene_idgene=idgene");
+		
+		while(rs.next()){
+			if((new Integer(rs.getString(2))).intValue()>1) 
+				numultiplegene++;
+		}
+		
+		rs.close();
+		return numultiplegene;
+	}
+	
+	/**
+	 * Get data from regulatory_event table.
+	 * @param stmt
+	 * @return HashMap<String,ArrayList<String[]>>
+	 * @throws SQLException
+	 */
+	public static HashMap<String,ArrayList<String[]>> getDataFromRegulatoryEvent(Statement stmt) throws SQLException{
+
+		HashMap<String,ArrayList<String[]>> index = new HashMap<String,ArrayList<String[]>>();
+		
+		ArrayList<String> check = new ArrayList<String>();		
+		
+		ResultSet rs = stmt.executeQuery("SELECT idprotein, gene.idgene, gene.name " +
+	        	"FROM regulatory_event JOIN protein ON regulatory_event.protein_idprotein " +
+	        	"= protein.idprotein JOIN subunit ON protein.idprotein = " +
+	        	"subunit.protein_idprotein JOIN gene ON gene.idgene = subunit.gene_idgene " +
+	        	"ORDER BY idprotein");
+        
+		while(rs.next())
+        {
+        	if(!check.contains(rs.getString(1)+"."+rs.getString(2)))
+        	{
+        		check.add(rs.getString(1)+"."+rs.getString(2));
+        		if(index.containsKey(rs.getString(1)))
+        		{
+        			index.get(rs.getString(1)).add(new 
+        				String[]{rs.getString(1),rs.getString(2),rs.getString(3)}
+        			);
+        		}
+        		else
+        		{
+        			ArrayList<String[]> lis = new ArrayList<String[]>();
+        			lis.add(new String[]{rs.getString(1),rs.getString(2),rs.getString(3)});
+        			index.put(rs.getString(1),lis);
+        		}
+        	}
+        }
+		
+		rs.close();
+		return index;
+	}
+	
+	/**
+	 * Get data from regulatory_event table.
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getDataFromRegulatoryEvent2(Statement stmt) throws SQLException{
+
+		ArrayList<String[]> result = new ArrayList<>();
+
+		ResultSet rs = stmt.executeQuery("SELECT protein.name, protein.idprotein, count(gene.idgene) " +
+	        	"FROM regulatory_event as event,transcription_unit, transcription_unit_gene " +
+	        	"AS tug, transcription_unit_promoter as tup, promoter,gene,protein, " +
+	        	"ri_function WHERE ri_function_idri_function=idri_function AND " +
+	        	"protein_idprotein=idprotein AND event.promoter_idpromoter=idpromoter " +
+	        	"AND tup.promoter_idpromoter=idpromoter AND " +
+	        	"tup.transcription_unit_idtranscription_unit=idtranscription_unit " +
+	        	"AND tug.transcription_unit_idtranscription_unit=idtranscription_unit " +
+	        	"AND gene_idgene=idgene GROUP BY protein.idprotein order by protein.idprotein");
+		
+		while(rs.next()){
+			String[] list = new String[3];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			
+			result.add(list);
+		}
+		
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get row informations from TFs table for a given proteinID.
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getRowInfoTFs(String id, Statement stmt) throws SQLException{
+
+		ArrayList<String[]> result = new ArrayList<>();
+
+		ResultSet rs = stmt.executeQuery("SELECT distinct(gene.idgene), gene.name FROM regulatory_event " +
+				"JOIN protein ON regulatory_event.protein_idprotein = protein.idprotein " +
+				"JOIN subunit ON protein.idprotein = subunit.protein_idprotein " +
+				"JOIN gene ON gene.idgene = subunit.gene_idgene " +
+				"WHERE idprotein = "+id+" ORDER BY idprotein");
+        
+		while(rs.next()){
+			String[] list = new String[2];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			
+			result.add(list);
+		}
+		
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get TFs data for a given proteinID.
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getTFsData(String id, Statement stmt) throws SQLException{
+
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT distinct(gene.idgene), gene.name FROM regulatory_event as event,transcription_unit, " +
+				"transcription_unit_gene AS tug, transcription_unit_promoter as tup, " +
+				"promoter,gene,protein, ri_function " +
+				"WHERE ri_function_idri_function=idri_function AND protein_idprotein=idprotein AND " +
+				"event.promoter_idpromoter=idpromoter AND tup.promoter_idpromoter=idpromoter AND " +
+				"tup.transcription_unit_idtranscription_unit=idtranscription_unit AND " +
+				"tug.transcription_unit_idtranscription_unit=idtranscription_unit AND " +
+				"gene_idgene=idgene AND protein.idprotein = "+id);
+        
+		while(rs.next()){
+			String[] list = new String[2];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			
+			result.add(list);
+		}
+		
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get data from transcription_unit table.
+	 * @param stmt
+	 * @return HashMap<String, String[]> 
+	 * @throws SQLException
+	 */
+	public static HashMap<String, String[]> getDataFromTU(HashMap<String, String[]> qls, Statement stmt) throws SQLException{
+
+		ResultSet rs = stmt.executeQuery("SELECT idtranscription_unit, "
+				+ "COUNT(gene_idgene) FROM transcription_unit JOIN transcription_unit_gene "
+				+ "ON transcription_unit.idtranscription_unit = "
+				+ "transcription_unit_gene.transcription_unit_idtranscription_unit "
+				+ "GROUP BY idtranscription_unit");
+        
+		while (rs.next())
+			qls.get(rs.getString(1))[1] = rs.getString(2);
+		
+		rs.close();
+		return qls;
+	}
+	
+	/**
+	 * Get data from transcription_unit table.
+	 * @param stmt
+	 * @return HashMap<String, String[]> 
+	 * @throws SQLException
+	 */
+	public static HashMap<String, String[]> getDataFromTU2(HashMap<String, String[]> qls, Statement stmt) throws SQLException{
+
+		ResultSet rs = stmt.executeQuery("SELECT idtranscription_unit, COUNT(promoter_idpromoter) "
+				+ "FROM transcription_unit JOIN transcription_unit_promoter ON "
+				+ "transcription_unit.idtranscription_unit = "
+				+ "transcription_unit_promoter.transcription_unit_idtranscription_unit "
+				+ "GROUP BY idtranscription_unit");
+        
+		while (rs.next())
+			qls.get(rs.getString(1))[2] = rs.getString(2);
+		
+		rs.close();
+		return qls;
+	}
+	
+	/**
+	 * Get gene name for a given idtranscription_unit.
+	 * @param id
+	 * @param stmt
+	 * @return ArrayList<String>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String> getGeneNameFromTU(String id, Statement stmt) throws SQLException{
+
+		ArrayList<String> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT gene.name FROM transcription_unit JOIN transcription_unit_gene "
+				+ "ON transcription_unit.idtranscription_unit = transcription_unit_gene.transcription_unit_idtranscription_unit "
+				+ "JOIN gene ON idgene = gene_idgene WHERE idtranscription_unit = "+ id);
+        
+		while(rs.next())
+			result.add(rs.getString(1));
+		
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get promoter name for a given idtranscription_unit.
+	 * @param id
+	 * @param stmt
+	 * @return ArrayList<String>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String> getPromoterNameFromTU(String id, Statement stmt) throws SQLException{
+
+		ArrayList<String> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT promoter.name FROM transcription_unit JOIN "
+				+ "transcription_unit_promoter ON transcription_unit.idtranscription_unit = "
+				+ "transcription_unit_promoter.transcription_unit_idtranscription_unit JOIN promoter "
+				+ "ON idpromoter = promoter_idpromoter WHERE idtranscription_unit = "+ id);
+        
+		while(rs.next())
+			result.add(rs.getString(1));
+		
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get protein composition.
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getProteinComposition(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT gene.idgene, gene.name, protein_composition.subunit " +
+				"FROM subunit JOIN protein_composition ON subunit.enzyme_protein_idprotein = protein_composition.subunit " +
+				"JOIN gene ON idgene = subunit.gene_idgene;");
+		
+		while(rs.next()){
+			String[] list = new String[3];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			
+			result.add(list);
+		}
+		
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * get metabolites in model.
+	 * @param statement
+	 * @return List<String>
+	 * @throws SQLException
+	 */
+	public static List<String> getMetabolitesInModel(Statement statement) throws SQLException{
+		
+		List<String> metabolites = new ArrayList<String>();
+		
+		ResultSet rs = statement.executeQuery("SELECT DISTINCT(compound_idcompound) FROM stoichiometry " +
+				"INNER JOIN reaction ON reaction_idreaction = reaction.idreaction " +
+				"WHERE inModel");
+
+		while (rs.next())
+			metabolites.add(rs.getString(1));
+		
+		rs.close();
+		return metabolites;
+	}
+	
+	/**
+	 * Get data from reaction_has_enzyme table.
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getReactionHasEnzymeData3(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT reaction_idreaction, enzyme_protein_idprotein, enzyme_ecnumber FROM reaction_has_enzyme "
+				+ " INNER JOIN enzyme on (enzyme.protein_idprotein = enzyme_protein_idprotein AND enzyme.ecnumber = enzyme_ecnumber) "
+				+ " WHERE inModel "
+				+ " ORDER BY reaction_idreaction" );
+		
+		while(rs.next()){
+			String[] list = new String[3];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			
+			result.add(list);
+		}
+		
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get data from pathway_has_reaction table.
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getPathwayHasReactionData(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT reaction_idreaction, pathway_idpathway, pathway.name " +
+				"FROM pathway_has_reaction " +
+				"INNER JOIN pathway ON (pathway_idpathway = pathway.idpathway)" +
+				"ORDER BY reaction_idreaction" );
+		
+		while(rs.next()){
+			String[] list = new String[3];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			
+			result.add(list);
+		}
+		
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get data from reaction_has_enzyme table.
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getReactionHasEnzymeData4(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT reaction_idreaction, name, locusTag, subunit.enzyme_ecnumber " +
+				"FROM reaction_has_enzyme " +
+				"INNER JOIN subunit ON (subunit.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein AND subunit.enzyme_ecnumber = reaction_has_enzyme.enzyme_ecnumber) " +
+				"INNER JOIN gene ON (gene_idgene = gene.idgene) " +
+				"WHERE (note is null OR note NOT LIKE 'unannotated') " +
+				"ORDER BY reaction_idreaction;");
+		
+		while(rs.next()){
+			String[] list = new String[4];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getString(4);
+			
+			result.add(list);
+		}
+		
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Get stoichiometry.
+	 * @param conditions
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getStoichiometry(String conditions, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT idstoichiometry, reaction_idreaction, compound_idcompound, stoichiometry.compartment_idcompartment, " +
+				"stoichiometric_coefficient, numberofchains, compound.name, compound.formula, compound.kegg_id " +
+				"FROM reaction " +
+				"INNER JOIN stoichiometry ON (stoichiometry.reaction_idreaction = idreaction) " +
+				"INNER JOIN compound ON (stoichiometry.compound_idcompound = compound.idcompound) " +
+				"WHERE inModel AND " +conditions );
+		
+		while(rs.next()){
+			String[] list = new String[9];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			list[3]=rs.getString(4);
+			list[4]=rs.getString(5);
+			list[5]=rs.getString(6);
+			list[6]=rs.getString(7);
+			list[7]=rs.getString(8);
+			list[8]=rs.getString(9);
+			
+			result.add(list);
+		}
+		
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * SELECT name FROM pathway WHERE name = 'Drains pathway'
+	 * @param conditions
+	 * @param stmt
+	 * @return String
+	 * @throws SQLException
+	 */
+	public static String getDrainsPathway(Statement stmt) throws SQLException{
+		
+		String res = "";
+		
+		ResultSet rs = stmt.executeQuery("SELECT name FROM pathway WHERE name = 'Drains pathway'");
+
+		if(rs.next())
+			res = rs.getString(1);
+		
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Get data in model from reaction table.
+	 * @param aux
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getDataFromReaction2(String aux, Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT reaction.name, kegg_id, idreaction FROM reaction "
+				+ " INNER JOIN stoichiometry ON stoichiometry.reaction_idreaction = reaction.idreaction "
+				+ " INNER JOIN compound ON (compound_idcompound = compound.idcompound) " +
+				aux + " AND inModel ");
+		
+		while(rs.next()){
+			String[] list = new String[3];
+
+			list[0]=rs.getString(1);
+			list[1]=rs.getString(2);
+			list[2]=rs.getString(3);
+			
+			result.add(list);
+		}
+		
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Retrieves idGene and locusTag from gene table
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getGeneIdLocusTag (Statement stmt) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag FROM gene;");
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		while(rs.next()) {
+			String[] list = new String[2];
+
+			list[0] = rs.getString(0);
+			list[1] = rs.getString(2);
+			result.add(list);
+		}
+		
+		return result;
+	}
+	
+	
+	/**
+	 * Retrives all the querys in geneHomology + homologySetup table that have more that appears more than one once
+	 * @param stmt
+	 * @return ArrayList<String> querys
+	 * @throws SQLException
+	 */
+	public static ArrayList<String> getDuplicatedQuerys(Statement stmt) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT COUNT(*), query, locusTag, program FROM geneHomology " +
+				"INNER JOIN homologySetup ON (homologySetup.s_key = homologySetup_s_key)" +
+				"GROUP by program, query "+
+				"HAVING COUNT(*)>1");
+		ArrayList<String> querys = new ArrayList<>();
+			
+		while(rs.next())
+			querys.add(rs.getString("query"));
+		
+		return querys;
+	}
+	
+	/**
+	 * D
+	 * @param statement
+	 * @param query
+	 * @throws SQLException
+	 */
+	public static void deleteDuplicatedQuerys(Statement statement, String query) throws SQLException {
+		
+		statement.execute("DELETE FROM geneHomology WHERE query ='"+query+"'");
+			
+	}
+	
+	/**
+	 * get a map with all locusTag and respective geneid
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, Integer> getGeneIds(Statement statement) throws SQLException{
+		
+		Map<String, Integer> result = new HashMap<>();
+		
+		ResultSet rs = statement.executeQuery("SELECT sequence_id, idgene FROM gene;");
+		
+		while(rs.next())
+			result.put(rs.getString(1), rs.getInt(2));
+		
+		return result;
+		
+	}
+	
+	
+	
+	
+	
+}	
