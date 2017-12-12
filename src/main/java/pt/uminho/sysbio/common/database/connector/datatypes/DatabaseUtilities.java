@@ -145,7 +145,7 @@ public class DatabaseUtilities {
 		String driver_class_name;
 		String url_db_connection;
 
-		String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
+		String path = FileUtils.getHomeFolderPath();
 		driver_class_name = "org.h2.Driver";
 		//url_db_connection = "jdbc:h2://"+this.host+":"+this.port;
 		url_db_connection = "jdbc:h2:"+path+"/h2Database;MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE";
