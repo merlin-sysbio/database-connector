@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
 import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
+import pt.uminho.sysbio.merlin.utilities.containers.model.MetaboliteContainer;
 
 /**
  * @author Oscar Dias
@@ -1332,7 +1333,7 @@ public class ProjectAPI {
 						" LEFT JOIN compartment ON compartment_idcompartment = compartment.idcompartment " +
 						" WHERE idreaction = "+rowID);
 		
-		if(rs.next()){
+		while(rs.next()){
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
 			list[2]=rs.getBoolean(3)+"";
@@ -1357,9 +1358,9 @@ public class ProjectAPI {
 	 * @return String[]
 	 * @throws SQLException
 	 */
-	public static String[] getStoichiometryData(String rowID, Statement statement) throws SQLException{
+	public static Map<String, MetaboliteContainer> getStoichiometryData(String rowID, Statement statement) throws SQLException{
 		
-		String[] list = new String[7];
+		Map<String, MetaboliteContainer> res = new TreeMap<String, MetaboliteContainer>();
 		
 		ResultSet rs = statement.executeQuery("SELECT idcompound, compound.name, compound.formula, " +
 				"stoichiometric_coefficient, " +
@@ -1373,17 +1374,15 @@ public class ProjectAPI {
 				"ON (compartment_idcompartment=idcompartment) " +
 				"WHERE reaction_idreaction = '"+rowID+"';");
 		
-		if(rs.next()){
-			list[0]=rs.getString(1);
-			list[1]=rs.getString(2);
-			list[2]=rs.getString(3);
-			list[3]=rs.getString(4);
-			list[4]=rs.getString(5);
-			list[5]=rs.getString(6);
-			list[6]=rs.getString(7);
+		while(rs.next()) {
+
+			MetaboliteContainer metaboliteContainer = new MetaboliteContainer(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6)) ;
+			res.put(rs.getString(7), metaboliteContainer);
+
 		}
+		
 		rs.close();
-		return list;
+		return res;
 	}
 	
 	/**
@@ -3372,5 +3371,164 @@ public class ProjectAPI {
 		return exists;
 	}
 	
+	/**
+	 * Check if all databases are up-to-date
+	 * 
+	 * @param data
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Set<Integer> checkIfUpdated(Map<Integer, String> data, Statement statement) throws SQLException{
+		
+		Set<Integer> forUpdate = new HashSet<>();
+		
+		for (int id : data.keySet()){
+			if(!forUpdate.contains(id))
+				forUpdate.add(id);
+		}
+		
+		ResultSet rs = statement.executeQuery("SELECT * FROM updates");
+		
+		while(rs.next()){
+			if(forUpdate.contains(rs.getInt(1)))
+				forUpdate.remove(rs.getInt(1));
+		}
+			
+		rs.close();
+		return forUpdate;
+	}
+	
+	/**
+	 * Method for execute queries read from the "updates" file in the folder conf
+	 * 
+	 * @param forUpdate
+	 * @param data
+	 * @param statement
+	 * @throws SQLException
+	 */
+	public static void update(Set<Integer> forUpdate, Map<Integer, String> data, Statement statement) throws SQLException{
+		
+		long time = System.currentTimeMillis();
+		Timestamp timestamp = new Timestamp(time);
+		
+		for(int code : forUpdate){
+			statement.execute(data.get(code));
+			statement.execute("INSERT INTO updates(id , date) values (" + code + ", '" + timestamp + "');");
+		}
+	}
+	
+	/**
+	 * Check if table updates already exists, if not, it will be created with columns 'id' and 'date'
+	 * 
+	 * @param table
+	 * @param statement
+	 * @throws SQLException
+	 */
+	public static void checkIfTableUpdatesExists(Statement statement) throws SQLException{
+		
+		statement.execute("CREATE TABLE IF NOT EXISTS `updates` ( `id` INT NOT NULL, `date` DATETIME NOT NULL, PRIMARY KEY (`id`));");
+		
+	}
+	
+	/**
+	 * Method to retrieve information about the organism from the table projects
+	 * 
+	 * @param taxonomyID
+	 * @param statement
+	 * @return
+	 * @throws SQLException 
+	 */
+	public static String[] getOrganismData(long taxonomyID, Statement statement) throws SQLException{
+		
+		String[] res = new String[2];
+		
+		ResultSet rs = statement.executeQuery("SELECT organism_name, organism_lineage FROM projects WHERE organism_id = " + taxonomyID +";"); 
+
+		if(rs.next()){
+			
+			res[0] = rs.getString(1);
+			res[1] = rs.getString(2);
+			return res;
+		}
+		
+		rs.close();
+		return null;
+		
+	}
+	
+	/**
+	 * Update organism name and lineage in the table projects
+	 * 
+	 * @param taxonomyID
+	 * @param data
+	 * @param statement
+	 * @throws SQLException
+	 */
+	public static void updateOrganismData(long taxonomyID, String[] data, Statement statement) throws SQLException{
+		
+		if(data != null)
+			statement.execute("UPDATE projects SET organism_name = '" + data[0] + "', organism_lineage = '" + data[1] + "' WHERE organism_id = " + taxonomyID +";"); 
+
+	}
+	
+	
+	/**
+	 * Method to drop table 'updates'.
+	 * 
+	 * @param taxonomyID
+	 * @param data
+	 * @param statement
+	 * @throws SQLException
+	 */
+	public static void dropTableUpdates(Statement statement) throws SQLException{
+		
+		statement.execute("DROP TABLE updates");
+
+	}
+	
+	/**
+	 * Method to retrieve all information about the organism from the table projects
+	 * 
+	 * @param taxonomyID
+	 * @param statement
+	 * @return
+	 * @throws SQLException 
+	 */
+	public static String[] getAllOrganismData(long taxonomyID, Statement statement) throws SQLException{
+		
+		String[] res = new String[6];
+		
+		ResultSet rs = statement.executeQuery("SELECT * FROM projects WHERE organism_id = " + taxonomyID +";"); 
+
+		if(rs.next()){
+			
+			res[0] = rs.getString(2);
+			res[1] = rs.getString(3);
+			res[2] = rs.getString(4);
+			res[3] = rs.getString(5);
+			res[4] = rs.getString(6);
+			res[5] = rs.getString(7);
+			return res;
+		}
+		
+		rs.close();
+		return null;
+		
+	}
+	
+	/**
+	 * Method to insert data into projects table.
+	 * 
+	 * @param data
+	 * @param statement
+	 * @throws SQLException
+	 */
+	public static void setOrganismData(String[] data, Statement statement) throws SQLException{
+		
+		statement.execute("INSERT INTO projects(organism_id, latest_version, date, version, organism_name, organism_lineage) "
+				+ "values(" + data[0] + ", " + data[1] + ", " + data[2] + ", " + data[3] +", '" + data[4] + "', '" + data[5] + "');");
+		
+	}
 	
 }

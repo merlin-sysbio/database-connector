@@ -12,13 +12,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.h2.jdbc.JdbcSQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
 import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
 import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
@@ -2243,28 +2241,29 @@ import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 					else
 						note = "";
 				}
-
-				for(String module_id : modules.get(ortholog)) {
-
-					if(modules_ids.contains(module_id)) {
-				
-						if(exists) {
-
-							if(noModules) {
-								System.out.println("UPDATE subunit SET module_id = "+module_id+" WHERE gene_idgene = '"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"';");
-								statement.execute("UPDATE subunit SET module_id = "+module_id+" WHERE gene_idgene = '"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"';");
-								noModules = false;
-								modules_ids.add(module_id);
+				if(modules != null){
+					for(String module_id : modules.get(ortholog)) {
+	
+						if(modules_ids.contains(module_id)) {
+					
+							if(exists) {
+	
+								if(noModules) {
+									System.out.println("UPDATE subunit SET module_id = "+module_id+" WHERE gene_idgene = '"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"';");
+									statement.execute("UPDATE subunit SET module_id = "+module_id+" WHERE gene_idgene = '"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"';");
+									noModules = false;
+									modules_ids.add(module_id);
+								}
 							}
+							else {
+								System.out.println("INSERT INTO subunit (module_id, gene_idgene, enzyme_ecnumber, enzyme_protein_idprotein, note)" +
+										"VALUES("+module_id+", "+idGene+", '"+ecnumber+"', "+protein_idprotein+", '"+note+"');");
+								statement.execute("INSERT INTO subunit (module_id, gene_idgene, enzyme_ecnumber, enzyme_protein_idprotein, note)" +
+										"VALUES("+module_id+", "+idGene+", '"+ecnumber+"', "+protein_idprotein+", '"+note+"');");
+								//exists = true;
+							}
+	
 						}
-						else {
-							System.out.println("INSERT INTO subunit (module_id, gene_idgene, enzyme_ecnumber, enzyme_protein_idprotein, note)" +
-									"VALUES("+module_id+", "+idGene+", '"+ecnumber+"', "+protein_idprotein+", '"+note+"');");
-							statement.execute("INSERT INTO subunit (module_id, gene_idgene, enzyme_ecnumber, enzyme_protein_idprotein, note)" +
-									"VALUES("+module_id+", "+idGene+", '"+ecnumber+"', "+protein_idprotein+", '"+note+"');");
-							//exists = true;
-						}
-
 					}
 				}
 			}
