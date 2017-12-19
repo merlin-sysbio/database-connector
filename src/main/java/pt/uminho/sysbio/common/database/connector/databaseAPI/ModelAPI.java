@@ -5215,6 +5215,26 @@ public class ModelAPI {
 		
 	}
 	
+	/**
+	 * Get geneID for a given sequenceID.
+	 * 
+	 * @param sequenceID
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String getGeneId(String sequenceID, Statement statement) throws SQLException{
+		
+		ResultSet rs = statement.executeQuery("SELECT locusTag FROM gene WHERE  sequence_id = '" + sequenceID + "';");
+		System.out.println("SELECT locusTag FROM gene WHERE  sequence_id = " + sequenceID + ";");
+		
+		if(rs.next())
+			return rs.getString(1);
+		
+		return null;
+		
+	}
+	
 	
 	
 	

@@ -2,6 +2,7 @@ package pt.uminho.sysbio.common.database.connector.databaseAPI;
 
 import java.io.IOException;
 import java.sql.DatabaseMetaData;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -349,13 +350,12 @@ public class ProjectAPI {
 	 * @param reaction
 	 * @return
 	 */
-	public static String getReactionName(Connection conn,List<String> reaction){
+	public static String getReactionName(List<String> reaction, Statement statement){
+		
 		String results = "r";
 		try {
-			Statement stmt = conn.createStatement();
-
 			for(String names : reaction){
-				ResultSet rs = stmt.executeQuery("SELECT name FROM reaction WHERE idreaction="+names+";");
+				ResultSet rs = statement.executeQuery("SELECT name FROM reaction WHERE idreaction="+names+";");
 				if(rs.next())
 					results += rs.getString("name")+",";
 			}
@@ -3447,13 +3447,13 @@ public class ProjectAPI {
 
 		ResultSet rs = statement.executeQuery("SELECT organism_name, organism_lineage FROM projects WHERE organism_id = " + taxonomyID +";"); 
 
-		if(rs.next()){
-
-			res[0] = rs.getString(1);
-			res[1] = rs.getString(2);
-			return res;
+		if(rs.next() && !rs.getString(1).equalsIgnoreCase("-1")){
+			
+				res[0] = rs.getString(1);
+				res[1] = rs.getString(2);
+				return res;
 		}
-
+		
 		rs.close();
 		return null;
 
@@ -3497,20 +3497,19 @@ public class ProjectAPI {
 	 * @return
 	 * @throws SQLException 
 	 */
-	public static String[] getAllOrganismData(long taxonomyID, Statement statement) throws SQLException{
-
-		String[] res = new String[6];
-
+	public static Object[] getAllOrganismData(long taxonomyID, Statement statement) throws SQLException{
+		
+		Object[] res = new String[5];
+		
 		ResultSet rs = statement.executeQuery("SELECT * FROM projects WHERE organism_id = " + taxonomyID +";"); 
 
 		if(rs.next()){
 
 			res[0] = rs.getString(2);
 			res[1] = rs.getString(3);
-			res[2] = rs.getString(4);
-			res[3] = rs.getString(5);
-			res[4] = rs.getString(6);
-			res[5] = rs.getString(7);
+			res[2] = rs.getString(5);
+			res[3] = rs.getString(6);
+			res[4] = rs.getString(7);
 			return res;
 		}
 
@@ -3526,11 +3525,14 @@ public class ProjectAPI {
 	 * @param statement
 	 * @throws SQLException
 	 */
-	public static void setOrganismData(String[] data, Statement statement) throws SQLException{
-
+	public static void setOrganismData(Object[] data, Statement statement) throws SQLException{
+		
+		long time = System.currentTimeMillis();
+		Timestamp timestamp = new Timestamp(time);
+		
 		statement.execute("INSERT INTO projects(organism_id, latest_version, date, version, organism_name, organism_lineage) "
-				+ "values(" + data[0] + ", " + data[1] + ", " + data[2] + ", " + data[3] +", '" + data[4] + "', '" + data[5] + "');");
-
+				+ "values(" + data[0] + ", " + data[1] + ", '" + timestamp + "', " + data[2] +", '" + data[3] + "', '" + data[4] + "');");
+		
 	}
 
 }
