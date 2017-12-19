@@ -11,6 +11,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.SynchronousQueue;
 
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 
@@ -85,7 +86,6 @@ public class Connection implements Externalizable{
 		this.database_password=dbAccess.get_database_password();
 		this.database_type=dbAccess.get_database_type();
 		
-
 		if (this.database_type.equals(DatabaseType.MYSQL))
 			this.dbAccess = new MySQLDatabaseAccess(this.database_user, this.database_password, this.database_host, this.database_port, this.database_name);
 		else

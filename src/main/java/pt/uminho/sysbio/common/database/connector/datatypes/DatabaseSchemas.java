@@ -43,16 +43,16 @@ public class DatabaseSchemas {
 		this.dbType = dbType;
 	}
 
-	/**
-	 * @param DatabaseSchemas
-	 */
-	public DatabaseSchemas(DatabaseAccess databaseBase) {
-		
-		this.username = databaseBase.get_database_user();
-		this.password = databaseBase.get_database_password();
-		this.host = databaseBase.get_database_host();
-		this.port = databaseBase.get_database_port();
-	}
+//	/**
+//	 * @param DatabaseSchemas
+//	 */
+//	public DatabaseSchemas(DatabaseAccess databaseBase) {
+//		
+//		this.username = databaseBase.get_database_user();
+//		this.password = databaseBase.get_database_password();
+//		this.host = databaseBase.get_database_host();
+//		this.port = databaseBase.get_database_port();
+//	}
 
 	/**
 	 * Creates a connection to a given schema, on the database, once provided with the following parameters.
@@ -74,18 +74,18 @@ public class DatabaseSchemas {
 		else {
 			
 			String prefix = "jdbc:h2:";
-			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
+			String path = FileUtils.getHomeFolderPath();
 			driver_class_name = "org.h2.Driver";
 			url_db_connection = prefix+path+"/h2Database/"+schema+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE";
 			
 		}
 		
 		Connection connection = null;
-
+		
 		try {
 			
 			Class.forName(driver_class_name).newInstance();
-			//System.out.println(url_db_connection);
+//			System.out.println(url_db_connection);
 			connection = (Connection) DriverManager.getConnection(url_db_connection, this.username, this.password);
 			
 //			if (this.dbType.equals(DatabaseType.H2)) { Server server = Server.createTcpServer("-tcpAllowOthers").start();}
@@ -125,7 +125,9 @@ public class DatabaseSchemas {
 			driver_class_name = "com.mysql.jdbc.Driver";
 			url_db_connection = "jdbc:mysql://"+this.host+":"+this.port;
 		}else{
-			String path = new File(FileUtils.getCurrentLibDirectory()).getParentFile().getParent();
+
+			String path = FileUtils.getHomeFolderPath();
+
 			driver_class_name = "org.h2.Driver";
 			url_db_connection = "jdbc:h2:"+path+"/h2Database;MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE";
 		}
@@ -331,7 +333,7 @@ public class DatabaseSchemas {
 	 * @return
 	 * @throws SQLException 
 	 */
-	public List<String> getSchemas() throws SQLException {
+	public List<String> getSchemas()  {
 
 		List<String> list= new ArrayList<String>();
 		List<String> schemasList = new ArrayList<String>();
@@ -346,7 +348,7 @@ public class DatabaseSchemas {
 
 		try {	
 				statement = connection.createStatement();
-				statement.execute("SHOW DATABASES ");
+				statement.execute("SHOW DATABASES;");
 				rs = statement.getResultSet();
 
 				while(rs.next())

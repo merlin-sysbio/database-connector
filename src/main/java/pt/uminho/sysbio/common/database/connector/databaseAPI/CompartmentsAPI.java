@@ -102,14 +102,14 @@ public class CompartmentsAPI {
 	 * @return String
 	 * @throws SQLException
 	 */
-	public static String getCompartmentID(String localisation, Statement statement) throws SQLException{
+	public static int getCompartmentID(String localisation, Statement statement) throws SQLException{
 		
-		String idCompartment = "";
+		int idCompartment = -1;
 		
 		ResultSet rs = statement.executeQuery("SELECT idcompartment FROM compartment WHERE name = '" + localisation + "'");
 		
 		if(rs.next())
-			idCompartment = rs.getString(1);
+			idCompartment = rs.getInt(1);
 		
 		rs.close();
 		return idCompartment;
@@ -182,10 +182,10 @@ public class CompartmentsAPI {
 	 * @return Map<String, List<String>>
 	 * @throws SQLException
 	 */
-	public static Map<String, List<String>> getEnzymesCompartments(Statement statement) throws SQLException{
+	public static Map<String, List<Integer>> getEnzymesCompartments(Statement statement) throws SQLException{
 		
-		Map<String, List<String>> enzymesCompartments = new HashMap<String, List<String>>();
-		List<String> compartments;
+		Map<String, List<Integer>> enzymesCompartments = new HashMap<>();
+		List<Integer> compartments;
 		
 		ResultSet rs = statement.executeQuery("SELECT DISTINCT compartment_idcompartment, enzyme_ecnumber, enzyme_protein_idprotein " +
 				" FROM subunit " +
@@ -194,12 +194,12 @@ public class CompartmentsAPI {
 
 		while(rs.next()) {
 
-			compartments = new ArrayList<String>();
+			compartments = new ArrayList<>();
 
 			if(enzymesCompartments.containsKey(rs.getString(2)))
 				compartments = enzymesCompartments.get(rs.getString(2));	
 
-			compartments.add(rs.getString(1));
+			compartments.add(rs.getInt(1));
 			enzymesCompartments.put(rs.getString(2),compartments);
 		}
 		
@@ -213,10 +213,10 @@ public class CompartmentsAPI {
 	 * @return Map<String, List<String>>
 	 * @throws SQLException
 	 */
-	public static Map<String, List<String>> getTransportProteinsCompartments(Statement statement) throws SQLException{
+	public static Map<String, List<Integer>> getTransportProteinsCompartments(Statement statement) throws SQLException{
 		
-		Map<String, List<String>> transportProteinsCompartments = new HashMap<String, List<String>>();
-		List<String> compartments;
+		Map<String, List<Integer>> transportProteinsCompartments = new HashMap<>();
+		List<Integer> compartments;
 		
 		ResultSet rs = statement.executeQuery("SELECT DISTINCT compartment_idcompartment, enzyme_ecnumber, enzyme_protein_idprotein FROM subunit " +
 				"INNER JOIN gene_has_compartment ON subunit.gene_idgene = gene_has_compartment.gene_idgene " +
@@ -225,12 +225,12 @@ public class CompartmentsAPI {
 		while(rs.next()) {
 
 			String key = rs.getString(2).concat("_").concat(rs.getString(3));
-			compartments = new ArrayList<String>();
+			compartments = new ArrayList<>();
 
 			if(transportProteinsCompartments.containsKey(key))
 				compartments = transportProteinsCompartments.get(key);	
 
-			compartments.add(rs.getString(1));
+			compartments.add(rs.getInt(1));
 			transportProteinsCompartments.put(key,compartments);
 		}
 		

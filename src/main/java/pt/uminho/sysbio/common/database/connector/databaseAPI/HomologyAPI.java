@@ -12,13 +12,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.h2.jdbc.JdbcSQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
 import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
 import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
@@ -1794,19 +1792,19 @@ import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 		
 		/**
 		 * Get enzymes by reaction.
-		 * @param rowID
+		 * @param idReaction
 		 * @param statement
 		 * @return
 		 * @throws SQLException
 		 */
-		public static String[] getEnzymesByReaction(String rowID, Statement statement) throws SQLException{
+		public static String[] getEnzymesByReaction(int idReaction, Statement statement) throws SQLException{
 			
 			String[] res = null;
 			
 			ResultSet rs = statement.executeQuery(
 					"SELECT enzyme_ecnumber, protein_idprotein, protein.name FROM reaction_has_enzyme " +
 							" INNER JOIN protein ON protein.idprotein = protein_idprotein " +
-							"WHERE reaction_idreaction='"+rowID+"'");
+							"WHERE reaction_idreaction='"+idReaction+"'");
 
 			rs.last();
 			res = new String[rs.getRow()];
@@ -1824,13 +1822,13 @@ import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 		
 		/**
 		 * Get enzymes by given reaction and pathway.
-		 * @param rowID
+		 * @param idReaction
 		 * @param pathway
 		 * @param statement
 		 * @return
 		 * @throws SQLException
 		 */
-		public static String[] getEnzymesByReactionAndPathway(String rowID, int pathway, Statement statement) throws SQLException{
+		public static String[] getEnzymesByReactionAndPathway(int idReaction, int pathway, Statement statement) throws SQLException{
 			
 			String[] res = null;
 			
@@ -1844,7 +1842,7 @@ import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 							" INNER JOIN protein ON protein.idprotein = protein_idprotein " +
 							" WHERE pathway_has_reaction.pathway_idpathway=pathway_has_enzyme.pathway_idpathway" +
 							" AND pathway_has_enzyme.pathway_idpathway=\'"+pathway+"\'" +
-							" AND reaction.idreaction=\'"+rowID+"\'");
+							" AND reaction.idreaction=\'"+idReaction+"\'");
 
 			rs.last();
 			res = new String[rs.getRow()];
@@ -2043,15 +2041,15 @@ import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 		 * @return String
 		 * @throws SQLException
 		 */
-		public static String getGeneHomologySkey(String aux, String homologySetupID, Statement statement) throws SQLException{
+		public static int getGeneHomologySkey(String aux, int homologySetupID, Statement statement) throws SQLException{
 			
-			String res = "";
+			int res = -1;
 			
 			ResultSet rs = statement.executeQuery("SELECT * FROM geneHomology WHERE query = '"
 			+ aux +"' AND homologySetup_s_key = " +homologySetupID);
 			
 			if(rs.next())
-				res = rs.getString(1);
+				res = rs.getInt(1);
 				
 			rs.close();
 			return res;
@@ -2064,14 +2062,14 @@ import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 		 * @return String
 		 * @throws SQLException
 		 */
-		public static String getHomologuesSkey(String query, Statement statement) throws SQLException{
+		public static int getHomologuesSkey(String query, Statement statement) throws SQLException{
 			
-			String res = "";
+			int res = -1;
 			
 			ResultSet rs = statement.executeQuery(query);
 			
 			if(rs.next())
-				res = rs.getString(1);
+				res = rs.getInt(1);
 				
 			rs.close();
 			return res;
@@ -2104,7 +2102,7 @@ import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 		 * @return boolean
 		 * @throws SQLException
 		 */
-		public static boolean checkHomologuesHasEcNumber(String homologues_s_key, String ecnumber_s_key, Statement statement) throws SQLException{
+		public static boolean checkHomologuesHasEcNumber(int homologues_s_key, int ecnumber_s_key, Statement statement) throws SQLException{
 			
 			boolean exists = false;
 			
@@ -2243,28 +2241,29 @@ import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 					else
 						note = "";
 				}
-
-				for(String module_id : modules.get(ortholog)) {
-
-					if(modules_ids.contains(module_id)) {
-				
-						if(exists) {
-
-							if(noModules) {
-								System.out.println("UPDATE subunit SET module_id = "+module_id+" WHERE gene_idgene = '"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"';");
-								statement.execute("UPDATE subunit SET module_id = "+module_id+" WHERE gene_idgene = '"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"';");
-								noModules = false;
-								modules_ids.add(module_id);
+				if(modules != null){
+					for(String module_id : modules.get(ortholog)) {
+	
+						if(modules_ids.contains(module_id)) {
+					
+							if(exists) {
+	
+								if(noModules) {
+									System.out.println("UPDATE subunit SET module_id = "+module_id+" WHERE gene_idgene = '"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"';");
+									statement.execute("UPDATE subunit SET module_id = "+module_id+" WHERE gene_idgene = '"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"';");
+									noModules = false;
+									modules_ids.add(module_id);
+								}
 							}
+							else {
+								System.out.println("INSERT INTO subunit (module_id, gene_idgene, enzyme_ecnumber, enzyme_protein_idprotein, note)" +
+										"VALUES("+module_id+", "+idGene+", '"+ecnumber+"', "+protein_idprotein+", '"+note+"');");
+								statement.execute("INSERT INTO subunit (module_id, gene_idgene, enzyme_ecnumber, enzyme_protein_idprotein, note)" +
+										"VALUES("+module_id+", "+idGene+", '"+ecnumber+"', "+protein_idprotein+", '"+note+"');");
+								//exists = true;
+							}
+	
 						}
-						else {
-							System.out.println("INSERT INTO subunit (module_id, gene_idgene, enzyme_ecnumber, enzyme_protein_idprotein, note)" +
-									"VALUES("+module_id+", "+idGene+", '"+ecnumber+"', "+protein_idprotein+", '"+note+"');");
-							statement.execute("INSERT INTO subunit (module_id, gene_idgene, enzyme_ecnumber, enzyme_protein_idprotein, note)" +
-									"VALUES("+module_id+", "+idGene+", '"+ecnumber+"', "+protein_idprotein+", '"+note+"');");
-							//exists = true;
-						}
-
 					}
 				}
 			}

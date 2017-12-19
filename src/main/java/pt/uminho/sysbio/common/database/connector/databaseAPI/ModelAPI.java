@@ -589,8 +589,8 @@ public class ModelAPI {
 	 * @param chains
 	 * @throws SQLException
 	 */
-	public static void loadReaction(String idCompartment, boolean inModel, String ecNumber, Statement statement, boolean isTransport, DatabaseType databaseType, String name, String equation, boolean reversible, boolean generic, boolean spontaneous, 
-			boolean nonEnzymatic, String reactionSource, String notes, List<String> proteins, List<String> enzymes, Map<String, List<String>> ecNumbers, List<String> pathways, List<String> compounds, List<String> compartments, List<String> stoichiometry, 
+	public static void loadReaction(int idCompartment, boolean inModel, String ecNumber, Statement statement, boolean isTransport, DatabaseType databaseType, String name, String equation, boolean reversible, boolean generic, boolean spontaneous, 
+			boolean nonEnzymatic, String reactionSource, String notes, List<String> proteins, List<String> enzymes, Map<String, List<String>> ecNumbers, List<String> pathways, List<Integer> compounds, List<Integer> compartments, List<String> stoichiometry, 
 			List<String> chains) throws SQLException {
 
 		String aux ="name = '"+DatabaseUtilities.databaseStrConverter(name, databaseType)+"_C"+idCompartment+"' AND ";
@@ -648,7 +648,7 @@ public class ModelAPI {
 
 			for(int j = 0 ; j < compounds.size(); j++ ) {
 
-				String newCOmpartmentID = idCompartment;
+				int newCOmpartmentID = idCompartment;
 
 				if(isTransport)
 					newCOmpartmentID = compartments.get(j);
@@ -956,14 +956,14 @@ public class ModelAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static Map<String,String> getIdCompartmentAbbMap(Statement statement) throws SQLException {
+	public static Map<Integer,String> getIdCompartmentAbbMap(Statement statement) throws SQLException {
 
-		Map<String,String> idCompartmentMap = new HashMap<String, String>();
+		Map<Integer,String> idCompartmentMap = new HashMap<>();
 
 		ResultSet rs = statement.executeQuery("SELECT idcompartment, abbreviation FROM compartment;");
 
 		while(rs.next())
-			idCompartmentMap.put(rs.getString(1), rs.getString(2));
+			idCompartmentMap.put(rs.getInt(1), rs.getString(2));
 
 		return idCompartmentMap;
 	}
@@ -974,14 +974,14 @@ public class ModelAPI {
 	 * @return Map<String,String>
 	 * @throws SQLException 
 	 */
-	public static Map<String,String> getCompartmentAbbIdMap(Statement statement) throws SQLException {
+	public static Map<String,Integer> getCompartmentAbbIdMap(Statement statement) throws SQLException {
 
-		Map<String,String> idCompartmentAbbIdMap = new HashMap<String, String>();
+		Map<String,Integer> idCompartmentAbbIdMap = new HashMap<>();
 
 		ResultSet rs = statement.executeQuery("SELECT idcompartment, abbreviation FROM compartment;");
 
 		while(rs.next())
-			idCompartmentAbbIdMap.put(rs.getString(2).toLowerCase(),rs.getString(1));
+			idCompartmentAbbIdMap.put(rs.getString(2).toLowerCase(),rs.getInt(1));
 
 		return idCompartmentAbbIdMap;
 	}
@@ -1014,16 +1014,16 @@ public class ModelAPI {
 	 * @return List<String>
 	 * @throws SQLException
 	 */
-	public static List<String> getEnzymeCompartments(String ecNumber, Statement statement) throws SQLException {
+	public static List<Integer> getEnzymeCompartments(String ecNumber, Statement statement) throws SQLException {
 
-		List<String> compartments = new ArrayList<String>();
+		List<Integer> compartments = new ArrayList<>();
 		ResultSet rs = statement.executeQuery("SELECT DISTINCT compartment_idcompartment, enzyme_ecnumber, enzyme_protein_idprotein " +
 				" FROM subunit " +
 				" INNER JOIN gene_has_compartment ON subunit.gene_idgene = gene_has_compartment.gene_idgene " +
 				" WHERE BY enzyme_ecnumber = '"+ecNumber+"';");
 
 		while(rs.next())
-			compartments.add(rs.getString(1));
+			compartments.add(rs.getInt(1));
 
 		return compartments;
 	}
@@ -3304,7 +3304,7 @@ public class ModelAPI {
 	 * @return Set<String>
 	 * @throws SQLException
 	 */
-	public static Set<String> getEnzymesForReaction(String rowID, Statement statement) throws SQLException{
+	public static Set<String> getEnzymesForReaction(int rowID, Statement statement) throws SQLException{
 		
 		Set<String> res = new TreeSet<String>();
 		
@@ -3328,7 +3328,7 @@ public class ModelAPI {
 	 * @return String[]
 	 * @throws SQLException
 	 */
-	public static String[] getPathwaysByRowID(String rowID, Statement statement) throws SQLException{
+	public static String[] getPathwaysByRowID(int rowID, Statement statement) throws SQLException{
 		
 		String[] res = new String[0];
 		
@@ -3423,7 +3423,7 @@ public class ModelAPI {
 	 * @return String
 	 * @throws SQLException
 	 */
-	public static String[] getBooleanRuleFromReaction(String id, Statement statement) throws SQLException{
+	public static String[] getBooleanRuleFromReaction(int id, Statement statement) throws SQLException{
 		
 		String[] res = new String[2];
 		
@@ -3448,7 +3448,7 @@ public class ModelAPI {
 	 * @return ArrayList<String[]>
 	 * @throws SQLException
 	 */
-	public static ArrayList<String[]>  getCompoundData(String id, Statement statement) throws SQLException{
+	public static ArrayList<String[]>  getCompoundData(int id, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
 		
@@ -3480,7 +3480,7 @@ public class ModelAPI {
 	 * @return ArrayList<String[]>
 	 * @throws SQLException
 	 */
-	public static ArrayList<String[]>  getReactionHasEnzymeData(String id, Statement statement) throws SQLException{
+	public static ArrayList<String[]>  getReactionHasEnzymeData(int id, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
 		
@@ -3512,7 +3512,7 @@ public class ModelAPI {
 	 * @return ArrayList<String[]>
 	 * @throws SQLException
 	 */
-	public static ArrayList<String[]>  getReactionData(String id, Statement statement) throws SQLException{
+	public static ArrayList<String[]>  getReactionData(int id, Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
 		
@@ -3538,12 +3538,12 @@ public class ModelAPI {
 	
 	/**
 	 * Get data from reaction table.
-	 * @param id
+	 * @param reactionID
 	 * @param statement
 	 * @return String[]
 	 * @throws SQLException
 	 */
-	public static String[] getReactionData2(String id, Statement statement) throws SQLException{
+	public static String[] getReactionData2(int reactionID, Statement statement) throws SQLException{
 		
 		String[] list = new String[12];
 		
@@ -3556,7 +3556,7 @@ public class ModelAPI {
 				//"INNER JOIN pathway ON pathway_idpathway = pathway.idpathway " +
 				"INNER JOIN compartment ON idcompartment = compartment_idcompartment " +
 				//"INNER JOIN reaction_has_enzyme ON idreaction = reaction_has_enzyme.reaction_idreaction " +
-				"WHERE idreaction="+id);
+				"WHERE idreaction="+reactionID);
 		
 		if(rs.next()){
 			list[0]=rs.getString(1);
@@ -3578,19 +3578,19 @@ public class ModelAPI {
 	
 	/**
 	 * Get data from stoichiometry data.
-	 * @param id
+	 * @param reactionID
 	 * @param statement
 	 * @return String[]
 	 * @throws SQLException
 	 */
-	public static String[] getStoichiometryData(String id, Statement statement) throws SQLException{
+	public static String[] getStoichiometryData(int reactionID, Statement statement) throws SQLException{
 		
 		String[] list = new String[4];
 		
 		ResultSet rs = statement.executeQuery("SELECT compartment.name, stoichiometric_coefficient, numberofchains, compound_idcompound " +
 				"FROM stoichiometry " +
 				"INNER JOIN compartment ON idcompartment = compartment_idcompartment " +
-				"WHERE reaction_idreaction = '" + id+"'");
+				"WHERE reaction_idreaction = '" + reactionID+"'");
 		
 		if(rs.next()){
 			list[0]=rs.getString(1);
@@ -3612,9 +3612,9 @@ public class ModelAPI {
 	 * @return Set<String>
 	 * @throws SQLException
 	 */
-	public static Set<String> getReactionsID(String pathway, String ecNumber, String idProtein, Statement statement) throws SQLException{
+	public static Set<Integer> getReactionsID(int pathway, String ecNumber, int idProtein, Statement statement) throws SQLException{
 		
-		Set<String> reactionsID = new TreeSet<String>();
+		Set<Integer> reactionsID = new TreeSet<>();
 		
 		ResultSet rs = statement.executeQuery("SELECT reaction_has_enzyme.reaction_idreaction FROM pathway_has_enzyme " +
 				"INNER JOIN reaction_has_enzyme ON pathway_has_enzyme.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein "
@@ -3625,7 +3625,7 @@ public class ModelAPI {
 				+"' AND pathway_has_enzyme.pathway_idpathway = "+pathway);
 		
 		while(rs.next()) 
-			reactionsID.add(rs.getString(1));
+			reactionsID.add(rs.getInt(1));
 			
 		rs.close();
 		return reactionsID;
@@ -3640,9 +3640,9 @@ public class ModelAPI {
 	 * @return Set<String>
 	 * @throws SQLException
 	 */
-	public static Set<String> getPathwayID2(String rowID, String ecNumber, String idProtein, Statement statement) throws SQLException{
+	public static Set<Integer> getPathwayID2(int idReaction, String ecNumber, int idProtein, Statement statement) throws SQLException{
 		
-		Set<String> pathwayID = new TreeSet<String>();
+		Set<Integer> pathwayID = new TreeSet<>();
 		
 		ResultSet rs = statement.executeQuery("SELECT pathway_has_enzyme.pathway_idpathway FROM pathway_has_enzyme " +
 				"INNER JOIN reaction_has_enzyme ON pathway_has_enzyme.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein "
@@ -3650,10 +3650,10 @@ public class ModelAPI {
 				"INNER JOIN pathway_has_reaction ON pathway_has_enzyme.pathway_idpathway = pathway_has_reaction.pathway_idpathway " +
 				"WHERE reaction_has_enzyme.reaction_idreaction = pathway_has_reaction.reaction_idreaction " +
 				"AND pathway_has_enzyme.enzyme_ecnumber = '"+ecNumber+"'  AND pathway_has_enzyme.enzyme_protein_idprotein = '"+idProtein+"' "
-						+ "AND reaction_has_enzyme.reaction_idreaction = "+rowID);
+						+ "AND reaction_has_enzyme.reaction_idreaction = "+idReaction);
 
 		while(rs.next()) 
-			pathwayID.add(rs.getString(1));
+			pathwayID.add(rs.getInt(1));
 			
 		rs.close();
 		return pathwayID;
@@ -3661,17 +3661,17 @@ public class ModelAPI {
 	
 	/**
 	 * Get existing metabolitesID by rowID.
-	 * @param rowID
+	 * @param idReaction
 	 * @param statement
 	 * @return Map<String,Pair<String,Pair<String,String>>>
 	 * @throws SQLException
 	 */
-	public static Map<String,Pair<String,Pair<String,String>>> getExistingMetabolitesID(String rowID, Statement statement) throws SQLException{
+	public static Map<String,Pair<String,Pair<String,String>>> getExistingMetabolitesID(int idReaction, Statement statement) throws SQLException{
 		
 		Map<String,Pair<String,Pair<String,String>>> existingMetabolitesID = new HashMap<>();
 		
 		ResultSet rs = statement.executeQuery("SELECT compound_idcompound, idstoichiometry, stoichiometric_coefficient, compartment_idcompartment "
-				+ "FROM stoichiometry WHERE reaction_idreaction = "+rowID);
+				+ "FROM stoichiometry WHERE reaction_idreaction = "+idReaction);
 
 
 		while(rs.next()) {
@@ -3688,7 +3688,7 @@ public class ModelAPI {
 	
 	/**
 	 * Get stoichiometryID from stoichiometry table.
-	 * @param rowID
+	 * @param idReaction
 	 * @param m
 	 * @param idCompartment
 	 * @param metabolite
@@ -3696,18 +3696,18 @@ public class ModelAPI {
 	 * @return String
 	 * @throws SQLException
 	 */
-	public static String getStoichiometryID(String rowID, String m, String idCompartment, String metabolite, Statement statement) throws SQLException{
+	public static int getStoichiometryID(int idReaction, String m, int idCompartment, String metabolite, Statement statement) throws SQLException{
 		
-		String idstoichiometry = "";
+		int idstoichiometry = -1;
 		
 		ResultSet rs = statement.executeQuery("SELECT idstoichiometry FROM stoichiometry "
-				+ " WHERE reaction_idreaction = "+rowID+" "
+				+ " WHERE reaction_idreaction = "+idReaction+" "
 				+ " AND compound_idcompound = " + m.replace("-", "")
 				+ " AND compartment_idcompartment = " + idCompartment
 				+ " AND stoichiometric_coefficient = '" + metabolite + "'");
 
 		if(rs.next())
-			idstoichiometry = rs.getString(1);
+			idstoichiometry = rs.getInt(1);
 			
 		rs.close();
 		return idstoichiometry;
@@ -4038,7 +4038,7 @@ public class ModelAPI {
 	 * @return ArrayList<String[]> 
 	 * @throws SQLException
 	 */
-	public static Pair<List<String>, Boolean[]> getECnumber(String proteinID, Statement stmt) throws SQLException{
+	public static Pair<List<String>, Boolean[]> getECnumber(int proteinID, Statement stmt) throws SQLException{
 		
 		List<String> enzymesIDs = new ArrayList<String>();
 		Pair<List<String>, Boolean[]> res = new Pair<List<String>, Boolean[]>(enzymesIDs, null);
@@ -4069,7 +4069,7 @@ public class ModelAPI {
 	 * @return String[][]
 	 * @throws SQLException
 	 */
-	public static String[][] getProteinData(String id, Statement stmt) throws SQLException{
+	public static String[][] getProteinData(int id, Statement stmt) throws SQLException{
 		
 		String[][] res = null;
 		
@@ -4104,7 +4104,7 @@ public class ModelAPI {
 	 * @return String[]
 	 * @throws SQLException
 	 */
-	public static String[] getECnumber2(String proteinID, Statement stmt) throws SQLException{
+	public static String[] getECnumber2(int proteinID, Statement stmt) throws SQLException{
 		
 		String[] list = new String[2];
 		
@@ -4131,16 +4131,16 @@ public class ModelAPI {
 	
 	/**
 	 * Get synonyms.
-	 * @param proteinID
+	 * @param integer
 	 * @param stmt
 	 * @return String[][]
 	 * @throws SQLException
 	 */
-	public static String[][] getSynonyms(String proteinID, Statement stmt) throws SQLException{
+	public static String[][] getSynonyms(Integer integer, Statement stmt) throws SQLException{
 		
 		String[][] res = null; 
 		
-		ResultSet rs = stmt.executeQuery("SELECT alias FROM aliases where class = 'p' AND entity ="+proteinID);
+		ResultSet rs = stmt.executeQuery("SELECT alias FROM aliases where class = 'p' AND entity ="+integer);
 		
 		ResultSetMetaData rsmd = rs.getMetaData();
 		rs.last();
@@ -4173,15 +4173,15 @@ public class ModelAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static String getProteinID(String classString, String name, Statement stmt) throws SQLException{
+	public static int getProteinID(String classString, String name, Statement stmt) throws SQLException{
 		
 		ResultSet rs = stmt.executeQuery("SELECT * FROM protein WHERE name='" + name + "' AND class = '"+classString+"'");
-		String idNewProtein = "";
+		int res = -1;
 		if(rs.next()) 
-			idNewProtein = rs.getString(1);
+			res = rs.getInt(1);
 		
 		rs.close();
-		return idNewProtein;
+		return res;
 	}
 	
 	/**
@@ -4192,7 +4192,7 @@ public class ModelAPI {
 	 * @return boolean
 	 * @throws SQLException
 	 */
-	public static boolean checkAliasExistence(String idNewProtein, String name, Statement stmt) throws SQLException{
+	public static boolean checkAliasExistence(int idNewProtein, String name, Statement stmt) throws SQLException{
 		
 		boolean exists = false;
 		ResultSet rs = stmt.executeQuery("SELECT * FROM aliases WHERE class='p' AND  alias='" + name +"' AND  entity=" + idNewProtein);
@@ -4212,7 +4212,7 @@ public class ModelAPI {
 	 * @return boolean
 	 * @throws SQLException
 	 */
-	public static boolean checkEnzymeInModelExistence(String idNewProtein, String id, Statement stmt) throws SQLException{
+	public static boolean checkEnzymeInModelExistence(int idNewProtein, String id, Statement stmt) throws SQLException{
 		
 		boolean exists = false;
 		
@@ -4235,9 +4235,9 @@ public class ModelAPI {
 	 * @return Set<String>
 	 * @throws SQLException
 	 */
-	public static Set<String> getReactionsIDs(String proteinID, String ec, Statement stmt) throws SQLException{
+	public static Set<Integer> getReactionsIDs(int proteinID, String ec, Statement stmt) throws SQLException{
 		
-		Set<String> reactionsIDs = new HashSet<String>();
+		Set<Integer> reactionsIDs = new HashSet<>();
 		
 		ResultSet rs= stmt.executeQuery("SELECT DISTINCT idreaction FROM reaction " +
 				"INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction = idreaction " +
@@ -4247,7 +4247,7 @@ public class ModelAPI {
 				"AND reaction_has_enzyme.enzyme_ecnumber = '"+ec+"'");
 		
 		while(rs.next()) 
-			reactionsIDs.add(rs.getString(1));
+			reactionsIDs.add(rs.getInt(1));
 		
 		rs.close();
 		return reactionsIDs;
@@ -4262,14 +4262,14 @@ public class ModelAPI {
 	 * @return Set<String>
 	 * @throws SQLException
 	 */
-	public static Set<String> getReactionsIDs2(Set<String> reactionsIDs, String proteinID, String ec, Statement stmt) throws SQLException{
+	public static Set<Integer> getReactionsIDs2(Set<Integer> reactionsIDs, int proteinID, String ec, Statement stmt) throws SQLException{
 		
 		ResultSet rs= stmt.executeQuery("SELECT DISTINCT idreaction FROM reactions_view_noPath_or_noEC " +
 				"INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction=idreaction " +
 				"WHERE enzyme_protein_idprotein = "+proteinID+" AND enzyme_ecnumber = '"+ec+"'");
 		
 		while(rs.next()) 
-			reactionsIDs.add(rs.getString(1));
+			reactionsIDs.add(rs.getInt(1));
 		
 		rs.close();
 		return reactionsIDs;
@@ -4282,7 +4282,7 @@ public class ModelAPI {
 	 * @return ArrayList<String[]>
 	 * @throws SQLException
 	 */
-	public static ArrayList<String[]> getReactionHasEnzymeData2(String idreaction, Statement stmt) throws SQLException{
+	public static ArrayList<String[]> getReactionHasEnzymeData2(int idreaction, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
 		
@@ -4310,7 +4310,7 @@ public class ModelAPI {
 	 * @return boolean
 	 * @throws SQLException
 	 */
-	public static boolean checkEnzyme(String idProtein, String ecnumber, Statement stmt) throws SQLException{
+	public static boolean checkEnzyme(int idProtein, String ecnumber, Statement stmt) throws SQLException{
 		
 		boolean exists = false;
 		
@@ -5212,6 +5212,26 @@ public class ModelAPI {
 			result.put(rs.getString(1), rs.getInt(2));
 		
 		return result;
+		
+	}
+	
+	/**
+	 * Get geneID for a given sequenceID.
+	 * 
+	 * @param sequenceID
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String getGeneId(String sequenceID, Statement statement) throws SQLException{
+		
+		ResultSet rs = statement.executeQuery("SELECT locusTag FROM gene WHERE  sequence_id = '" + sequenceID + "';");
+		System.out.println("SELECT locusTag FROM gene WHERE  sequence_id = " + sequenceID + ";");
+		
+		if(rs.next())
+			return rs.getString(1);
+		
+		return null;
 		
 	}
 	
