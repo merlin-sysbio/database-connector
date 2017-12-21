@@ -1400,7 +1400,7 @@ public class ProjectAPI {
 
 		while(rs.next()) {
 
-			MetaboliteContainer metaboliteContainer = new MetaboliteContainer(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6)) ;
+			MetaboliteContainer metaboliteContainer = new MetaboliteContainer(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6)) ;
 			res.put(rs.getString(7), metaboliteContainer);
 
 		}
@@ -2937,6 +2937,7 @@ public class ProjectAPI {
 
 	/**
 	 * Check if an internalID exists for a given internal_id and external_database and class.
+	 * 
 	 * @param geneID
 	 * @param database
 	 * @param stmt

@@ -8,10 +8,10 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.concurrent.SynchronousQueue;
 
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 
@@ -108,8 +108,6 @@ public class Connection implements Externalizable{
 				this.connection = this.dbAccess.openConnection();
 
 			statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
-//			statement.isClosed();
-//			statement.isPoolable();
 			statement.executeQuery("SHOW TABLES;");
 		}
 		catch (CommunicationsException e) {
@@ -124,8 +122,62 @@ public class Connection implements Externalizable{
 		}
 
 		return statement;
-
 	}
+	
+//	/**
+//	 * @return
+//	 * @throws SQLException
+//	 */
+//	public PreparedStatement prepareStatement(String query) throws SQLException {
+//
+//		PreparedStatement statement = null;
+//
+//		try {
+//			
+//			if(this.connection==null || this.connection.isClosed())
+//				this.connection = this.dbAccess.openConnection();
+//
+//			statement = this.connection.prepareStatement(  query, ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+//		}
+//		catch (CommunicationsException e) {
+//
+//			System.err.println("CommunicationsException\t"+e.getMessage());
+//		}
+//		catch (SQLException se){
+//			System.out.println(se.getMessage());
+//			throw se;
+//		}
+//
+//		return statement;
+//	}
+	
+	/**
+	 * @return
+	 * @throws SQLException
+	 */
+	public PreparedStatement prepareStatement(String query) throws SQLException {
+
+		PreparedStatement statement = null;
+
+		try {
+			
+			if(this.connection==null || this.connection.isClosed())
+				this.connection = this.dbAccess.openConnection();
+
+			statement = this.connection.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
+		}
+		catch (CommunicationsException e) {
+
+			System.err.println("CommunicationsException\t"+e.getMessage());
+		}
+		catch (SQLException se){
+			System.out.println(se.getMessage());
+			throw se;
+		}
+
+		return statement;
+	}
+	
 
 	/**
 	 * @return
