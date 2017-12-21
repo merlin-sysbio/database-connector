@@ -38,7 +38,7 @@ public class ModelAPI {
 
 
 
-	private static final int BATCH_SIZE = 1000;
+	private static final int BATCH_SIZE = 500;
 
 	/**
 	 * Load gene to model.
@@ -2373,9 +2373,11 @@ public class ModelAPI {
 				"FROM reaction WHERE inModel AND " +conditions );
 
 		Map<String, ArrayList<String>> result = new HashMap<>();
-		ArrayList<String> list = new ArrayList<>();
+		
 
 		while(rs.next()) {
+			
+			ArrayList<String> list = new ArrayList<>();
 			list.add(rs.getString(2));
 			list.add(rs.getString(3));
 			list.add(rs.getBoolean(4)+"");
@@ -2405,6 +2407,7 @@ public class ModelAPI {
 		ArrayList<String[]> result = new ArrayList<>();
 
 		while(rs.next()) {
+			
 			String[] list = new String[3];
 
 			list[0] = rs.getString(1);
@@ -5408,7 +5411,7 @@ public class ModelAPI {
 	public static String getGeneId(String sequenceID, Statement statement) throws SQLException{
 
 		ResultSet rs = statement.executeQuery("SELECT locusTag FROM gene WHERE  sequence_id = '" + sequenceID + "';");
-		System.out.println("SELECT locusTag FROM gene WHERE  sequence_id = " + sequenceID + ";");
+		//System.out.println("SELECT locusTag FROM gene WHERE  sequence_id = " + sequenceID + ";");
 
 		if(rs.next())
 			return rs.getString(1);
