@@ -2,7 +2,6 @@ package pt.uminho.sysbio.common.database.connector.databaseAPI;
 
 import java.io.IOException;
 import java.sql.DatabaseMetaData;
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;

@@ -378,4 +378,58 @@ public class CompartmentsAPI {
 		return results;
 	}
 	
+	/**
+	 * Get reactionIDs and ecNumbers.
+	 * @param statement
+	 * @return Map<String, List<String>>
+	 * @throws SQLException
+	 */
+	public static Map<String, List<String>> getEnzymesReactions2(Statement statement) throws SQLException{
+		
+		Map<String, List<String>> enzymesReactions = new HashMap<String, List<String>>();
+		List<String> reactionsIDs = null;
+		
+		ResultSet rs = statement.executeQuery("SELECT idreaction, enzyme_ecnumber, enzyme_protein_idprotein FROM reaction " +
+				"INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction = idreaction " +
+				"WHERE (source <> 'TRANSPORTERS' AND reaction_has_enzyme.enzyme_ecnumber IS NOT NULL AND originalReaction)");
+		
+		while(rs.next()) {
+
+			reactionsIDs = new ArrayList<String>();
+
+			if(enzymesReactions.containsKey(rs.getString(2)))
+				reactionsIDs = enzymesReactions.get(rs.getString(2));
+
+			reactionsIDs.add(rs.getString(1));
+			enzymesReactions.put(rs.getString(2),reactionsIDs);
+		}
+		
+		rs.close();
+		return enzymesReactions;
+	}
+	
+	/**
+	 * Get reactionsIDs WHERE source <> 'TRANSPORTERS'.
+	 * @param statement
+	 * @return List<String>
+	 * @throws SQLException
+	 */
+	public static List<String> getReactionID(Statement statement) throws SQLException{
+	
+		List<String> reactionsIDs = null;
+		reactionsIDs = new ArrayList<String>();
+		
+		ResultSet rs = statement.executeQuery("SELECT distinct idreaction " +
+				" FROM reaction "+
+				" INNER JOIN reaction_has_enzyme ON reaction.idreaction = reaction_has_enzyme.reaction_idreaction " +
+				" WHERE source <> 'TRANSPORTERS' AND reaction_has_enzyme.enzyme_ecnumber IS NULL AND originalReaction;");
+
+		while(rs.next())
+			reactionsIDs.add(rs.getString(1));
+		
+		rs.close();
+		return reactionsIDs;
+	}
+	
+	
 }

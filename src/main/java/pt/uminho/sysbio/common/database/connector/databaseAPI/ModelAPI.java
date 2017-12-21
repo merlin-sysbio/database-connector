@@ -590,7 +590,7 @@ public class ModelAPI {
 	 * @throws SQLException
 	 */
 	public static void loadReaction(String idCompartment, boolean inModel, String ecNumber, Statement statement, boolean isTransport, DatabaseType databaseType, String name, String equation, boolean reversible, boolean generic, boolean spontaneous, 
-			boolean nonEnzymatic, String reactionSource, String notes, List<String> proteins, List<String> enzymes, Map<String, List<String>> ecNumbers, List<String> pathways, List<String> compounds, List<String> compartments, List<String> stoichiometry, 
+			boolean nonEnzymatic, String reactionSource, String notes, List<String> proteins, List<String> enzymes, List<String> ecNumbers, List<String> pathways, List<String> compounds, List<String> compartments, List<String> stoichiometry, 
 			List<String> chains) throws SQLException {
 
 		String aux ="name = '"+DatabaseUtilities.databaseStrConverter(name, databaseType)+"_C"+idCompartment+"' AND ";
@@ -637,9 +637,10 @@ public class ModelAPI {
 		if(ecNumber==null)
 			for(int j = 0; j< proteins.size(); j++)
 				ModelAPI.addReaction_has_Enzyme(proteins.get(j), enzymes.get(j), newReactionID, statement);
-		else
-			for(String protein_id : ecNumbers.get(ecNumber))
-				ModelAPI.addReaction_has_Enzyme(protein_id, ecNumber, newReactionID, statement);
+		else{
+			for(String protein_id : ecNumbers)
+					ModelAPI.addReaction_has_Enzyme(protein_id, ecNumber, newReactionID, statement);
+		}
 
 		for(String idPathway : pathways)
 			ModelAPI.addPathway_has_Reaction(idPathway, newReactionID, statement);
@@ -810,33 +811,52 @@ public class ModelAPI {
 		}
 
 
-		List<Pair<String, String>> proteinsPairs = new ArrayList<>();
-		rs = statement.executeQuery("SELECT reaction_idreaction, enzyme_protein_idprotein, enzyme_ecnumber  " +
-				" FROM reaction_has_enzyme;");
-		while (rs.next())
-			if(reactionsMap.containsKey(rs.getString(1)))			
+		
+		rs = statement.executeQuery("SELECT reaction_idreaction, enzyme_protein_idprotein, enzyme_ecnumber  FROM reaction_has_enzyme;");
+		
+		while (rs.next()) {
+			
+			List<Pair<String, String>> proteinsPairs = new ArrayList<>();
+			
+			if(reactionsMap.containsKey(rs.getString(1))) {
+				
+				if(reactionsMap.get(rs.getString(1)).containsKey("proteins"))			
+					proteinsPairs = (List<Pair<String, String>>) reactionsMap.get(rs.getString(1)).get("proteins");
+				
 				proteinsPairs.add(new  Pair<>(rs.getString(2), rs.getString(3)));
+				reactionsMap.get(rs.getString(1)).put("proteins", proteinsPairs);
+			}
+			
+		}
 
-		reactionsMap.get(rs.getString(1)).put("proteins", proteinsPairs);
-
-
-		List<String> pathways = new ArrayList<>();
 		rs = statement.executeQuery("SELECT reaction_idreaction, pathway_idpathway FROM pathway_has_reaction;");
-		while (rs.next())
-			if(reactionsMap.containsKey(rs.getString(1)))
+		while (rs.next()){
+			
+			List<String> pathways = new ArrayList<>();
+			
+			if(reactionsMap.containsKey(rs.getString(1))) {
+				
+				if(reactionsMap.get(rs.getString(1)).containsKey("pathways"))
+					pathways = (List<String>) reactionsMap.get(rs.getString(1)).get("pathways");
+			
 				pathways.add(rs.getString(2));
+				
+				reactionsMap.get(rs.getString(1)).put("pathways",pathways);
+			}
+		}
 
-		reactionsMap.get(rs.getString(1)).put("pathways",pathways);
 
-
-		List<String[]> entry = new ArrayList<>();
+		
 		rs = statement.executeQuery("SELECT * FROM stoichiometry "
 				+ " INNER JOIN reaction ON stoichiometry.reaction_idreaction = reaction.idreaction " +
 				" WHERE source <> 'TRANSPORTERS' AND originalReaction;");
 
 		while (rs.next()) {
-
+			List<String[]> entry = new ArrayList<>();
 			if(reactionsMap.containsKey(rs.getString(2))) {
+				
+				if(reactionsMap.get(rs.getString(2)).containsKey("entry"))
+					entry = (List<String[]>) reactionsMap.get(rs.getString(2)).get("entry");
 
 				String[] ent = new String[4];
 				ent[0] = rs.getString(3);
@@ -844,10 +864,11 @@ public class ModelAPI {
 				ent[2] = rs.getString(6);
 				ent[3] = rs.getString(4);
 				entry.add(ent);
+
+				
+				reactionsMap.get(rs.getString(2)).put("entry",entry);
 			}
 		}
-
-		reactionsMap.get(rs.getString(2)).put("entry",entry);
 		return reactionsMap;
 	}
 
