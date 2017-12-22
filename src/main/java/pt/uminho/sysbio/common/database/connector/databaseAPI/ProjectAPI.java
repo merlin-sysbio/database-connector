@@ -2908,7 +2908,7 @@ public class ProjectAPI {
 
 		ResultSet rs = stmt.executeQuery("SELECT name, idchromosome FROM chromosome");
 
-		if(rs.next())
+		while(rs.next())
 			map.put(rs.getString(1), rs.getInt(2));
 
 		rs.close();
@@ -2928,7 +2928,7 @@ public class ProjectAPI {
 
 		ResultSet rs = stmt.executeQuery(query);
 
-		if(rs.next())
+		while(rs.next())
 			map.put(rs.getString(1), rs.getInt(2));
 
 		rs.close();

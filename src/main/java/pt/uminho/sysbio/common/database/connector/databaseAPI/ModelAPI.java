@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
@@ -3017,18 +3018,21 @@ public class ModelAPI {
 	 * Load metabolites
 	 * 
 	 * @param metabolites
+	 * @param metabolites_id 
 	 * @param concurrentLinkedQueue
 	 * @param reactionsCompounds 
 	 * @param statement
 	 * @param databaseType
 	 * @throws SQLException
 	 */
-	public static void loadMetabolites(ConcurrentLinkedQueue<MetaboliteContainer> metabolites, ConcurrentLinkedQueue<String> concurrentLinkedQueue, PreparedStatement statement, DatabaseType databaseType) throws SQLException {
+	public static void loadMetabolites(ConcurrentLinkedQueue<MetaboliteContainer> metabolites, ConcurrentHashMap<String,Integer> metabolites_id, ConcurrentLinkedQueue<String> concurrentLinkedQueue, PreparedStatement statement, DatabaseType databaseType) throws SQLException {
 
 		//		"INSERT INTO compound(name, formula, molecular_weight, hasBiologicalRoles, entry_type, kegg_id) VALUES(?,?,?,?,?,?);"
 
 		int i = 0;
 		for (MetaboliteContainer metaboliteContainer : metabolites) {
+			
+			if(!metabolites_id.containsKey(metaboliteContainer.getEntryID())){
 
 				String entry_type = null;
 				if(metaboliteContainer.getEntryID().startsWith("C"))
@@ -3070,6 +3074,7 @@ public class ModelAPI {
 					statement.executeBatch(); // Execute every 1000 items.
 				}
 				i++;
+		}
 		}
 		statement.executeBatch();
 	}
