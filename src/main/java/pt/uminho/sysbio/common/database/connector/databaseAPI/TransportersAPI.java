@@ -4,10 +4,10 @@ package pt.uminho.sysbio.common.database.connector.databaseAPI;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,6 +21,7 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
 import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
 import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
+import pt.uminho.sysbio.merIin.utilities.capsules.DatabaseReactionContainer;
 
 /**
  * @author Oscar Dias
@@ -37,9 +38,9 @@ public class TransportersAPI {
 	 * @param statement
 	 * @throws SQLException
 	 */
-	public static void setProcessed(String idLocusTag, String status, Statement statement) throws SQLException {
+	public static void setProcessed(int id, String status, Statement statement) throws SQLException {
 
-		statement.execute("UPDATE sw_reports SET status='"+status+"'  WHERE id =" +idLocusTag);
+		statement.execute("UPDATE sw_reports SET status='"+status+"'  WHERE id =" +id +";");
 	}
 
 	/**
@@ -103,28 +104,42 @@ public class TransportersAPI {
 	 */
 	public static void loadTransportAlignmentsGenes(String locus_tag, String matrix, int tmd, String status, int project_id, Statement statement) throws SQLException {
 
-			Date sqlToday = new Date((new java.util.Date()).getTime());
-			ResultSet rs = statement.executeQuery("SELECT id, number_TMD FROM sw_reports WHERE locus_tag='"+locus_tag+"' AND project_id = "+project_id);
+		long time = System.currentTimeMillis();
+		Timestamp sqlToday = new Timestamp(time);
+		
+		ResultSet rs = statement.executeQuery("SELECT id, number_TMD FROM sw_reports WHERE locus_tag='"+locus_tag+"' AND project_id = "+project_id+";");
+		
+		System.out.println("SELECT id, number_TMD FROM sw_reports WHERE locus_tag='"+locus_tag+"' AND project_id = "+project_id+";");
 
-			if(rs.next()) {
+		if(rs.next()) {
 
-				statement.execute("UPDATE sw_reports SET "
-						+ " date = '"+sqlToday+"', "
-						+ " matrix= '"+matrix+"', "
-						+ " number_TMD = '"+tmd+"', "
-						+ " project_id = "+project_id+", "
-						+ " status ='"+status+"' " +
-						" WHERE locus_tag = '"+locus_tag+"'");
-			}
-			else{
+			statement.execute("UPDATE sw_reports SET "
+					+ " date = '"+sqlToday+"', "
+					+ " matrix= '"+matrix+"', "
+					+ " number_TMD = '"+tmd+"', "
+					+ " project_id = "+project_id+", "
+					+ " status ='"+status+"' " +
+					" WHERE locus_tag = '"+locus_tag+"'");
+			
+			System.out.println("UPDATE sw_reports SET "
+					+ " date = '"+sqlToday+"', "
+					+ " matrix= '"+matrix+"', "
+					+ " number_TMD = '"+tmd+"', "
+					+ " project_id = "+project_id+", "
+					+ " status ='"+status+"' " +
+					" WHERE locus_tag = '"+locus_tag+"';");
+		}
+		else{
 
-				statement.execute("INSERT INTO sw_reports (locus_tag, date, matrix, number_TMD, project_id, status) " +
-						"VALUES ('"+locus_tag+"','"+sqlToday+"','"+matrix+"','"+tmd+"',"+project_id+",'"+status+"')");
-				rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
-				rs.next();
-			}
+			statement.execute("INSERT INTO sw_reports (locus_tag, date, matrix, number_TMD, project_id, status) " +
+					"VALUES ('"+locus_tag+"','"+sqlToday+"','"+matrix+"','"+tmd+"',"+project_id+",'"+status+"');");
+			System.out.println("INSERT INTO sw_reports (locus_tag, date, matrix, number_TMD, project_id, status) " +
+					"VALUES ('"+locus_tag+"','"+sqlToday+"','"+matrix+"','"+tmd+"',"+project_id+",'"+status+"');");
+			rs = statement.executeQuery("SELECT LAST_INSERT_ID();");
+			rs.next();
+		}
 
-			rs.close();
+		rs.close();
 	}
 
 	/**
@@ -192,11 +207,11 @@ public class TransportersAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static Set<String> retrieveProcessedTransportAlignmentGenes(Statement statement) throws SQLException{
+	public static Set<String> retrieveProcessingTransportAlignmentGenes(Statement statement) throws SQLException{
 
 		Set<String> processedGenes  = new HashSet<String>();
 
-		ResultSet rs = statement.executeQuery("SELECT locus_tag FROM sw_reports WHERE status <> 'PROCESSED'");
+		ResultSet rs = statement.executeQuery("SELECT locus_tag FROM sw_reports WHERE status <> 'PROCESSING'");
 
 		while(rs.next())
 			processedGenes.add(rs.getString(1));
@@ -2957,34 +2972,40 @@ public class TransportersAPI {
 		return result;
 	}
 	
-	public static ArrayList<String[]> getDataFromReactionForTransp(Statement statement) throws SQLException{
+	public static Map<String, DatabaseReactionContainer> getDataFromReactionForTransp(Statement statement) throws SQLException{
 		
-		ArrayList<String[]> result = new ArrayList<>();
+		Map<String, DatabaseReactionContainer> reactionsMap = new HashMap<>();
 		
 		ResultSet rs = statement.executeQuery("SELECT name, equation, reversible, inModel, isGeneric, isSpontaneous, "
 				+ "isNonEnzymatic, source, idreaction, lowerBound, upperBound, notes " +
 				" FROM reaction WHERE source = 'TRANSPORTERS' AND originalReaction;");
 		
-		while(rs.next()){
-			String[] list = new String[12];
+		while (rs.next()) {
 
-			list[0]=rs.getString(1);
-			list[1]=rs.getString(2);
-			list[2]=rs.getBoolean(3)+"";
-			list[3]=rs.getBoolean(4)+"";
-			list[4]=rs.getBoolean(5)+"";
-			list[5]=rs.getBoolean(6)+"";
-			list[6]=rs.getBoolean(7)+"";
-			list[7]=rs.getString(8);
-			list[8]=rs.getString(9);
-			list[9]=rs.getString(10);
-			list[10]=rs.getString(11);
-			list[11]=rs.getString(12);
-			
-			result.add(list);
+			String name = rs.getString(1);
+			String equation = rs.getString(2);
+			boolean reversible = rs.getBoolean(3);
+			boolean inModel = rs.getBoolean(4);
+			boolean isGeneric = rs.getBoolean(5);
+			boolean isSpontaneous = rs.getBoolean(6);
+			boolean isNonEnzymatic = rs.getBoolean(7);
+			String source = rs.getString(8);
+			String id = rs.getString(9);
+			String lowerBound = rs.getString(10); 
+			String upperBound = rs.getString(11);
+			String notes ="";
+			if(rs.getString(12)!= null)
+				notes = rs.getString(12);
+
+			DatabaseReactionContainer drc = new DatabaseReactionContainer(id, name, equation, source, reversible, inModel, isGeneric, isSpontaneous, isNonEnzymatic);
+			drc.setUpperBound(upperBound);
+			drc.setLowerBound(lowerBound);
+			drc.setNotes(notes);
+			reactionsMap.put(id, drc);
 		}
+		
 		rs.close();
-		return result;
+		return reactionsMap;
 	}
 	
 	/**
@@ -2993,13 +3014,13 @@ public class TransportersAPI {
 	 * @return ArrayList<String[]> 
 	 * @throws SQLException
 	 */
-	public static ArrayList<String[]> getEnzymesReactions(Statement statement) throws SQLException{
+	public static ArrayList<String[]> getTransportReactions(Statement statement) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
 		
 		ResultSet rs = statement.executeQuery("SELECT idreaction, enzyme_ecnumber, enzyme_protein_idprotein FROM reaction " +
 				"INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction = idreaction " +
-				"WHERE (source <> 'TRANSPORTERS' AND reaction_has_enzyme.enzyme_ecnumber IS NOT NULL AND originalReaction)");
+				"WHERE (source = 'TRANSPORTERS' AND reaction_has_enzyme.enzyme_ecnumber IS NOT NULL AND originalReaction)");
 		
 		while(rs.next()){
 			String[] list = new String[12];
@@ -3013,59 +3034,6 @@ public class TransportersAPI {
 		}
 		rs.close();
 		return result;
-	}
-	
-	/**
-	 * Get reactionIDs and ecNumbers.
-	 * @param statement
-	 * @return Map<String, List<String>>
-	 * @throws SQLException
-	 */
-	public static Map<String, List<String>> getEnzymesReactions2(Statement statement) throws SQLException{
-		
-		Map<String, List<String>> enzymesReactions = new HashMap<String, List<String>>();
-		List<String> reactionsIDs = null;
-		
-		ResultSet rs = statement.executeQuery("SELECT idreaction, enzyme_ecnumber, enzyme_protein_idprotein FROM reaction " +
-				"INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction = idreaction " +
-				"WHERE (source <> 'TRANSPORTERS' AND reaction_has_enzyme.enzyme_ecnumber IS NOT NULL AND originalReaction)");
-		
-		while(rs.next()) {
-
-			reactionsIDs = new ArrayList<String>();
-
-			if(enzymesReactions.containsKey(rs.getString(2)))
-				reactionsIDs = enzymesReactions.get(rs.getString(2));
-
-			reactionsIDs.add(rs.getString(1));
-			enzymesReactions.put(rs.getString(2),reactionsIDs);
-		}
-		
-		rs.close();
-		return enzymesReactions;
-	}
-	
-	/**
-	 * Get reactionsIDs WHERE source <> 'TRANSPORTERS'.
-	 * @param statement
-	 * @return List<String>
-	 * @throws SQLException
-	 */
-	public static List<String> getReactionID(Statement statement) throws SQLException{
-	
-		List<String> reactionsIDs = null;
-		reactionsIDs = new ArrayList<String>();
-		
-		ResultSet rs = statement.executeQuery("SELECT distinct idreaction " +
-				" FROM reaction "+
-				" INNER JOIN reaction_has_enzyme ON reaction.idreaction = reaction_has_enzyme.reaction_idreaction " +
-				" WHERE source <> 'TRANSPORTERS' AND reaction_has_enzyme.enzyme_ecnumber IS NULL AND originalReaction;");
-
-		while(rs.next())
-			reactionsIDs.add(rs.getString(1));
-		
-		rs.close();
-		return reactionsIDs;
 	}
 	
 	/**
@@ -3148,7 +3116,7 @@ public class TransportersAPI {
 
 		Map<String, Integer> processedGenes  = new HashMap<>();
 
-		ResultSet rs = statement.executeQuery("SELECT locus_tag, id FROM sw_reports'");
+		ResultSet rs = statement.executeQuery("SELECT locus_tag, id FROM sw_reports;");
 
 		while(rs.next())
 			processedGenes.put(rs.getString(1), rs.getInt(2));
@@ -3185,24 +3153,6 @@ public class TransportersAPI {
 		}
 
 		rs.close();
-	}
-	
-	/**
-	 * Loads data about the transporters
-	 * 
-	 * @param alignmentContainerSet
-	 * @param statement
-	 * @throws SQLException
-	 */
-	public static void loadTransportersInfo (List<AlignmentCapsule> alignmentContainerSet, Statement statement) throws SQLException {
-		
-		Map<String, Integer> genesIDs  = TransportersAPI.getTransportAlignmentGenes(statement);
-		
-		for (AlignmentCapsule alignmentContainer : alignmentContainerSet){
-			
-			TransportersAPI.loadTransportInfo(alignmentContainer, genesIDs.get(alignmentContainer.getQuery()), statement);
-			TransportersAPI.setProcessed(alignmentContainer.getQuery(), "PROCESSED", statement);
-		}
 	}
 	
 }
