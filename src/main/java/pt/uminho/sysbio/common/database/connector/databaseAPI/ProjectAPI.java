@@ -3572,6 +3572,7 @@ public class ProjectAPI {
 			res[2] = rs.getString(5);
 			res[3] = rs.getString(6);
 			res[4] = rs.getString(7);
+			
 			return res;
 		}
 
@@ -3594,6 +3595,27 @@ public class ProjectAPI {
 
 		statement.execute("INSERT INTO projects(organism_id, latest_version, date, version, organism_name, organism_lineage) "
 				+ "values(" + data[0] + ", " + data[1] + ", '" + timestamp + "', " + data[2] +", '" + data[3] + "', '" + data[4] + "');");
+
+	}
+	
+	/**
+	 * @param statement
+	 * @throws SQLException
+	 */
+	public static void restoreOrganismColumns(Statement statement) throws SQLException{
+
+		statement.execute("ALTER TABLE `projects` ADD COLUMN `organism_name` VARCHAR(200) NULL DEFAULT '-1' AFTER `version`;");
+		statement.execute("ALTER TABLE `projects` ADD COLUMN `organism_lineage` VARCHAR(1000) NULL DEFAULT '-1' AFTER `organism_name`;");
+
+	}
+	
+	/**
+	 * @param statement
+	 * @throws SQLException
+	 */
+	public static void restoreColumnCompartmentsTools(Statement statement) throws SQLException{
+
+		statement.execute("ALTER TABLE `projects` ADD `compartments_tool` VARCHAR(60);");
 
 	}
 
