@@ -431,5 +431,55 @@ public class CompartmentsAPI {
 		return reactionsIDs;
 	}
 	
+	/**
+	 * Check the existence of biochemical reactions.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static boolean checkBiochemicalReactions(Statement statement) throws SQLException{
+	
+		ResultSet rs = statement.executeQuery("SELECT * FROM reaction WHERE NOT originalReaction AND source <> 'TRANSPORTERS';");
+
+		if(rs.next())
+			return true;
+		
+		rs.close();
+		return false;
+	}
+	
+	
+	/**
+	 * Check the existence of transporters reactions.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static boolean checkTransportersReactions(Statement statement) throws SQLException{
+	
+		ResultSet rs = statement.executeQuery("SELECT * FROM reaction WHERE NOT originalReaction AND source = 'TRANSPORTERS';");
+
+		if(rs.next())
+			return true;
+		
+		rs.close();
+		return false;
+	}
+	
+	/**
+	 * Removes all reactions assigned to the model.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static void removeNotOriginalReactions(Statement statement) throws SQLException{
+	
+		statement.execute("DELETE FROM reaction WHERE NOT originalReaction;");
+
+	}
+	
 	
 }
