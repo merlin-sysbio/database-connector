@@ -2936,6 +2936,39 @@ public class ProjectAPI {
 	}
 
 	/**
+	 * Get data from a given query and insert it into a map.
+	 * 
+	 * @param query
+	 * @param stmt
+	 * @return ConcurrentHashMap<String,List<Integer>>
+	 * @throws SQLException
+	 */
+	public static ConcurrentHashMap<String, List<Integer>> databaseInitialDataList(String query, Statement stmt) throws SQLException{
+
+		ConcurrentHashMap<String,List<Integer>> map = new ConcurrentHashMap<>();
+
+		ResultSet rs = stmt.executeQuery(query);
+
+		while(rs.next()) {
+			
+			String key = rs.getString(1);
+			int value = rs.getInt(2);
+			
+			List<Integer> l = new ArrayList<>();
+			
+			if(map.containsKey(key))
+				l = map.get(key);
+			
+			l.add(value);
+			
+			map.put(key, l);
+		}
+
+		rs.close();
+		return map;
+	}
+	
+	/**
 	 * Check if an internalID exists for a given internal_id and external_database and class.
 	 * 
 	 * @param geneID
@@ -3316,6 +3349,7 @@ public class ProjectAPI {
 
 	/**
 	 * Check pathway_has_enzyme data for a given enzyme_protein_idprotein and pathway_idpathway.
+	 * 
 	 * @param proteinID
 	 * @param pathwayID
 	 * @param stmt
@@ -3326,8 +3360,7 @@ public class ProjectAPI {
 
 		boolean exists = false;
 
-		ResultSet rs = stmt.executeQuery("SELECT * FROM pathway_has_enzyme "
-				+ "WHERE enzyme_protein_idprotein="+ proteinID +" AND pathway_idpathway="+ pathwayID);
+		ResultSet rs = stmt.executeQuery("SELECT * FROM pathway_has_enzyme WHERE enzyme_protein_idprotein="+ proteinID +" AND pathway_idpathway="+ pathwayID);
 
 		if(rs.next())
 			exists = true;

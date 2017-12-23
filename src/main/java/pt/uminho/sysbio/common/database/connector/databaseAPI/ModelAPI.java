@@ -3025,7 +3025,8 @@ public class ModelAPI {
 	 * @param databaseType
 	 * @throws SQLException
 	 */
-	public static void loadMetabolites(ConcurrentLinkedQueue<MetaboliteContainer> metabolites, ConcurrentHashMap<String,Integer> metabolites_id, ConcurrentLinkedQueue<String> concurrentLinkedQueue, PreparedStatement statement, DatabaseType databaseType) throws SQLException {
+	public static void loadMetabolites(ConcurrentLinkedQueue<MetaboliteContainer> metabolites, ConcurrentHashMap<String,Integer> metabolites_id, 
+			ConcurrentLinkedQueue<String> concurrentLinkedQueue, PreparedStatement statement, DatabaseType databaseType) throws SQLException {
 
 		//		"INSERT INTO compound(name, formula, molecular_weight, hasBiologicalRoles, entry_type, kegg_id) VALUES(?,?,?,?,?,?);"
 
