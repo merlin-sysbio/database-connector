@@ -745,11 +745,11 @@ public class TransportersAPI {
 	 */
 	public static void insertIntoCompartments(String geneID, String name, String abbreviation, Double compartmentScore, Statement statement) throws SQLException{
 		
-		ResultSet rs = statement.executeQuery("SELECT id FROM compartments WHERE abbreviation='"+ name.toUpperCase() +"'");
+		ResultSet rs = statement.executeQuery("SELECT id FROM compartments WHERE abbreviation='"+ abbreviation +"'");
 
 		if(!rs.next()) {
 
-			statement.execute("INSERT INTO compartments (name,abbreviation) VALUES('"+ abbreviation +"', '"+ name.toUpperCase() +"')");
+			statement.execute("INSERT INTO compartments (name,abbreviation) VALUES('"+ name.toUpperCase() +"', '"+ abbreviation +"')");
 			rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
 			rs.next();
 		}
