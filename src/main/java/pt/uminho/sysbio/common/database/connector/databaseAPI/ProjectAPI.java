@@ -3509,6 +3509,9 @@ public class ProjectAPI {
 
 		ResultSet rs = statement.executeQuery("SELECT organism_name, organism_lineage FROM projects WHERE organism_id = " + taxonomyID +";"); 
 
+//		System.out.println(rs.getString(1));
+//		System.out.println(rs.getString(2));
+		
 		if(rs.next() && !rs.getString(1).equalsIgnoreCase("-1")){
 
 			res[0] = rs.getString(1);
