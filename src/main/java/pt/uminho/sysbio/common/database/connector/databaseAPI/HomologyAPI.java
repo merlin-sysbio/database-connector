@@ -1792,19 +1792,19 @@ import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 		
 		/**
 		 * Get enzymes by reaction.
-		 * @param rowID
+		 * @param idReaction
 		 * @param statement
 		 * @return
 		 * @throws SQLException
 		 */
-		public static String[] getEnzymesByReaction(String rowID, Statement statement) throws SQLException{
+		public static String[] getEnzymesByReaction(int idReaction, Statement statement) throws SQLException{
 			
 			String[] res = null;
 			
 			ResultSet rs = statement.executeQuery(
 					"SELECT enzyme_ecnumber, protein_idprotein, protein.name FROM reaction_has_enzyme " +
 							" INNER JOIN protein ON protein.idprotein = protein_idprotein " +
-							"WHERE reaction_idreaction='"+rowID+"'");
+							"WHERE reaction_idreaction='"+idReaction+"'");
 
 			rs.last();
 			res = new String[rs.getRow()];
@@ -1822,13 +1822,13 @@ import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 		
 		/**
 		 * Get enzymes by given reaction and pathway.
-		 * @param rowID
+		 * @param idReaction
 		 * @param pathway
 		 * @param statement
 		 * @return
 		 * @throws SQLException
 		 */
-		public static String[] getEnzymesByReactionAndPathway(String rowID, int pathway, Statement statement) throws SQLException{
+		public static String[] getEnzymesByReactionAndPathway(int idReaction, int pathway, Statement statement) throws SQLException{
 			
 			String[] res = null;
 			
@@ -1842,7 +1842,7 @@ import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 							" INNER JOIN protein ON protein.idprotein = protein_idprotein " +
 							" WHERE pathway_has_reaction.pathway_idpathway=pathway_has_enzyme.pathway_idpathway" +
 							" AND pathway_has_enzyme.pathway_idpathway=\'"+pathway+"\'" +
-							" AND reaction.idreaction=\'"+rowID+"\'");
+							" AND reaction.idreaction=\'"+idReaction+"\'");
 
 			rs.last();
 			res = new String[rs.getRow()];
@@ -2041,15 +2041,15 @@ import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 		 * @return String
 		 * @throws SQLException
 		 */
-		public static String getGeneHomologySkey(String aux, String homologySetupID, Statement statement) throws SQLException{
+		public static int getGeneHomologySkey(String aux, int homologySetupID, Statement statement) throws SQLException{
 			
-			String res = "";
+			int res = -1;
 			
 			ResultSet rs = statement.executeQuery("SELECT * FROM geneHomology WHERE query = '"
 			+ aux +"' AND homologySetup_s_key = " +homologySetupID);
 			
 			if(rs.next())
-				res = rs.getString(1);
+				res = rs.getInt(1);
 				
 			rs.close();
 			return res;
@@ -2062,14 +2062,14 @@ import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 		 * @return String
 		 * @throws SQLException
 		 */
-		public static String getHomologuesSkey(String query, Statement statement) throws SQLException{
+		public static int getHomologuesSkey(String query, Statement statement) throws SQLException{
 			
-			String res = "";
+			int res = -1;
 			
 			ResultSet rs = statement.executeQuery(query);
 			
 			if(rs.next())
-				res = rs.getString(1);
+				res = rs.getInt(1);
 				
 			rs.close();
 			return res;
@@ -2102,7 +2102,7 @@ import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
 		 * @return boolean
 		 * @throws SQLException
 		 */
-		public static boolean checkHomologuesHasEcNumber(String homologues_s_key, String ecnumber_s_key, Statement statement) throws SQLException{
+		public static boolean checkHomologuesHasEcNumber(int homologues_s_key, int ecnumber_s_key, Statement statement) throws SQLException{
 			
 			boolean exists = false;
 			

@@ -2,7 +2,6 @@ package pt.uminho.sysbio.common.database.connector.databaseAPI;
 
 import java.io.IOException;
 import java.sql.DatabaseMetaData;
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -351,7 +350,7 @@ public class ProjectAPI {
 	 * @return
 	 */
 	public static String getReactionName(List<String> reaction, Statement statement){
-		
+
 		String results = "r";
 		try {
 			for(String names : reaction){
@@ -591,7 +590,7 @@ public class ProjectAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static ArrayList<String> getAliasClassR(String id, Statement stmt) throws SQLException{
+	public static ArrayList<String> getAliasClassR(int id, Statement stmt) throws SQLException{
 
 		ArrayList<String> res = new ArrayList<>();
 
@@ -922,6 +921,32 @@ public class ProjectAPI {
 		stmt.execute(query);
 	}
 
+	//	/**
+	//	 *Execute and get last insertID.
+	//	 * 
+	//	 * @param query
+	//	 * @param stmt
+	//	 * @return
+	//	 * @throws SQLException
+	//	 */
+	//	public static String executeAndGetLastInsertID(String query, Statement stmt) throws SQLException{
+	//
+	//		String idNew = null;
+	//
+	//		synchronized (stmt) {
+	//			
+	//			stmt.execute(query);
+	//			ResultSet rs = stmt.executeQuery("SELECT LAST_INSERT_ID()");
+	//
+	//			if(rs.next())
+	//				idNew = rs.getString(1);	
+	//			rs.close();
+	//		}
+	//
+	//		return idNew;
+	//	}
+
+
 	/**
 	 *Execute and get last insertID.
 	 * 
@@ -930,22 +955,19 @@ public class ProjectAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static String executeAndGetLastInsertID(String query, Statement stmt) throws SQLException{
+	public static int executeAndGetLastInsertID(String query, Statement stmt) throws SQLException{
 
-		String idNew = null;
+		//stmt.execute(query);
+		stmt.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
+		ResultSet rs = stmt.getGeneratedKeys();
+		if(rs.next())
+			return rs.getInt(1);
 
-		synchronized (stmt) {
-			
-			stmt.execute(query);
-			ResultSet rs = stmt.executeQuery("SELECT LAST_INSERT_ID()");
-
-			if(rs.next())
-				idNew = rs.getString(1);	
-			rs.close();
-		}
-
-		return idNew;
+		return -1;
 	}
+	
+	
+
 
 	/**
 	 * Count compounds with a given name.
@@ -1133,14 +1155,14 @@ public class ProjectAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static String getReactionIdByName(String name, Statement stmt) throws SQLException{
+	public static int getReactionIdByName(String name, Statement stmt) throws SQLException{
 
-		String res = "";
+		int res = -1;
 
 		ResultSet rs = stmt.executeQuery("SELECT idreaction FROM reaction WHERE name = '"+name+"'");
 
 		if(rs.next())
-			res = rs.getString(1);
+			res = rs.getInt(1);
 
 		rs.close();
 		return res;
@@ -1153,7 +1175,7 @@ public class ProjectAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static boolean isReactionInModel(String id, Statement statement) throws SQLException{
+	public static boolean isReactionInModel(int id, Statement statement) throws SQLException{
 
 		ResultSet rs = statement.executeQuery("SELECT inModel FROM reaction WHERE idreaction='"+id+"';");
 
@@ -1167,19 +1189,19 @@ public class ProjectAPI {
 
 	/**
 	 * Get Existing PathwaysID.
-	 * @param rowID
+	 * @param idReaction
 	 * @param statement
 	 * @return
 	 * @throws SQLException
 	 */
-	public static Map<String,String> getExistingPathwaysID(String rowID, Statement statement) throws SQLException{
+	public static Map<Integer,String> getExistingPathwaysID(int idReaction, Statement statement) throws SQLException{
 
-		Map<String,String> existingPathwaysID = new TreeMap<String,String>();
+		Map<Integer,String> existingPathwaysID = new TreeMap<>();
 
-		ResultSet rs = statement.executeQuery("SELECT pathway_idpathway FROM pathway_has_reaction WHERE reaction_idreaction = "+rowID);
+		ResultSet rs = statement.executeQuery("SELECT pathway_idpathway FROM pathway_has_reaction WHERE reaction_idreaction = "+idReaction);
 
 		while(rs.next()) 
-			existingPathwaysID.put(rs.getString(1),"");
+			existingPathwaysID.put(rs.getInt(1),"");
 
 		rs.close();
 		return existingPathwaysID;
@@ -1187,18 +1209,18 @@ public class ProjectAPI {
 
 	/**
 	 * Get Existing EnzymesID.
-	 * @param rowID
+	 * @param idReaction
 	 * @param statement
 	 * @return
 	 * @throws SQLException
 	 */
-	public static List<String> getExistingEnzymesID(String rowID, Statement statement) throws SQLException{
+	public static List<String> getExistingEnzymesID(int idReaction, Statement statement) throws SQLException{
 
 		List<String> existingEnzymesID = new ArrayList<String>();
 
 		ResultSet rs = statement.executeQuery("SELECT enzyme_ecnumber, reaction_has_enzyme.enzyme_protein_idprotein, protein.name FROM reaction_has_enzyme " +
 				" INNER JOIN protein ON protein.idprotein = reaction_has_enzyme.enzyme_protein_idprotein " +
-				" WHERE reaction_idreaction = "+rowID);
+				" WHERE reaction_idreaction = "+idReaction);
 
 		while(rs.next()) 
 			existingEnzymesID.add(rs.getString(1)+"___"+rs.getString(3)+"___"+rs.getString(2));
@@ -1211,17 +1233,17 @@ public class ProjectAPI {
 	 * Check if the the information already exists in the table.
 	 * @param ecnumber
 	 * @param idProtein
-	 * @param rowID
+	 * @param idReaction
 	 * @param statement
 	 * @return boolean
 	 * @throws SQLException
 	 */
-	public static boolean checkReactionHasEnzymeData(String ecnumber, String idProtein, String rowID, Statement statement) throws SQLException{
+	public static boolean checkReactionHasEnzymeData(String ecnumber, int idProtein, int idReaction, Statement statement) throws SQLException{
 
 		boolean exists = false;
 
 		ResultSet rs = statement.executeQuery("SELECT * FROM reaction_has_enzyme WHERE enzyme_ecnumber='" +
-				ecnumber+ "' AND enzyme_protein_idprotein = "+idProtein+" AND reaction_idreaction = "+rowID);
+				ecnumber+ "' AND enzyme_protein_idprotein = "+idProtein+" AND reaction_idreaction = "+idReaction);
 
 		if(rs.next()) 
 			exists = true;
@@ -1233,19 +1255,19 @@ public class ProjectAPI {
 
 	/**
 	 * Get Existing EnzymesID.
-	 * @param rowID
+	 * @param idReaction
 	 * @param statement
 	 * @return List<String>
 	 * @throws SQLException
 	 */
-	public static List<String> getExistingEnzymesID2(String rowID, Statement statement) throws SQLException{
+	public static List<String> getExistingEnzymesID2(int idReaction, Statement statement) throws SQLException{
 
 		List<String> existingEnzymesID = new ArrayList<String>();
 
 		ResultSet rss = statement.executeQuery("SELECT enzyme_ecnumber, protein.idprotein, protein.name" +
 				" FROM reaction_has_enzyme " +
 				" INNER JOIN protein ON protein.idprotein = enzyme_protein_idprotein " +
-				" WHERE reaction_idreaction = "+rowID);
+				" WHERE reaction_idreaction = "+idReaction);
 
 		while(rss.next()) 
 			existingEnzymesID.add(rss.getString(1)+"___"+rss.getString(3)+"___"+rss.getString(2));
@@ -1256,17 +1278,17 @@ public class ProjectAPI {
 
 	/**
 	 * Get Existing PathwaysID.
-	 * @param rowID
+	 * @param idReaction
 	 * @param statement
 	 * @return Map<String,String>
 	 * @throws SQLException
 	 */
-	public static Map<String,String> getExistingPathwaysID2(Map<String,String> existingPathwaysID, String rowID, Statement statement) throws SQLException{
+	public static Map<Integer,String> getExistingPathwaysID2(Map<Integer,String> existingPathwaysID, int idReaction, Statement statement) throws SQLException{
 
-		ResultSet rs = statement.executeQuery("SELECT pathway_idpathway FROM pathway_has_reaction WHERE reaction_idreaction = "+rowID);
+		ResultSet rs = statement.executeQuery("SELECT pathway_idpathway FROM pathway_has_reaction WHERE reaction_idreaction = "+idReaction);
 
 		while(rs.next()) 
-			existingPathwaysID.put(rs.getString(1),"");
+			existingPathwaysID.put(rs.getInt(1),"");
 
 		rs.close();
 		return existingPathwaysID;
@@ -1279,14 +1301,14 @@ public class ProjectAPI {
 	 * @return String
 	 * @throws SQLException
 	 */
-	public static String getPathwayID(String aux, Statement statement) throws SQLException{
+	public static int getPathwayID(String aux, Statement statement) throws SQLException{
 
-		String res ="";
+		int res = -1;
 
 		ResultSet rs = statement.executeQuery("SELECT idpathway FROM pathway WHERE name = '" + aux + "'");
 
 		if(rs.next())
-			res = rs.getString(1);
+			res = rs.getInt(1);
 
 		rs.close();
 		return res;
@@ -1301,7 +1323,7 @@ public class ProjectAPI {
 	 * @return boolean
 	 * @throws SQLException
 	 */
-	public static boolean checkPathwayHasEnzymeData(String ecnumber, String idProtein, String pathway, Statement statement) throws SQLException{
+	public static boolean checkPathwayHasEnzymeData(String ecnumber, int idProtein, int pathway, Statement statement) throws SQLException{
 
 		boolean exists = false;
 
@@ -1322,7 +1344,7 @@ public class ProjectAPI {
 	 * @return ArrayList<String[]>
 	 * @throws SQLException
 	 */
-	public static String[] getDataForReactionContainer(String rowID, Statement statement) throws SQLException{
+	public static String[] getDataForReactionContainer(int rowID, Statement statement) throws SQLException{
 
 		String[] list = new String[12];
 
@@ -1360,7 +1382,7 @@ public class ProjectAPI {
 	 * @return String[]
 	 * @throws SQLException
 	 */
-	public static Map<String, MetaboliteContainer> getStoichiometryData(String rowID, Statement statement) throws SQLException{
+	public static Map<String, MetaboliteContainer> getStoichiometryData(int rowID, Statement statement) throws SQLException{
 
 		Map<String, MetaboliteContainer> res = new TreeMap<String, MetaboliteContainer>();
 
@@ -2655,7 +2677,7 @@ public class ProjectAPI {
 	 * @return Set<String>
 	 * @throws SQLException
 	 */
-	public static Set<String> getEcNumberByPathwayID(String idPathway, Statement stmt) throws SQLException{
+	public static Set<String> getEcNumberByPathwayID(int idPathway, Statement stmt) throws SQLException{
 
 		Set<String> ecnumbers = new TreeSet<String>();
 
@@ -2676,7 +2698,7 @@ public class ProjectAPI {
 	 * @return Set<String>
 	 * @throws SQLException
 	 */
-	public static Set<String> getReactionIdByPathwayID(String idPathway, Statement stmt) throws SQLException{
+	public static Set<String> getReactionIdByPathwayID(int idPathway, Statement stmt) throws SQLException{
 
 		Set<String> reactions = new TreeSet<String>();
 
@@ -2756,15 +2778,15 @@ public class ProjectAPI {
 	 * @return String
 	 * @throws SQLException
 	 */
-	public static String getSKeyFromOrganism(String aux, Statement statement) throws SQLException{
+	public static int getSKeyFromOrganism(String aux, Statement statement) throws SQLException{
 
-		String res = "";
+		int res = -1;
 
 		ResultSet rs = statement.executeQuery("SELECT * FROM organism where organism = '"+ aux);
 
 
 		if(rs.next())
-			res = rs.getString(1);
+			res = rs.getInt(1);
 
 		rs.close();
 		return res;
@@ -2777,7 +2799,7 @@ public class ProjectAPI {
 	 * @return boolean
 	 * @throws SQLException
 	 */
-	public static boolean checkfastaSequenceBySkey(String geneHomology_s_key, Statement statement) throws SQLException{
+	public static boolean checkfastaSequenceBySkey(int geneHomology_s_key, Statement statement) throws SQLException{
 
 		boolean exists = false;
 
@@ -2797,14 +2819,14 @@ public class ProjectAPI {
 	 * @return boolean
 	 * @throws SQLException
 	 */
-	public static String getecNumberSkey(String ecNumber, Statement statement) throws SQLException{
+	public static int getecNumberSkey(String ecNumber, Statement statement) throws SQLException{
 
-		String res = "";
+		int res = -1;
 
 		ResultSet rs = statement.executeQuery("SELECT * FROM ecNumber WHERE ecNumber = '"+ecNumber+"'");
 
 		if(rs.next())
-			res = rs.getString(1);
+			res = rs.getInt(1);
 
 		rs.close();
 		return res;
@@ -2817,15 +2839,15 @@ public class ProjectAPI {
 	 * @return boolean
 	 * @throws SQLException
 	 */
-	public static String getProductRankSkey(String geneHomology_s_key, String aux, int aux2, Statement statement) throws SQLException{
+	public static int getProductRankSkey(int geneHomology_s_key, String aux, int aux2, Statement statement) throws SQLException{
 
-		String res = "";
+		int res = -1;
 
 		ResultSet rs = statement.executeQuery("SELECT * FROM productRank WHERE geneHomology_s_key = "
 				+ geneHomology_s_key +" AND productName = '"+ aux +"' AND rank = '"+ aux2 +"'");
 
 		if(rs.next())
-			res = rs.getString(1);
+			res = rs.getInt(1);
 
 		rs.close();
 		return res;
@@ -2838,15 +2860,15 @@ public class ProjectAPI {
 	 * @return boolean
 	 * @throws SQLException
 	 */
-	public static String getProductRankHasOrganismSkey(String aux, String orgKey, Statement statement) throws SQLException{
+	public static int getProductRankHasOrganismSkey(String aux, int orgKey, Statement statement) throws SQLException{
 
-		String res = "";
+		int res = -1;
 
 		ResultSet rs = statement.executeQuery("SELECT * FROM productRank_has_organism WHERE productRank_s_key = '"
 				+ aux +"' AND organism_s_key = '"+orgKey+"'");
 
 		if(rs.next())
-			res = rs.getString(1);
+			res = rs.getInt(1);
 
 		rs.close();
 		return res;
@@ -2859,16 +2881,16 @@ public class ProjectAPI {
 	 * @return boolean
 	 * @throws SQLException
 	 */
-	public static String getEcNumberRankSkey(String geneHomology_s_key, String concatEC, int ecnumber, Statement statement) throws SQLException{
+	public static int getEcNumberRankSkey(int geneHomology_s_key, String concatEC, int ecnumber, Statement statement) throws SQLException{
 
-		String res = "";
+		int res = -1;
 
 		ResultSet rs = statement.executeQuery("SELECT * FROM ecNumberRank " +
 				"WHERE geneHomology_s_key = '"+geneHomology_s_key+
 				"' AND ecNumber = '"+concatEC+"' AND rank = '"+ecnumber+"'");
 
 		if(rs.next())
-			res = rs.getString(1);
+			res = rs.getInt(1);
 
 		rs.close();
 		return res;
@@ -3104,6 +3126,46 @@ public class ProjectAPI {
 		rs.close();
 		return exists;
 	}
+	
+	/**
+	 * Get idprotein from protein table for a given EC number.
+	 * @param query
+	 * @param statement
+	 * @return String
+	 * @throws SQLException
+	 */
+	public static int getProteinIDFromEC_Number(String ecNumber, Statement stmt) throws SQLException{
+
+		int res = -1;
+
+		ResultSet rs = stmt.executeQuery("SELECT idprotein FROM protein WHERE ecnumber='"+ ecNumber +"'");
+
+		if(rs.next())
+			res = rs.getInt(1);
+
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * Get idprotein from protein table for a given EC number.
+	 * @param query
+	 * @param statement
+	 * @return String
+	 * @throws SQLException
+	 */
+	public static int getProteinIDFromName(String name, Statement stmt) throws SQLException{
+
+		int res = -1;
+
+		ResultSet rs = stmt.executeQuery("SELECT idprotein FROM protein WHERE name = '"+ name +"'");
+
+		if(rs.next())
+			res = rs.getInt(1);
+
+		rs.close();
+		return res;
+	}
 
 	/**
 	 * Get idprotein from protein table for a given name and class.
@@ -3112,14 +3174,14 @@ public class ProjectAPI {
 	 * @return String
 	 * @throws SQLException
 	 */
-	public static String getProteinIDFromProtein(String enzyme, Statement stmt) throws SQLException{
+	public static int getProteinIDFromProtein(String enzyme, Statement stmt) throws SQLException{
 
-		String res = "";
+		int res = -1;
 
 		ResultSet rs = stmt.executeQuery("SELECT idprotein FROM protein WHERE name='-' AND class='"+ enzyme +"'");
 
 		if(rs.next())
-			res = rs.getString(1);
+			res = rs.getInt(1);
 
 		rs.close();
 		return res;
@@ -3154,14 +3216,14 @@ public class ProjectAPI {
 	 * @return String
 	 * @throws SQLException
 	 */
-	public static String getPathwayData(String name, String code, Statement stmt) throws SQLException{
+	public static int getPathwayData(String name, String code, Statement stmt) throws SQLException{
 
-		String res = "";
+		int res = -1;
 
 		ResultSet rs = stmt.executeQuery("SELECT * FROM pathway WHERE name='"+ name +"' AND code='"+ code +"'");
 
 		if(rs.next())
-			res = rs.getString(1);
+			res = rs.getInt(1);
 
 		rs.close();
 		return res;
@@ -3174,14 +3236,14 @@ public class ProjectAPI {
 	 * @return String
 	 * @throws SQLException
 	 */
-	public static String getData(String query, Statement stmt) throws SQLException{
+	public static int getData(String query, Statement stmt) throws SQLException{
 
-		String res = "";
+		int res = -1;
 
 		ResultSet rs = stmt.executeQuery(query);
 
 		if(rs.next())
-			res = rs.getString(1);
+			res = rs.getInt(1);
 
 		rs.close();
 		return res;
@@ -3216,14 +3278,14 @@ public class ProjectAPI {
 	 * @return String
 	 * @throws SQLException
 	 */
-	public static String getSuperPathwayData(int intermediary_pathway_id, int super_pathway_id, Statement statement) throws SQLException{
+	public static int getSuperPathwayData(int intermediary_pathway_id, int super_pathway_id, Statement statement) throws SQLException{
 
-		String res ="";
+		int res = -1;
 
 		ResultSet rs = statement.executeQuery("SELECT * FROM superpathway WHERE pathway_idpathway="+intermediary_pathway_id+" AND superpathway="+super_pathway_id);
 
 		if(rs.next())
-			res = rs.getString(1);
+			res = rs.getInt(1);
 
 		rs.close();
 		return res;
@@ -3451,12 +3513,12 @@ public class ProjectAPI {
 //		System.out.println(rs.getString(2));
 		
 		if(rs.next() && !rs.getString(1).equalsIgnoreCase("-1")){
-			
-				res[0] = rs.getString(1);
-				res[1] = rs.getString(2);
-				return res;
+
+			res[0] = rs.getString(1);
+			res[1] = rs.getString(2);
+			return res;
 		}
-		
+
 		rs.close();
 		return null;
 
@@ -3501,9 +3563,9 @@ public class ProjectAPI {
 	 * @throws SQLException 
 	 */
 	public static Object[] getAllOrganismData(long taxonomyID, Statement statement) throws SQLException{
-		
+
 		Object[] res = new String[5];
-		
+
 		ResultSet rs = statement.executeQuery("SELECT * FROM projects WHERE organism_id = " + taxonomyID +";"); 
 
 		if(rs.next()){
@@ -3529,13 +3591,13 @@ public class ProjectAPI {
 	 * @throws SQLException
 	 */
 	public static void setOrganismData(Object[] data, Statement statement) throws SQLException{
-		
+
 		long time = System.currentTimeMillis();
 		Timestamp timestamp = new Timestamp(time);
-		
+
 		statement.execute("INSERT INTO projects(organism_id, latest_version, date, version, organism_name, organism_lineage) "
 				+ "values(" + data[0] + ", " + data[1] + ", '" + timestamp + "', " + data[2] +", '" + data[3] + "', '" + data[4] + "');");
-		
+
 	}
 
 }
