@@ -3595,7 +3595,7 @@ public class ProjectAPI {
 
 		long time = System.currentTimeMillis();
 		Timestamp timestamp = new Timestamp(time);
-
+		
 		statement.execute("INSERT INTO projects(organism_id, latest_version, date, version, organism_name, organism_lineage) "
 				+ "values(" + data[0] + ", " + data[1] + ", '" + timestamp + "', " + data[2] +", '" + data[3] + "', '" + data[4] + "');");
 
