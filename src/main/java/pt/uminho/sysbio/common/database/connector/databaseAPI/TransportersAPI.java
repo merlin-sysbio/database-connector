@@ -109,8 +109,6 @@ public class TransportersAPI {
 		
 		ResultSet rs = statement.executeQuery("SELECT id, number_TMD FROM sw_reports WHERE locus_tag='"+locus_tag+"' AND project_id = "+project_id+";");
 		
-		System.out.println("SELECT id, number_TMD FROM sw_reports WHERE locus_tag='"+locus_tag+"' AND project_id = "+project_id+";");
-
 		if(rs.next()) {
 
 			statement.execute("UPDATE sw_reports SET "
@@ -120,20 +118,10 @@ public class TransportersAPI {
 					+ " project_id = "+project_id+", "
 					+ " status ='"+status+"' " +
 					" WHERE locus_tag = '"+locus_tag+"'");
-			
-			System.out.println("UPDATE sw_reports SET "
-					+ " date = '"+sqlToday+"', "
-					+ " matrix= '"+matrix+"', "
-					+ " number_TMD = '"+tmd+"', "
-					+ " project_id = "+project_id+", "
-					+ " status ='"+status+"' " +
-					" WHERE locus_tag = '"+locus_tag+"';");
 		}
 		else{
 
 			statement.execute("INSERT INTO sw_reports (locus_tag, date, matrix, number_TMD, project_id, status) " +
-					"VALUES ('"+locus_tag+"','"+sqlToday+"','"+matrix+"','"+tmd+"',"+project_id+",'"+status+"');");
-			System.out.println("INSERT INTO sw_reports (locus_tag, date, matrix, number_TMD, project_id, status) " +
 					"VALUES ('"+locus_tag+"','"+sqlToday+"','"+matrix+"','"+tmd+"',"+project_id+",'"+status+"');");
 			rs = statement.executeQuery("SELECT LAST_INSERT_ID();");
 			rs.next();
@@ -3153,6 +3141,38 @@ public class TransportersAPI {
 		}
 
 		rs.close();
+	}
+	
+	/**
+	 * Method to delete all entry from reaction where source = 'TRANSPORTERS'.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static void cleanIntegration(Statement statement) throws SQLException{
+
+
+		statement.execute("DELETE FROM reaction WHERE source = 'TRANSPORTERS';");
+
+	}
+	
+	/**
+	 * Check the existence of transporters reactions.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static boolean checkTransporters(Statement statement) throws SQLException{
+	
+		ResultSet rs = statement.executeQuery("SELECT * FROM reaction WHERE source = 'TRANSPORTERS';");
+
+		if(rs.next())
+			return true;
+		
+		rs.close();
+		return false;
 	}
 	
 }
