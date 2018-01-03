@@ -1399,10 +1399,9 @@ public class ProjectAPI {
 				"WHERE reaction_idreaction = '"+rowID+"';");
 
 		while(rs.next()) {
-
+			
 			MetaboliteContainer metaboliteContainer = new MetaboliteContainer(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6)) ;
 			res.put(rs.getString(7), metaboliteContainer);
-
 		}
 
 		rs.close();
