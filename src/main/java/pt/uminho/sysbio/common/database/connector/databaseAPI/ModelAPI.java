@@ -22,7 +22,7 @@ import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
 import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
 import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
-import pt.uminho.sysbio.merIin.utilities.capsules.ReactionsCapsule;
+import pt.uminho.sysbio.merlin.utilities.containers.capsules.ReactionsCapsule;
 import pt.uminho.sysbio.merlin.utilities.containers.gpr.GeneAssociation;
 import pt.uminho.sysbio.merlin.utilities.containers.gpr.ModuleCI;
 import pt.uminho.sysbio.merlin.utilities.containers.gpr.ProteinsGPR_CI;
