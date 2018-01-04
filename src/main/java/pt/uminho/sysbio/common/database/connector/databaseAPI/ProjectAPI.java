@@ -824,7 +824,7 @@ public class ProjectAPI {
 				"RIGHT JOIN pathway_has_reaction ON pathway_idpathway=pathway.idpathway " +
 				"GROUP BY pathway_idpathway ORDER BY name;");
 
-		while(rs.next()) 
+		while(rs.next())
 			qls.get(rs.getString(1))[2] = rs.getString(2);
 
 		rs.close();
