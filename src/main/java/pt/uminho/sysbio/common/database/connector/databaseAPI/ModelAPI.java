@@ -1968,8 +1968,8 @@ public class ModelAPI {
 	 * @param statement
 	 * @param reaction_id
 	 */
-	public static void removeSelectedReaction(Statement statement, String reaction_id){
-
+	public static void removeSelectedReaction(Statement statement, int reaction_id){
+		
 		try{
 
 			statement.execute("DELETE FROM reaction WHERE idreaction="+reaction_id+";");
