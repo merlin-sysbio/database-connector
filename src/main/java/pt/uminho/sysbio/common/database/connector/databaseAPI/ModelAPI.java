@@ -755,6 +755,7 @@ public class ModelAPI {
 	 * @return
 	 * @throws SQLException
 	 */
+	@SuppressWarnings("unchecked")
 	public static Map<String, Map<String, Object>> getEnzymesReactionsMap(Statement statement, boolean isTransporters ) throws SQLException {
 
 		String aux = "<>";
@@ -815,42 +816,42 @@ public class ModelAPI {
 		}
 
 
-		
+
 		rs = statement.executeQuery("SELECT reaction_idreaction, enzyme_protein_idprotein, enzyme_ecnumber  FROM reaction_has_enzyme;");
-		
+
 		while (rs.next()) {
-			
+
 			List<Pair<String, String>> proteinsPairs = new ArrayList<>();
-			
+
 			if(reactionsMap.containsKey(rs.getString(1))) {
-				
+
 				if(reactionsMap.get(rs.getString(1)).containsKey("proteins"))			
 					proteinsPairs = (List<Pair<String, String>>) reactionsMap.get(rs.getString(1)).get("proteins");
-				
+
 				proteinsPairs.add(new  Pair<>(rs.getString(2), rs.getString(3)));
 				reactionsMap.get(rs.getString(1)).put("proteins", proteinsPairs);
 			}
-			
+
 		}
 
 		rs = statement.executeQuery("SELECT reaction_idreaction, pathway_idpathway FROM pathway_has_reaction;");
 		while (rs.next()){
-			
+
 			List<String> pathways = new ArrayList<>();
-			
+
 			if(reactionsMap.containsKey(rs.getString(1))) {
-				
+
 				if(reactionsMap.get(rs.getString(1)).containsKey("pathways"))
 					pathways = (List<String>) reactionsMap.get(rs.getString(1)).get("pathways");
-			
+
 				pathways.add(rs.getString(2));
-				
+
 				reactionsMap.get(rs.getString(1)).put("pathways",pathways);
 			}
 		}
 
 
-		
+
 		rs = statement.executeQuery("SELECT * FROM stoichiometry "
 				+ " INNER JOIN reaction ON stoichiometry.reaction_idreaction = reaction.idreaction " +
 				" WHERE source <> 'TRANSPORTERS' AND originalReaction;");
@@ -858,7 +859,7 @@ public class ModelAPI {
 		while (rs.next()) {
 			List<String[]> entry = new ArrayList<>();
 			if(reactionsMap.containsKey(rs.getString(2))) {
-				
+
 				if(reactionsMap.get(rs.getString(2)).containsKey("entry"))
 					entry = (List<String[]>) reactionsMap.get(rs.getString(2)).get("entry");
 
@@ -869,7 +870,7 @@ public class ModelAPI {
 				ent[3] = rs.getString(4);
 				entry.add(ent);
 
-				
+
 				reactionsMap.get(rs.getString(2)).put("entry",entry);
 			}
 		}
@@ -2394,10 +2395,10 @@ public class ModelAPI {
 				"FROM reaction WHERE inModel AND " +conditions );
 
 		Map<String, ArrayList<String>> result = new HashMap<>();
-		
+
 
 		while(rs.next()) {
-			
+
 			ArrayList<String> list = new ArrayList<>();
 			list.add(rs.getString(2));
 			list.add(rs.getString(3));
@@ -2428,7 +2429,7 @@ public class ModelAPI {
 		ArrayList<String[]> result = new ArrayList<>();
 
 		while(rs.next()) {
-			
+
 			String[] list = new String[3];
 
 			list[0] = rs.getString(1);
@@ -3018,9 +3019,8 @@ public class ModelAPI {
 	 * Load metabolites
 	 * 
 	 * @param metabolites
-	 * @param metabolites_id 
+	 * @param metabolites_id
 	 * @param concurrentLinkedQueue
-	 * @param reactionsCompounds 
 	 * @param statement
 	 * @param databaseType
 	 * @throws SQLException
@@ -3032,7 +3032,7 @@ public class ModelAPI {
 
 		int i = 0;
 		for (MetaboliteContainer metaboliteContainer : metabolites) {
-			
+
 			if(!metabolites_id.containsKey(metaboliteContainer.getEntryID())){
 
 				String entry_type = null;
@@ -3075,7 +3075,7 @@ public class ModelAPI {
 					statement.executeBatch(); // Execute every 1000 items.
 				}
 				i++;
-		}
+			}
 		}
 		statement.executeBatch();
 	}
