@@ -560,7 +560,7 @@ public class ProjectAPI {
 
 		while(rs.next())
 			res.add(rs.getString(1));
-
+		
 		rs.close();
 		return res;
 	}
@@ -580,7 +580,7 @@ public class ProjectAPI {
 
 		while(rs.next())
 			res.add(rs.getString(1));
-
+		
 		rs.close();
 		return res;
 	}
@@ -3634,7 +3634,7 @@ public class ProjectAPI {
 		
 		statement.execute("INSERT INTO projects(organism_id, latest_version, date, version, organism_name, organism_lineage) "
 				+ "values(" + data[0] + ", " + data[1] + ", '" + timestamp + "', " + data[2] +", '" + data[3] + "', '" + data[4] + "');");
-
+		
 	}
 	
 	/**

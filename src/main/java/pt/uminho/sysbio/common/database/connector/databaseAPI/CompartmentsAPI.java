@@ -280,7 +280,7 @@ public class CompartmentsAPI {
 
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
-			list[1]=rs.getString(3);
+			list[2]=rs.getString(3);
 			
 			result.add(list);
 		}
