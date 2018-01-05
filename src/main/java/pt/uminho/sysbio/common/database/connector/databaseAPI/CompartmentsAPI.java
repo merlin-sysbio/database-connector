@@ -481,5 +481,26 @@ public class CompartmentsAPI {
 
 	}
 	
+	/**
+	 * Method to retrieve all distinct compartments and abbreviations in gene_has_compartment table.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, String>  getCompartments(Statement statement) throws SQLException{
+		
+		Map<String, String> comp = new HashMap<>();
+		
+		ResultSet rs = statement.executeQuery("SELECT DISTINCT(name), abbreviation FROM psort_reports_has_compartments INNER JOIN compartments ON id = compartment_id;");
+		
+		while(rs.next())
+			comp.put(rs.getString(1), rs.getString(2));
+		
+		rs.close();
+		
+		return comp;
+	}
+	
 	
 }
