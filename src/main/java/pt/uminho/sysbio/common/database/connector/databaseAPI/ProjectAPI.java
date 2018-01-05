@@ -537,6 +537,9 @@ public class ProjectAPI {
 
 		while(rs.next())
 			res.add(rs.getString(1));
+		
+		if(res.size() == 0)
+			res.add("");
 
 		rs.close();
 		return res;
