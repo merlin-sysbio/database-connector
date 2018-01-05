@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
-import pt.uminho.sysbio.merIin.utilities.capsules.AlignmentCapsule;
+import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
 	
 	
 	/**
