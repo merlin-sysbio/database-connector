@@ -165,7 +165,7 @@ import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
 		 * @throws SQLException
 		 */
 		public static List< ArrayList<String>> getHomologyResults(int key, Statement statement, String tool1, String tool2, String tool3) throws SQLException {
-	
+			
 			ResultSet rs1=statement.executeQuery("SELECT query FROM geneHomology WHERE geneHomology.s_key = '" + key+"' ");
 	
 			String query = "";
@@ -194,8 +194,12 @@ import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
 					"AND (LOWER(program) LIKE '"+tool1+"' OR LOWER(program) LIKE '"+tool2+"' OR LOWER(program) LIKE '"+tool3+"')"
 							+ " ORDER BY bits DESC, geneHomology_has_homologues.eValue ASC");
 	
+			boolean go = true;
+			
 			while(resultSet.next()) {
 	
+				go = false;
+				
 				String s_key = "";
 				if(resultSet.getString(7) != null) {
 	
@@ -238,7 +242,7 @@ import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
 					ql = new ArrayList<String>();
 					ql.add("");
 					ql.add("");
-					ql.add("");
+					ql.add("-1");
 					ql.add("");
 					ql.add("");
 					ql.add("");
@@ -246,6 +250,20 @@ import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
 					ql.add("");
 					result.add(ql);
 				}
+			}
+			
+			if(go){
+				
+				ql = new ArrayList<String>();
+				ql.add("");
+				ql.add("");
+				ql.add("-1");
+				ql.add("");
+				ql.add("");
+				ql.add("");
+				ql.add("");
+				ql.add("");
+				result.add(ql);
 			}
 	
 			return result;
@@ -286,11 +304,22 @@ import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
 							"AND (LOWER(program) LIKE '"+tool1+"' OR LOWER(program) LIKE '"+tool2+"' OR LOWER(program) LIKE '"+tool3+"')"
 							+ " ORDER BY bits DESC, geneHomology_has_homologues.eValue ASC");
 			
+			boolean go = true;
+			
 			while (resultSet.next()) {
+				
+				go = false;
 	
 				ql = new ArrayList<String>();
 				ql.add(resultSet.getString(1));
 				ql.add(resultSet.getString(2));
+				result.add(ql);
+			}
+			
+			if(go){
+				ql = new ArrayList<String>();
+				ql.add("");
+				ql.add("");
 				result.add(ql);
 			}
 	

@@ -349,14 +349,15 @@ public class ProjectAPI {
 	 * @param reaction
 	 * @return
 	 */
-	public static String getReactionName(List<String> reaction, Statement statement){
+	public static Set<String> getReactionName(List<String> reaction, Statement statement){
 
-		String results = "r";
+		Set<String> results  = new HashSet<String>();
+		
 		try {
 			for(String names : reaction){
 				ResultSet rs = statement.executeQuery("SELECT name FROM reaction WHERE idreaction="+names+";");
-				if(rs.next())
-					results += rs.getString("name")+",";
+				while(rs.next())
+					results.add(rs.getString("name"));
 			}
 
 		} catch (SQLException e) {
@@ -560,7 +561,7 @@ public class ProjectAPI {
 
 		while(rs.next())
 			res.add(rs.getString(1));
-
+		
 		rs.close();
 		return res;
 	}
@@ -580,7 +581,7 @@ public class ProjectAPI {
 
 		while(rs.next())
 			res.add(rs.getString(1));
-
+		
 		rs.close();
 		return res;
 	}
@@ -3634,7 +3635,7 @@ public class ProjectAPI {
 		
 		statement.execute("INSERT INTO projects(organism_id, latest_version, date, version, organism_name, organism_lineage) "
 				+ "values(" + data[0] + ", " + data[1] + ", '" + timestamp + "', " + data[2] +", '" + data[3] + "', '" + data[4] + "');");
-
+		
 	}
 	
 	/**
