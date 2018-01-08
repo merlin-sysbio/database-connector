@@ -381,6 +381,8 @@ public class ModelAPI {
 	 */
 	public static Map<String, List<String>> loadEnzymeGetReactions(String idGene, Set<String> ecNumber, String proteinName, Statement statement, boolean integratePartial, boolean integrateFull, boolean insertProductNames, DatabaseType databaseType) throws SQLException {
 
+		String aux = " AND originalReaction = " + !ProjectAPI.isCompartmentalisedModel(statement);
+		
 		String idProtein = null;
 		Map<String, List<String>> enzymesReactions = new HashMap<>();
 		ResultSet resultSet = statement.executeQuery("SELECT enzyme_ecnumber FROM subunit WHERE gene_idgene = "+idGene);
@@ -395,7 +397,7 @@ public class ModelAPI {
 		resultSet = statement.executeQuery("SELECT * FROM subunit WHERE gene_idgene = "+idGene);
 
 		for(String enzyme : ecNumber) {
-
+			
 			List<String> reactions_ids = new ArrayList<String>();
 
 			if(((enzyme.contains(".-") && integratePartial) || (!enzyme.contains(".-") && integrateFull)) && !enzyme.isEmpty()) {
@@ -403,10 +405,8 @@ public class ModelAPI {
 				resultSet = statement.executeQuery("SELECT protein_idprotein FROM enzyme WHERE ecnumber = '"+enzyme+"'");
 
 				boolean go = false;
-				boolean next = resultSet.next();
 
-
-				if(next) {
+				if(resultSet.next()) {
 
 					idProtein = resultSet.getString(1);
 					resultSet= statement.executeQuery("SELECT inModel FROM enzyme WHERE protein_idprotein="+idProtein+" AND ecnumber='"+enzyme+"'");
@@ -440,12 +440,12 @@ public class ModelAPI {
 					if(!enzyme.contains(".-")) {
 
 						resultSet= statement.executeQuery("SELECT DISTINCT idreaction FROM reaction " +
-								"INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction = idreaction " +
-								"INNER JOIN pathway_has_enzyme ON pathway_has_enzyme.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein  " +
-								"INNER JOIN pathway_has_reaction ON pathway_has_enzyme.pathway_idpathway = pathway_has_reaction.pathway_idpathway  " +
-								"WHERE pathway_has_reaction.reaction_idreaction = idreaction " +
-								"AND reaction_has_enzyme.enzyme_protein_idprotein = '"+idProtein+"' " +
-								"AND reaction_has_enzyme.enzyme_ecnumber = '"+enzyme+"'");
+								" INNER JOIN reaction_has_enzyme ON reaction_has_enzyme.reaction_idreaction = idreaction " +
+								" INNER JOIN pathway_has_enzyme ON pathway_has_enzyme.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein  " +
+								" INNER JOIN pathway_has_reaction ON pathway_has_enzyme.pathway_idpathway = pathway_has_reaction.pathway_idpathway  " +
+								" WHERE pathway_has_reaction.reaction_idreaction = idreaction " + aux  +
+								" AND reaction_has_enzyme.enzyme_protein_idprotein = '"+idProtein+"' " +
+								" AND reaction_has_enzyme.enzyme_ecnumber = '"+enzyme+"'");
 
 						while(resultSet.next())
 							reactions_ids.add(resultSet.getString(1));
@@ -457,8 +457,9 @@ public class ModelAPI {
 						while(resultSet.next())
 							reactions_ids.add(resultSet.getString(1));
 
-						for(String idreaction: reactions_ids)
+						for(String idreaction: reactions_ids){
 							statement.execute("UPDATE reaction SET inModel = true, source = 'HOMOLOGY' WHERE idreaction = '"+idreaction+"'");
+						}
 
 					}
 				}
@@ -1100,6 +1101,8 @@ public class ModelAPI {
 		String locusTag = sequence_id, name = null;
 
 		ResultSet rs = statement.executeQuery("SELECT locusTag, gene FROM geneHomology WHERE query = '"+sequence_id+"';");
+		
+		System.out.println("SELECT locusTag, gene FROM geneHomology WHERE query = '"+sequence_id+"';");
 
 		if(rs.next()) {
 
@@ -1134,12 +1137,14 @@ public class ModelAPI {
 		if(rs.next()) {
 
 			String informationType_db = rs.getString(2);
+			
+			geneID = rs.getString(1);
 
 			if(!informationType.equalsIgnoreCase(informationType_db))
 				statement.execute("UPDATE gene SET origin = '"+informationType+"' WHERE sequence_id = '"+sequence_id+"'");
 
-			geneID = rs.getString(1);
 			query = "SELECT idgene FROM gene WHERE locusTag = '"+locusTag+"' AND sequence_id = '"+sequence_id+"';";
+			
 			rs = statement.executeQuery(query);
 
 			if(!rs.next() && !locusTag.equalsIgnoreCase(sequence_id))
@@ -2106,7 +2111,6 @@ public class ModelAPI {
 				if(rs.getString(5)==null) {temp.add("0");}
 				else {temp.add(rs.getString(5));}
 				reactionsData.add(temp);
-
 				namesIndex.put(rs.getString(1), rs.getString(2));
 				formulasIndex.put(rs.getString(1), rs.getString(3));
 
@@ -3961,7 +3965,7 @@ public class ModelAPI {
 
 		if(rs.next()){
 			res.setA(rs.getString(1));
-			res.setB(rs.getString(3));
+			res.setB(rs.getString(2));
 		}
 
 		rs.close();
