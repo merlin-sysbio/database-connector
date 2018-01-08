@@ -2862,12 +2862,12 @@ public class ProjectAPI {
 	 * @return boolean
 	 * @throws SQLException
 	 */
-	public static int getProductRankHasOrganismSkey(String aux, int orgKey, Statement statement) throws SQLException{
+	public static int getProductRankHasOrganismSkey(int prodKey, int orgKey, Statement statement) throws SQLException{
 
 		int res = -1;
 
 		ResultSet rs = statement.executeQuery("SELECT * FROM productRank_has_organism WHERE productRank_s_key = '"
-				+ aux +"' AND organism_s_key = '"+orgKey+"'");
+				+ prodKey +"' AND organism_s_key = '"+orgKey+"'");
 
 		if(rs.next())
 			res = rs.getInt(1);

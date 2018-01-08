@@ -255,7 +255,7 @@ public class CompartmentsAPI {
 
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
-			list[1]=rs.getString(3);
+			list[2]=rs.getString(3);
 			
 			result.add(list);
 		}
@@ -273,14 +273,14 @@ public class CompartmentsAPI {
 		
 		ArrayList<String[]> result = new ArrayList<>();
 		
-		ResultSet rs = stmt.executeQuery("SELECT idcompartment, name, abbreviation FROM compartment"+aux);
+		ResultSet rs = stmt.executeQuery("SELECT idcompartment, name, abbreviation FROM compartment "+aux);
 		
 		while(rs.next()){
 			String[] list = new String[3];
 
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
-			list[1]=rs.getString(3);
+			list[2]=rs.getString(3);
 			
 			result.add(list);
 		}
