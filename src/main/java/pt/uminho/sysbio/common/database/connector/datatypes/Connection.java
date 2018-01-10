@@ -117,7 +117,6 @@ public class Connection implements Externalizable{
 			statement = this.connection.createStatement();
 		}
 		catch (SQLException se){
-			System.out.println(se.getMessage());
 			throw se;
 		}
 

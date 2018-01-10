@@ -6,6 +6,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -493,32 +494,40 @@ public class ModelAPI {
 	 */
 	public static void loadGenesCompartments(String idGene, Map<String,String> compartmentsDatabaseIDs, Statement statement, String primaryCompartment, double scorePrimaryCompartment, Map<String, Double> secondaryCompartmens) throws SQLException {
 
-		DecimalFormat df = new DecimalFormat("#.##");
+		DecimalFormatSymbols separator = new DecimalFormatSymbols();
+		separator.setDecimalSeparator('.');
+		DecimalFormat df = new DecimalFormat("#.##", separator);
+		
+		try {
 
-		ResultSet rs = statement.executeQuery("SELECT gene_idgene FROM gene_has_compartment " +
-				"WHERE gene_idgene = "+idGene+" AND primaryLocation;");
-
-		if(!rs.next())
-			statement.execute("INSERT INTO gene_has_compartment (gene_idgene, compartment_idcompartment, primaryLocation, score) " +
-					"VALUES("+idGene+","+compartmentsDatabaseIDs.get(primaryCompartment)+","+true+",'"+df.format(scorePrimaryCompartment)+"')");
-
-		List<String> compartments = new ArrayList<>();
-
-		for(String loc : secondaryCompartmens.keySet())
-			compartments.add(loc);
-
-		for(String compartment:compartments) {
-
-			rs = statement.executeQuery("SELECT gene_idgene " +
-					"FROM gene_has_compartment " +
-					"WHERE gene_idgene = "+idGene+" " +
-					"AND compartment_idcompartment = "+compartmentsDatabaseIDs.get(compartment)+"  ;");
+			ResultSet rs = statement.executeQuery("SELECT gene_idgene FROM gene_has_compartment " +
+					"WHERE gene_idgene = "+idGene+" AND primaryLocation;");
 
 			if(!rs.next())
 				statement.execute("INSERT INTO gene_has_compartment (gene_idgene, compartment_idcompartment, primaryLocation, score) " +
-						"VALUES("+idGene+","+compartmentsDatabaseIDs.get(compartment)+",false,'"+df.format(secondaryCompartmens.get(compartment))+"')");
+						"VALUES("+idGene+","+compartmentsDatabaseIDs.get(primaryCompartment)+","+true+","+df.format(scorePrimaryCompartment)+")");
+
+			List<String> compartments = new ArrayList<>();
+
+			for(String loc : secondaryCompartmens.keySet())
+				compartments.add(loc);
+
+			for(String compartment:compartments) {
+
+				rs = statement.executeQuery("SELECT gene_idgene " +
+						"FROM gene_has_compartment " +
+						"WHERE gene_idgene = "+idGene+" " +
+						"AND compartment_idcompartment = "+compartmentsDatabaseIDs.get(compartment)+"  ;");
+
+				if(!rs.next())
+					statement.execute("INSERT INTO gene_has_compartment (gene_idgene, compartment_idcompartment, primaryLocation, score) " +
+							"VALUES("+idGene+","+compartmentsDatabaseIDs.get(compartment)+",false,"+df.format(secondaryCompartmens.get(compartment))+")");
+			}
+			rs.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw e;
 		}
-		rs.close();
 	}
 
 	/**
@@ -1102,8 +1111,6 @@ public class ModelAPI {
 
 		ResultSet rs = statement.executeQuery("SELECT locusTag, gene FROM geneHomology WHERE query = '"+sequence_id+"';");
 		
-		System.out.println("SELECT locusTag, gene FROM geneHomology WHERE query = '"+sequence_id+"';");
-
 		if(rs.next()) {
 
 			locusTag = rs.getString(1);
@@ -5441,7 +5448,6 @@ public class ModelAPI {
 	public static String getGeneId(String sequenceID, Statement statement) throws SQLException{
 
 		ResultSet rs = statement.executeQuery("SELECT locusTag FROM gene WHERE  sequence_id = '" + sequenceID + "';");
-		//System.out.println("SELECT locusTag FROM gene WHERE  sequence_id = " + sequenceID + ";");
 
 		if(rs.next())
 			return rs.getString(1);
