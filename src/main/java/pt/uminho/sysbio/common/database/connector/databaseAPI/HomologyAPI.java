@@ -2181,10 +2181,6 @@ import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
 			
 			String orthologLocus = capsule.getQuery().split(":")[1];
 			
-			System.out.println("8 orthologLocus -----> " + orthologLocus);
-			
-//			int idGene = geneIds.get(query);
-			
 			double score = capsule.getScore();
 			
 			String ecnumber = capsule.getEcNumber();
@@ -2195,15 +2191,7 @@ import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
 			
 			String sequenceID = capsule.getTarget();
 			
-			System.out.println("8.1.1 sequenceID -----> " + sequenceID);
-			
-			System.out.println("8.1.2 GeneID -----> " + sequenceID);
-			
 			int idGene = geneIds.get(sequenceID);
-			
-			System.out.println(":::::::::::::::::::::::::::::::LOADER:::::::::::::::::::::::::::::::::");
-			System.out.println("8.1.3 queryLocus ---------> " + sequenceID);
-			
 			
 			ResultSet rs = null;
 			
@@ -2230,24 +2218,14 @@ import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
 					}
 					orthology_id = rs.getString(1);
 				}
-				System.out.println("8.2 orthology_id ---------> " + orthology_id);
-				
-				System.out.println("SELECT * FROM gene_has_orthology WHERE gene_idgene='"+idGene+"' AND orthology_id='"+orthology_id+"';");
 				rs = statement.executeQuery("SELECT * FROM gene_has_orthology WHERE gene_idgene='"+idGene+"' AND orthology_id='"+orthology_id+"';");
 
-				if(rs.next()) {
-					
-					System.out.println("Entry exists!! "+idGene+"\t"+orthology_id);
-				}
-				else {
-					System.out.println("INSERT INTO gene_has_orthology (gene_idgene,orthology_id, similarity) VALUES("+idGene+","+orthology_id+", "+ score +" );");
+				if(!rs.next())	
 					statement.execute("INSERT INTO gene_has_orthology (gene_idgene,orthology_id, similarity) VALUES("+idGene+","+orthology_id+", "+ score +" );");
-				}
-				System.out.println("SELECT protein_idprotein FROM enzyme WHERE ecnumber='"+ecnumber+"';");
+				
 				rs = statement.executeQuery("SELECT protein_idprotein FROM enzyme WHERE ecnumber='"+ecnumber+"';");
 				rs.next();
 				int protein_idprotein = rs.getInt(1);
-				System.out.println("SELECT module_id, note FROM subunit WHERE gene_idgene='"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"';");
 				rs = statement.executeQuery("SELECT module_id, note FROM subunit WHERE gene_idgene='"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"';");
 
 				List<String> modules_ids = new ArrayList<String>();
@@ -2278,18 +2256,14 @@ import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
 							if(exists) {
 	
 								if(noModules) {
-									System.out.println("UPDATE subunit SET module_id = "+module_id+" WHERE gene_idgene = '"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"';");
 									statement.execute("UPDATE subunit SET module_id = "+module_id+" WHERE gene_idgene = '"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"';");
 									noModules = false;
 									modules_ids.add(module_id);
 								}
 							}
 							else {
-								System.out.println("INSERT INTO subunit (module_id, gene_idgene, enzyme_ecnumber, enzyme_protein_idprotein, note)" +
-										"VALUES("+module_id+", "+idGene+", '"+ecnumber+"', "+protein_idprotein+", '"+note+"');");
 								statement.execute("INSERT INTO subunit (module_id, gene_idgene, enzyme_ecnumber, enzyme_protein_idprotein, note)" +
 										"VALUES("+module_id+", "+idGene+", '"+ecnumber+"', "+protein_idprotein+", '"+note+"');");
-								//exists = true;
 							}
 	
 						}

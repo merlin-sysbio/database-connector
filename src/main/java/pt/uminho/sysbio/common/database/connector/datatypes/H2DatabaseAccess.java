@@ -635,10 +635,6 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 			this.database_name=arg0.readUTF();	
 			this.database_password=arg0.readUTF();
 			this.database_user=arg0.readUTF();
-			
-			System.out.println(database_name);
-			System.out.println(database_password);
-			System.out.println(database_user);
 		}
 
 		@Override
