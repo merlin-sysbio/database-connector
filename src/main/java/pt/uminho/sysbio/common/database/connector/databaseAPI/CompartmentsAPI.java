@@ -255,7 +255,7 @@ public class CompartmentsAPI {
 
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
-			list[1]=rs.getString(3);
+			list[2]=rs.getString(3);
 			
 			result.add(list);
 		}
@@ -273,14 +273,14 @@ public class CompartmentsAPI {
 		
 		ArrayList<String[]> result = new ArrayList<>();
 		
-		ResultSet rs = stmt.executeQuery("SELECT idcompartment, name, abbreviation FROM compartment"+aux);
+		ResultSet rs = stmt.executeQuery("SELECT idcompartment, name, abbreviation FROM compartment "+aux);
 		
 		while(rs.next()){
 			String[] list = new String[3];
 
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
-			list[1]=rs.getString(3);
+			list[2]=rs.getString(3);
 			
 			result.add(list);
 		}
@@ -479,6 +479,27 @@ public class CompartmentsAPI {
 	
 		statement.execute("DELETE FROM reaction WHERE NOT originalReaction;");
 
+	}
+	
+	/**
+	 * Method to retrieve all distinct compartments and abbreviations in gene_has_compartment table.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, String>  getCompartments(Statement statement) throws SQLException{
+		
+		Map<String, String> comp = new HashMap<>();
+		
+		ResultSet rs = statement.executeQuery("SELECT DISTINCT(name), abbreviation FROM psort_reports_has_compartments INNER JOIN compartments ON id = compartment_id;");
+		
+		while(rs.next())
+			comp.put(rs.getString(1), rs.getString(2));
+		
+		rs.close();
+		
+		return comp;
 	}
 	
 	
