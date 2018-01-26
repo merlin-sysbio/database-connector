@@ -17,6 +17,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.swing.text.html.parser.Parser;
+
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
 import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
 import pt.uminho.sysbio.merlin.utilities.containers.model.MetaboliteContainer;
@@ -352,7 +354,7 @@ public class ProjectAPI {
 	public static Set<String> getReactionName(List<String> reaction, Statement statement){
 
 		Set<String> results  = new HashSet<String>();
-		
+
 		try {
 			for(String names : reaction){
 				ResultSet rs = statement.executeQuery("SELECT name FROM reaction WHERE idreaction="+names+";");
@@ -538,7 +540,7 @@ public class ProjectAPI {
 
 		while(rs.next())
 			res.add(rs.getString(1));
-		
+
 		if(res.size() == 0)
 			res.add("");
 
@@ -561,7 +563,7 @@ public class ProjectAPI {
 
 		while(rs.next())
 			res.add(rs.getString(1));
-		
+
 		rs.close();
 		return res;
 	}
@@ -581,7 +583,7 @@ public class ProjectAPI {
 
 		while(rs.next())
 			res.add(rs.getString(1));
-		
+
 		rs.close();
 		return res;
 	}
@@ -829,9 +831,9 @@ public class ProjectAPI {
 				"GROUP BY pathway_idpathway ORDER BY name;");
 
 		System.out.println(qls.keySet());
-		
+
 		while(rs.next()) {
-			
+
 			System.out.println("pathID ----->"+ rs.getString(1));
 			System.out.println("count ----->"+ rs.getString(2));
 
@@ -976,8 +978,8 @@ public class ProjectAPI {
 
 		return -1;
 	}
-	
-	
+
+
 
 
 	/**
@@ -1410,7 +1412,7 @@ public class ProjectAPI {
 				"WHERE reaction_idreaction = '"+rowID+"';");
 
 		while(rs.next()) {
-			
+
 			MetaboliteContainer metaboliteContainer = new MetaboliteContainer(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6)) ;
 			res.put(rs.getString(7), metaboliteContainer);
 		}
@@ -2960,24 +2962,24 @@ public class ProjectAPI {
 		ResultSet rs = stmt.executeQuery(query);
 
 		while(rs.next()) {
-			
+
 			String key = rs.getString(1);
 			int value = rs.getInt(2);
-			
+
 			List<Integer> l = new ArrayList<>();
-			
+
 			if(map.containsKey(key))
 				l = map.get(key);
-			
+
 			l.add(value);
-			
+
 			map.put(key, l);
 		}
 
 		rs.close();
 		return map;
 	}
-	
+
 	/**
 	 * Check if an internalID exists for a given internal_id and external_database and class.
 	 * 
@@ -3170,7 +3172,7 @@ public class ProjectAPI {
 		rs.close();
 		return exists;
 	}
-	
+
 	/**
 	 * Get idprotein from protein table for a given EC number.
 	 * @param query
@@ -3190,7 +3192,7 @@ public class ProjectAPI {
 		rs.close();
 		return res;
 	}
-	
+
 	/**
 	 * Get idprotein from protein table for a given EC number.
 	 * @param query
@@ -3616,7 +3618,7 @@ public class ProjectAPI {
 			res[2] = rs.getString(5);
 			res[3] = rs.getString(6);
 			res[4] = rs.getString(7);
-			
+
 			return res;
 		}
 
@@ -3636,12 +3638,12 @@ public class ProjectAPI {
 
 		long time = System.currentTimeMillis();
 		Timestamp timestamp = new Timestamp(time);
-		
+
 		statement.execute("INSERT INTO projects(organism_id, latest_version, date, version, organism_name, organism_lineage) "
 				+ "values(" + data[0] + ", " + data[1] + ", '" + timestamp + "', " + data[2] +", '" + data[3] + "', '" + data[4] + "');");
-		
+
 	}
-	
+
 	/**
 	 * @param statement
 	 * @throws SQLException
@@ -3652,7 +3654,7 @@ public class ProjectAPI {
 		statement.execute("ALTER TABLE `projects` ADD COLUMN `organism_lineage` VARCHAR(1000) NULL DEFAULT '-1' AFTER `organism_name`;");
 
 	}
-	
+
 	/**
 	 * @param statement
 	 * @throws SQLException
@@ -3663,4 +3665,61 @@ public class ProjectAPI {
 
 	}
 
+
+	/**
+	 * @param statement
+	 * @param tableName
+	 * @param sKeyValue
+	 * @param oldSKeyValue
+	 * @throws SQLException
+	 */
+	public static void updateSKeysValues(Statement statement, String tableName, Long sKeyValue, Long oldSKeyValue) throws SQLException{
+
+		statement.execute("UPDATE " + tableName + "SET s_key = " + sKeyValue + "WHERE s_key = " + oldSKeyValue + ";");
+
+	}
+	
+	
+	/**
+	 * @param statement
+	 * @param originaDBstatement
+	 * @param tableName
+	 * @throws SQLException
+	 */
+	public static void updateForeingSKeysValues(Statement statement, Statement originaDBstatement, String tableName) throws SQLException{
+		
+		String[] foreignTables = tableName.split("_");
+		String foreignTableName = foreignTables[0];
+		String foreignTable2Name = foreignTables[2];
+		
+		ResultSet rs = statement.executeQuery("SELECT " + foreignTableName.concat("_s_key") + "," + foreignTable2Name.concat("_s_key") + " FROM " + tableName + ";"); 
+		ResultSet rs2 = originaDBstatement.executeQuery("SELECT COUNT(*) FROM " + foreignTableName +";");
+		ResultSet rs3 = originaDBstatement.executeQuery("SELECT COUNT(*) FROM " + foreignTable2Name +";");
+		
+		String foreignTableLength = rs2.getString(1);
+		String foreignTable2Length = rs3.getString(1);
+		Integer length = Integer.parseInt(foreignTableLength);
+		Integer length2 = Integer.parseInt(foreignTable2Length);
+		
+		rs.last();
+		while(rs.previous()){
+			
+			Integer currentSKeyValue = Integer.parseInt(rs.getString(1));
+			Integer currentSKeyValue2 = Integer.parseInt(rs.getString(2));
+			Long newSKeyValue = Long.parseLong(currentSKeyValue + length+"");
+			Long newSKeyValue2 = Long.parseLong(currentSKeyValue2 + length2+"");
+			
+			statement.execute("UPDATE " + tableName + "SET " + foreignTableName + "_s_key = " + newSKeyValue + "," + foreignTable2Name + "_s_key = " + newSKeyValue2 + "WHERE " + foreignTable2Name + "_s_key = " + currentSKeyValue2 + ";");
+//			statement.execute("UPDATE " + tableName + "SET " + foreignTable2Name + "_s_key = " + newSKeyValue2 + "WHERE " + foreignTableName + "_s_key = " + currentSKeyValue2 + ";");
+
+		}
+	}
+	
+//	public static List<String> getEnzymeAnnotationTablesNames(Statement statement){
+//		
+//		statement.execute("")
+//		
+//		return null;
+//	}
 }
+
