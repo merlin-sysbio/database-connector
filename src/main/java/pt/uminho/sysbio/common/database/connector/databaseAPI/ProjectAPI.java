@@ -3679,6 +3679,31 @@ public class ProjectAPI {
 
 	}
 	
+	/**
+	 * @param statement
+	 * @param originalDBstatement
+	 * @param tableName
+	 * @throws SQLException 
+	 */
+	public static void updateSKey(Statement statement, Statement originalDBstatement, String tableName) throws SQLException {
+		
+		ResultSet rs = originalDBstatement.executeQuery("SELECT COUNT(*) FROM " + tableName +";");
+		ResultSet rs2 = statement.executeQuery("SELECT s_key FROM " + tableName + ";"); 
+		
+		
+		String tableLength = rs.getString(1);
+		Integer length = Integer.parseInt(tableLength);
+		
+		rs.last();
+		while(rs.previous()){
+			
+			Integer oldSKeyValue = Integer.parseInt(rs2.getString(1));
+			Long newSKeyValue = Long.parseLong(oldSKeyValue + length+"");
+			
+			statement.execute("UPDATE " + tableName + "SET s_key = " + newSKeyValue + "WHERE s_key = " + oldSKeyValue + ";");
+		}
+
+	}
 	
 	/**
 	 * @param statement
@@ -3686,15 +3711,15 @@ public class ProjectAPI {
 	 * @param tableName
 	 * @throws SQLException
 	 */
-	public static void updateForeingSKeysValues(Statement statement, Statement originaDBstatement, String tableName) throws SQLException{
+	public static void updateForeingSKeysValues(Statement statement, Statement originalDBstatement, String tableName) throws SQLException{
 		
 		String[] foreignTables = tableName.split("_");
 		String foreignTableName = foreignTables[0];
 		String foreignTable2Name = foreignTables[2];
 		
 		ResultSet rs = statement.executeQuery("SELECT " + foreignTableName.concat("_s_key") + "," + foreignTable2Name.concat("_s_key") + " FROM " + tableName + ";"); 
-		ResultSet rs2 = originaDBstatement.executeQuery("SELECT COUNT(*) FROM " + foreignTableName +";");
-		ResultSet rs3 = originaDBstatement.executeQuery("SELECT COUNT(*) FROM " + foreignTable2Name +";");
+		ResultSet rs2 = originalDBstatement.executeQuery("SELECT COUNT(*) FROM " + foreignTableName +";");
+		ResultSet rs3 = originalDBstatement.executeQuery("SELECT COUNT(*) FROM " + foreignTable2Name +";");
 		
 		String foreignTableLength = rs2.getString(1);
 		String foreignTable2Length = rs3.getString(1);
