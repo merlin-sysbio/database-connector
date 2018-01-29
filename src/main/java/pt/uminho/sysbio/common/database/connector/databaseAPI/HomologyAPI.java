@@ -2049,11 +2049,7 @@ import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
 			Map<String, List<String>> listECs = new HashMap<>();
 			
 			ResultSet rs = stmt.executeQuery(
-					"SELECT enzyme_ecnumber, name, inModel, enzyme_protein_idprotein " +
-							" FROM reaction_has_enzyme " +
-							" INNER JOIN enzyme ON reaction_has_enzyme.enzyme_protein_idprotein = enzyme.protein_idprotein AND reaction_has_enzyme.enzyme_ecnumber = enzyme.ecnumber " +
-							" INNER JOIN protein ON reaction_has_enzyme.enzyme_protein_idprotein = protein.idprotein AND reaction_has_enzyme.enzyme_ecnumber = enzyme.ecnumber " +
-							" WHERE reaction_idreaction = "+reactionID);
+					"SELECT enzyme_ecnumber FROM reaction_has_enzyme WHERE reaction_idreaction = "+reactionID);
 			
 			while(rs.next())
 				listECs.put(rs.getString(1),new ArrayList<String>());

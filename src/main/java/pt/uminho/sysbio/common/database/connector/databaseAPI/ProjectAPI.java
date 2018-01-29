@@ -1181,11 +1181,12 @@ public class ProjectAPI {
 	 */
 	public static boolean isReactionInModel(int id, Statement statement) throws SQLException{
 
+		boolean inModelReaction = false;
+		
 		ResultSet rs = statement.executeQuery("SELECT inModel FROM reaction WHERE idreaction='"+id+"';");
 
-		rs.next();
-		boolean inModelReaction=rs.getBoolean(1);
-
+		if(rs.next())
+			inModelReaction=rs.getBoolean(1);
 
 		rs.close();
 		return inModelReaction;
