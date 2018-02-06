@@ -3693,18 +3693,18 @@ public class ProjectAPI {
 	 */
 	public static void updateSKey(Statement statement, Statement originalDBstatement, String tableName) throws SQLException {
 		
-		ResultSet rs = originalDBstatement.executeQuery("SELECT COUNT(*) FROM " + tableName +";");
+		ResultSet rs = originalDBstatement.executeQuery("SELECT s_key FROM " + tableName + " ORDER BY s_key DESC LIMIT 1;");
 		ResultSet rs2 = statement.executeQuery("SELECT s_key FROM " + tableName + ";"); 
 		
-		
-		String tableLength = rs.getString(1);
-		Integer length = Integer.parseInt(tableLength);
+		String maxValue = rs.getString(1);
+		Integer maxSKeyValue = Integer.parseInt(maxValue);
 		
 		rs.last();
 		while(rs.previous()){
 			
-			Integer oldSKeyValue = Integer.parseInt(rs2.getString(1));
-			Long newSKeyValue = Long.parseLong(oldSKeyValue + length+"");
+			String oldSKey = rs2.getString(1);
+			Integer oldSKeyValue = Integer.parseInt(oldSKey);
+			Long newSKeyValue = Long.parseLong(oldSKeyValue + maxSKeyValue+"");
 			
 			statement.execute("UPDATE " + tableName + "SET s_key = " + newSKeyValue + "WHERE s_key = " + oldSKeyValue + ";");
 		}
@@ -3724,8 +3724,11 @@ public class ProjectAPI {
 		String foreignTable2Name = foreignTables[2];
 		
 		ResultSet rs = statement.executeQuery("SELECT " + foreignTableName.concat("_s_key") + "," + foreignTable2Name.concat("_s_key") + " FROM " + tableName + ";"); 
-		ResultSet rs2 = originalDBstatement.executeQuery("SELECT COUNT(*) FROM " + foreignTableName +";");
-		ResultSet rs3 = originalDBstatement.executeQuery("SELECT COUNT(*) FROM " + foreignTable2Name +";");
+		ResultSet rs2 = originalDBstatement.executeQuery("SELECT s_key FROM " + foreignTableName + " ORDER BY s_key DESC LIMIT 1;");
+		ResultSet rs3 = originalDBstatement.executeQuery("SELECT s_key FROM " + foreignTable2Name + " ORDER BY s_key DESC LIMIT 1;");
+
+//		ResultSet rs2 = originalDBstatement.executeQuery("SELECT COUNT(*) FROM " + foreignTableName +";");
+//		ResultSet rs3 = originalDBstatement.executeQuery("SELECT COUNT(*) FROM " + foreignTable2Name +";");
 		
 		String foreignTableLength = rs2.getString(1);
 		String foreignTable2Length = rs3.getString(1);
@@ -3735,8 +3738,10 @@ public class ProjectAPI {
 		rs.last();
 		while(rs.previous()){
 			
-			Integer currentSKeyValue = Integer.parseInt(rs.getString(1));
-			Integer currentSKeyValue2 = Integer.parseInt(rs.getString(2));
+			String currentSKey = rs.getString(1);
+			String currentSKey2 = rs.getString(2);
+			Integer currentSKeyValue = Integer.parseInt(currentSKey);
+			Integer currentSKeyValue2 = Integer.parseInt(currentSKey2);
 			Long newSKeyValue = Long.parseLong(currentSKeyValue + length+"");
 			Long newSKeyValue2 = Long.parseLong(currentSKeyValue2 + length2+"");
 			
