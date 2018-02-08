@@ -17,6 +17,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.swing.table.TableStringConverter;
 import javax.swing.text.html.parser.Parser;
 
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
@@ -3666,91 +3667,131 @@ public class ProjectAPI {
 
 	}
 
-
-	/**
-	 * @param statement
-	 * @param tableName
-	 * @param sKeyValue
-	 * @param oldSKeyValue
-	 * @throws SQLException
-	 */
-	public static void updateSKeysValues(Statement statement, String tableName, Long sKeyValue, Long oldSKeyValue) throws SQLException{
-
-		statement.execute("UPDATE " + tableName + "SET s_key = " + sKeyValue + "WHERE s_key = " + oldSKeyValue + ";");
-
-	}
-	
 	/**
 	 * @param statement
 	 * @param originalDBstatement
 	 * @param tableName
 	 * @throws SQLException 
 	 */
-	public static void updateSKey(Statement statement, Statement originalDBstatement, String tableName) throws SQLException {
+	public static void updateSKeys(Statement queryStatement, Statement executeStatement, Statement executeStatement2, Statement originalDBstatement, String[] dependentTables, String tableName) throws SQLException {
 		
 		ResultSet rs = originalDBstatement.executeQuery("SELECT s_key FROM " + tableName + " ORDER BY s_key DESC LIMIT 1;");
-		ResultSet rs2 = statement.executeQuery("SELECT s_key FROM " + tableName + ";"); 
+//		ResultSet rs2 = statement.executeQuery("SELECT s_key FROM " + tableName + ";"); 
+		ResultSet rs2 = queryStatement.executeQuery("SELECT s_key FROM " + tableName + " ORDER BY s_key DESC LIMIT 1;");
 		
-		String maxValue = rs.getString(1);
-		Integer maxSKeyValue = Integer.parseInt(maxValue);
-		
-		rs.last();
-		while(rs.previous()){
+		Integer maxSKeyValue = null;
+		if(rs.next() && rs2.next()){
+			Integer maxValue = Integer.parseInt(rs.getString(1));
+			Integer maxValue2 = Integer.parseInt(rs2.getString(1));
 			
-			String oldSKey = rs2.getString(1);
-			Integer oldSKeyValue = Integer.parseInt(oldSKey);
-			Long newSKeyValue = Long.parseLong(oldSKeyValue + maxSKeyValue+"");
-			
-			statement.execute("UPDATE " + tableName + "SET s_key = " + newSKeyValue + "WHERE s_key = " + oldSKeyValue + ";");
+			if(maxValue > maxValue2) 
+				maxSKeyValue = maxValue;
+			else
+				maxSKeyValue = maxValue2;
 		}
+		
+//		ResultSet rs2 = queryStatement.executeQuery("SELECT s_key FROM " + tableName + " ORDER BY s_key DESC;"); 
 
+//		rs2.last();
+//		while(rs2.previous()){
+//		while(rs2.next()){
+			
+//			String oldSKey = rs2.getString(1);
+//			Integer oldSKeyValue = Integer.parseInt(oldSKey);
+//			Long newSKeyValue = Long.parseLong(oldSKeyValue + maxSKeyValue+"");
+//			executeStatement.execute("UPDATE " + tableName + " SET s_key = " + newSKeyValue + " WHERE s_key = " + oldSKeyValue + ";");
+		
+		executeStatement.execute("UPDATE " + tableName + " SET s_key = s_key+" + maxSKeyValue + ";");
+
+//		}
+		
+		if(dependentTables != null){
+			
+			System.out.println("Entrou para: "+ tableName);
+			
+			for(String dependTable : dependentTables){
+				
+				System.out.println("Tabela dependente--->"+dependTable);
+
+//				ResultSet rs3 = queryStatement.executeQuery("SELECT " + tableName + "_s_key FROM " + dependTable + " ORDER BY " + tableName + "_s_key DESC;"); 
+				
+//				while(rs3.next()){
+					
+//					String oldForeignSKey = rs3.getString(1);
+//					Integer oldForeignSKeyValue = Integer.parseInt(oldForeignSKey);
+//					Long newForeignSKeyValue = Long.parseLong(oldForeignSKeyValue + maxSKeyValue+"");
+//					executeStatement2.execute("UPDATE " + dependTable + " SET " + tableName + "_s_key = " + newForeignSKeyValue + " WHERE " + tableName + "_s_key = " + oldForeignSKey + ";");
+				executeStatement2.execute("UPDATE " + dependTable + " SET " + tableName + "_s_key = " + tableName + "_s_key+"+ maxSKeyValue + ";");
+
+//				}
+			}
+			
+		}
+			
 	}
+	
+//	/**
+//	 * @param receiverDbStatement
+//	 * @param queryStatement
+//	 * @param executeStatement
+//	 * @param tableNames
+//	 * @throws SQLException
+//	 */
+//	public static void mergeTables (Statement receiverDbStatement, Statement queryStatement, Statement executeStatement, String[] tableNames) throws SQLException{
+//		
+//		for(String tableName : tableNames){
+//			
+//			System.out.println(tableName);
+//			
+//			ResultSet rs = queryStatement.executeQuery("SHOW COLUMNS FROM " + tableName + ";");
+//			Map<String, ArrayList<String>> tableInfo = new HashMap<String, ArrayList<String>>();
+//			String columnName = null;
+//			
+//			while(rs.next()){
+//				
+//				columnName = rs.getString(1);
+//				ArrayList<String> columnValues = new ArrayList<>();
+//				ResultSet rs2 = queryStatement.executeQuery("SELECT " + columnName + " FROM " + tableName + ";"); 
+//				
+//				while(rs2.next())					
+//					columnValues.add(rs.getString(1));
+//					
+//				tableInfo.put(columnName, columnValues);
+//			}
+//			
+//			Integer lines = tableInfo.get(columnName).size();
+//			
+//			for(int i=0 ; i < lines ; i++){
+//				
+//				String queryValues = "";
+//				String queryColumns = "";
+//				
+//				for(String column : tableInfo.keySet()){
+//					
+//					queryColumns.concat(column).concat(",");
+//					queryValues.concat(tableInfo.get(column).get(i)).concat(",");
+//				}
+//				
+//				receiverDbStatement.execute("INSERT INTO " + tableName + "(" + queryColumns.substring(0, queryColumns.length()-1) + ") values(" 
+//						+ queryValues.substring(0, queryValues.length()-1) + ");");
+//			}
+//		}	
+//	}
+	
 	
 	/**
-	 * @param statement
-	 * @param originaDBstatement
-	 * @param tableName
+	 * @param receiverDbStatement
+	 * @param tableNames
 	 * @throws SQLException
 	 */
-	public static void updateForeingSKeysValues(Statement statement, Statement originalDBstatement, String tableName) throws SQLException{
+	public static void mergeTables (Statement receiverDbStatement, String[] tableNames, String sourceDatabase, String destinyDatabase) throws SQLException{
 		
-		String[] foreignTables = tableName.split("_");
-		String foreignTableName = foreignTables[0];
-		String foreignTable2Name = foreignTables[2];
-		
-		ResultSet rs = statement.executeQuery("SELECT " + foreignTableName.concat("_s_key") + "," + foreignTable2Name.concat("_s_key") + " FROM " + tableName + ";"); 
-		ResultSet rs2 = originalDBstatement.executeQuery("SELECT s_key FROM " + foreignTableName + " ORDER BY s_key DESC LIMIT 1;");
-		ResultSet rs3 = originalDBstatement.executeQuery("SELECT s_key FROM " + foreignTable2Name + " ORDER BY s_key DESC LIMIT 1;");
-
-//		ResultSet rs2 = originalDBstatement.executeQuery("SELECT COUNT(*) FROM " + foreignTableName +";");
-//		ResultSet rs3 = originalDBstatement.executeQuery("SELECT COUNT(*) FROM " + foreignTable2Name +";");
-		
-		String foreignTableLength = rs2.getString(1);
-		String foreignTable2Length = rs3.getString(1);
-		Integer length = Integer.parseInt(foreignTableLength);
-		Integer length2 = Integer.parseInt(foreignTable2Length);
-		
-		rs.last();
-		while(rs.previous()){
+		for(String tableName : tableNames){
 			
-			String currentSKey = rs.getString(1);
-			String currentSKey2 = rs.getString(2);
-			Integer currentSKeyValue = Integer.parseInt(currentSKey);
-			Integer currentSKeyValue2 = Integer.parseInt(currentSKey2);
-			Long newSKeyValue = Long.parseLong(currentSKeyValue + length+"");
-			Long newSKeyValue2 = Long.parseLong(currentSKeyValue2 + length2+"");
-			
-			statement.execute("UPDATE " + tableName + "SET " + foreignTableName + "_s_key = " + newSKeyValue + "," + foreignTable2Name + "_s_key = " + newSKeyValue2 + "WHERE " + foreignTable2Name + "_s_key = " + currentSKeyValue2 + ";");
-//			statement.execute("UPDATE " + tableName + "SET " + foreignTable2Name + "_s_key = " + newSKeyValue2 + "WHERE " + foreignTableName + "_s_key = " + currentSKeyValue2 + ";");
-
+			System.out.println(tableName);
+		
+			receiverDbStatement.execute("INSERT INTO " + destinyDatabase + "." + tableName + " SELECT * FROM " + sourceDatabase + "." + tableName + ";");
 		}
 	}
-	
-//	public static List<String> getEnzymeAnnotationTablesNames(Statement statement){
-//		
-//		statement.execute("")
-//		
-//		return null;
-//	}
 }
 
