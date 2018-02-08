@@ -368,11 +368,17 @@ public class CompartmentsAPI {
 		
 		Map<String, String> results = new HashMap<>();
 		
-		ResultSet rs = statement.executeQuery("SELECT query, locusTag FROM geneHomology;");
+		ResultSet rs = statement.executeQuery("SELECT id, query, locusTag FROM geneHomology "
+				+ " INNER JOIN psort_reports ON gene = locus_tag;");
 		
-		while(rs.next()) 
-			results.put(rs.getString(1), rs.getString(2));
+		while(rs.next()){
 			
+			if(rs.getString(3).isEmpty() || rs.getString(3) == null)
+				results.put(rs.getString(1), rs.getString(2));
+			else 
+				results.put(rs.getString(1), rs.getString(3));
+		}
+		
 		rs.close();
 		
 		return results;
@@ -421,7 +427,7 @@ public class CompartmentsAPI {
 		
 		ResultSet rs = statement.executeQuery("SELECT distinct idreaction " +
 				" FROM reaction "+
-				" INNER JOIN reaction_has_enzyme ON reaction.idreaction = reaction_has_enzyme.reaction_idreaction " +
+				" LEFT JOIN reaction_has_enzyme ON reaction.idreaction = reaction_has_enzyme.reaction_idreaction " +
 				" WHERE source <> 'TRANSPORTERS' AND reaction_has_enzyme.enzyme_ecnumber IS NULL AND originalReaction;");
 
 		while(rs.next())
