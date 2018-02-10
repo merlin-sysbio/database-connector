@@ -3287,9 +3287,10 @@ public class ModelAPI {
 	 * @return ArrayList<String>
 	 * @throws SQLException
 	 */
-	public static ArrayList<String> getReactions(String aux, String rec, String compartment, Statement stmt) throws SQLException{
+	public static List<ArrayList<String>> getReactions(String aux, String rec, String compartment, Statement stmt) throws SQLException{
 
-		ArrayList<String> ql = new ArrayList<String>();
+		List<ArrayList<String>> ret = new ArrayList<>();
+		
 
 		ResultSet rs = stmt.executeQuery("SELECT distinct(idreaction), reaction.name, equation, source, inModel, reversible FROM reaction " +
 				"INNER JOIN stoichiometry ON reaction.idreaction = stoichiometry.reaction_idreaction " +
@@ -3299,6 +3300,8 @@ public class ModelAPI {
 				" ORDER BY inModel DESC, source, reversible DESC, name ASC");
 
 		while(rs.next()) {
+			
+			ArrayList<String> ql = new ArrayList<>();
 			ql.add(rs.getString(2));
 			ql.add(rs.getString(3));
 			ql.add(rs.getString(4));
@@ -3312,10 +3315,12 @@ public class ModelAPI {
 				ql.add(rs.getBoolean(6)+"");
 			else
 				ql.add("-");
+			
+			ret.add(ql);
 		}
 
 		rs.close();
-		return ql;
+		return ret;
 	}
 
 	/**

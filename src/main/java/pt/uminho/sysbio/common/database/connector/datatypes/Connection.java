@@ -108,7 +108,7 @@ public class Connection implements Externalizable{
 				this.connection = this.dbAccess.openConnection();
 
 			statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			statement.executeQuery("SHOW TABLES;");
+//			statement.executeQuery("SHOW TABLES;");
 		}
 		catch (CommunicationsException e) {
 
