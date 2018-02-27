@@ -346,10 +346,11 @@ public class CompartmentsAPI {
 		ArrayList<String> list = new ArrayList<>();
 		
 		while(rs.next()) {
+			
+			list = new ArrayList<>();
 			list.add(rs.getString(2));
 			list.add(rs.getString(3));
 			result.put(rs.getString(1),list);
-			
 		}
 		
 		rs.close();
