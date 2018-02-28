@@ -17,6 +17,10 @@ import org.h2.jdbc.JdbcSQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
+
+import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
+import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseAccess;
 import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
 import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
@@ -2267,6 +2271,34 @@ import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
 				}
 			}
 		rs.close();
+		}
+		
+		/**
+		 * Method to check if the statement is still working. If not, the a new statement is generated. 
+		 * 
+		 * @param dbAccess
+		 * @param statement
+		 * @return
+		 * @throws SQLException 
+		 */
+		public static Statement checkStatement(DatabaseAccess dbAccess, Statement statement) throws SQLException{
+			
+			try {
+				
+				statement.executeQuery("SELECT * FROM scorerConfig");
+				
+			} 
+			catch(CommunicationsException e) {
+				
+				Connection connection = new Connection(dbAccess);
+				
+				statement = connection.createStatement();
+				
+				logger.info("New SQL connection generated due to communications exception.");
+				
+			}
+			
+			return statement;
 		}
 		
 	}
