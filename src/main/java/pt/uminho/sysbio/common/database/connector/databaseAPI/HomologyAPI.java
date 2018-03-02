@@ -1820,6 +1820,43 @@ public class HomologyAPI {
 			result.add(list);
 		}
 		rs.close();
+		
+		return result;
+	}
+	
+	/**
+	 * Get gene blast database information.
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, Set<Integer>> getGenesPerDatabase(Statement stmt) throws SQLException{
+
+		Map<String, Set<Integer>> result = new TreeMap<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT geneHomology.s_key, databaseID" +
+				" FROM geneHomology" +
+				" INNER JOIN homologySetup ON (homologySetup.s_key = homologySetup_s_key)" +
+				" WHERE (status = 'PROCESSED' OR status = 'NO_SIMILARITY') " +
+				" ORDER BY locusTag, status DESC;");
+
+		while(rs.next()) {
+			
+			if(result.containsKey(rs.getObject(2))) {
+				
+				Set<Integer> keys = result.get(rs.getString(2));
+				keys.add(rs.getInt(1));
+				
+				result.put(rs.getString(2), keys);
+			}
+			else {
+				Set<Integer> keys = new HashSet<>();
+				keys.add(rs.getInt(1));
+				
+				result.put(rs.getString(2), keys);
+			}
+		}
+		rs.close();
 		return result;
 	}
 
