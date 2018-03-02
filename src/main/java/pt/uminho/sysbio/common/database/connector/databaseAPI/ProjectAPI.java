@@ -1004,6 +1004,36 @@ public class ProjectAPI {
 		rs.close();
 		return res;
 	}
+	
+	/**
+	 * Count compounds with a given name.
+	 * @param name
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String isMetaboliteEditable(String name, Statement stmt) throws SQLException{
+
+		int count = 0;
+
+		ResultSet rs = stmt.executeQuery("SELECT COUNT(name) FROM compound WHERE compound.name ='" + name + "';");
+		
+		if(rs.next())
+			count = Integer.parseInt(rs.getString(1));
+		
+		if(count == 0)
+			return "";
+		
+		else if(count == 1){
+			
+			rs = stmt.executeQuery("SELECT kegg_id FROM compound WHERE compound.name ='" + name + "';");
+			
+			return rs.getString(1);
+		}
+		
+		return null;
+		
+	}
 
 	/**
 	 * Get data of a givem metabolite.
