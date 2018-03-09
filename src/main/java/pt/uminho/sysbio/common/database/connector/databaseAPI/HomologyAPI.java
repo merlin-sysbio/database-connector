@@ -1364,6 +1364,69 @@ public class HomologyAPI {
 		rs.close();
 		return result;
 	}
+	
+	/**
+	 * Get last database used in the last "session"
+	 * 
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String getLastestUsedBlastDatabase(Statement statement) throws SQLException{
+
+		String latestDB = "";
+
+		ResultSet rs = statement.executeQuery("SELECT blastDB FROM scorerConfig WHERE latest;");
+
+		if(rs.next())
+			latestDB = rs.getString(1);
+
+		rs.close();
+		return latestDB;
+	}
+	
+	/**
+	 * Get last database used in the last "session"
+	 * 
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static void setLastestUsedBlastDatabase(Statement statement, String latestDB) throws SQLException{
+
+		statement.execute("UPDATE scorerConfig SET latest = false;");
+		
+		statement.execute("UPDATE scorerConfig SET latest = true WHERE blastDB = '" + latestDB + "';");
+
+	}
+	
+	/**
+	 * Resets the configurations of all databases by deleting them.
+	 * merlin will automatically provide new standard configurations.
+	 * 
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static void resetAllScorers(Statement statement) throws SQLException{
+
+		statement.execute("DELETE FROM scorerConfig;");
+		
+	}
+	
+	/**
+	 * Deletes the configurations of a sprecific database.
+	 * merlin will automatically provide new standard configurations.
+	 * 
+	 * @param statement
+	 * @param blastDatabase
+	 * @throws SQLException
+	 */
+	public static void resetDatabaseScorer(Statement statement, String blastDatabase) throws SQLException{
+
+		statement.execute("DELETE FROm scorerConfig WHERE blastDB = '" + blastDatabase + "';");
+		
+	}
 
 	/**
 	 * Get all data from scorerConfig table.
@@ -1371,11 +1434,11 @@ public class HomologyAPI {
 	 * @return ArrayList<String>
 	 * @throws SQLException
 	 */
-	public static ArrayList<String> getCommitedScorerData(Statement stmt) throws SQLException{
+	public static ArrayList<String> getCommitedScorerData(Statement statement, String blastDatabase) throws SQLException{
 
 		ArrayList<String> result = new ArrayList<>();
 
-		ResultSet rs = stmt.executeQuery("SELECT * FROM scorerConfig;");
+		ResultSet rs = statement.executeQuery("SELECT * FROM scorerConfig WHERE blastDB = '" + blastDatabase +"';");
 
 		while(rs.next()){
 			result.add(rs.getString(1));
@@ -1384,6 +1447,39 @@ public class HomologyAPI {
 			result.add(rs.getString(4));
 			result.add(rs.getString(5));
 		}
+
+		rs.close();
+		return result;
+	}
+	
+	/**
+	 * Method to indicate in the database that the best alpha for a specific blast database was found.
+	 * 
+	 * @param stmt
+	 * @return ArrayList<String>
+	 * @throws SQLException
+	 */
+	public static void setBestAlphaFound(Statement statement, String blastDatabase) throws SQLException{
+
+		statement.execute("UPDATE scorerConfig SET bestAlpha = true WHERE blastDB = '" + blastDatabase +"';");
+
+	}
+	
+	/**
+	 * Get all commited databases from scorerConfig table.
+	 * 
+	 * @param stmt
+	 * @return ArrayList<String>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String> bestAlphasFound(Statement statement) throws SQLException{
+
+		ArrayList<String> result = new ArrayList<>();
+
+		ResultSet rs = statement.executeQuery("SELECT blastDB FROM scorerConfig WHERE bestAlpha;");
+
+		while(rs.next())
+			result.add(rs.getString(1));
 
 		rs.close();
 		return result;
