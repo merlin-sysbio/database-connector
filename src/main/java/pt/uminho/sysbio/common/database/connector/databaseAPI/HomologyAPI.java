@@ -888,7 +888,7 @@ public class HomologyAPI {
 	 * @param statement
 	 * @return
 	 */
-	public static Set<String> getGenesFromDatabase(String eVal, String matrix, int numberOfAlignments, short word, String program, String databaseID, boolean deleteProcessing, Statement statement) {
+	public static Set<String> getGenesFromDatabase(double eVal, String matrix, int numberOfAlignments, short word, String program, String databaseID, boolean deleteProcessing, Statement statement) {
 
 		Set<String> loadedGenes = new HashSet<String>();
 
