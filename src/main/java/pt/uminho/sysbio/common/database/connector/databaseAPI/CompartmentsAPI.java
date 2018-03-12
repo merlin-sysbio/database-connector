@@ -45,40 +45,40 @@ public class CompartmentsAPI {
 	}
 	
 	
-	/**
-	 * @param compartments
-	 * @param metabolites_id
-	 * @param concurrentLinkedQueue
-	 * @param statement
-	 * @param databaseType
-	 * @throws SQLException 
-	 */
-	public static void loadCompartments(ConcurrentLinkedQueue<CompartmentContainer> compartments, PreparedStatement statement, DatabaseType databaseType) throws SQLException{
-		
-		int i = 0;
-		for (CompartmentContainer compartmentContainer : compartments) {
-			
-			String name = null;
-			String abreviation = null;
-			
-			if(compartmentContainer.getName()!=null)
-				name = DatabaseUtilities.databaseStrConverter(compartmentContainer.getName(), databaseType);
-
-			if(compartmentContainer.getAbbreviation()!=null)
-				abreviation = DatabaseUtilities.databaseStrConverter(compartmentContainer.getAbbreviation(), databaseType);
-
-			statement.setString(1, name);
-			statement.setString(2, abreviation);
-			statement.addBatch();
-
-			if ((i + 1) % 5 == 0) {
-
-				statement.executeBatch(); 
-			}
-			i++;
-		}
-		statement.executeBatch();
-	}
+//	/**
+//	 * @param compartments
+//	 * @param metabolites_id
+//	 * @param concurrentLinkedQueue
+//	 * @param statement
+//	 * @param databaseType
+//	 * @throws SQLException 
+//	 */
+//	public static void loadCompartments(ConcurrentLinkedQueue<CompartmentContainer> compartments, PreparedStatement statement, DatabaseType databaseType) throws SQLException{
+//		
+//		int i = 0;
+//		for (CompartmentContainer compartmentContainer : compartments) {
+//			
+//			String name = null;
+//			String abreviation = null;
+//			
+//			if(compartmentContainer.getName()!=null)
+//				name = DatabaseUtilities.databaseStrConverter(compartmentContainer.getName(), databaseType);
+//
+//			if(compartmentContainer.getAbbreviation()!=null)
+//				abreviation = DatabaseUtilities.databaseStrConverter(compartmentContainer.getAbbreviation(), databaseType);
+//
+//			statement.setString(1, name);
+//			statement.setString(2, abreviation);
+//			statement.addBatch();
+//
+//			if ((i + 1) % 5 == 0) {
+//
+//				statement.executeBatch(); 
+//			}
+//			i++;
+//		}
+//		statement.executeBatch();
+//	}
 	
 	
 	/**
