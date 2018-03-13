@@ -956,18 +956,6 @@ public class HomologyAPI {
 
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-			//			// get processed genes
-			//			rs =statement.executeQuery("SELECT query, program FROM geneHomology " +
-			//					"INNER JOIN homologySetup ON (homologySetup.s_key = homologySetup_s_key) " +
-			//					"WHERE status = 'PROCESSED' " +
-			//					"AND matrix = '"+matrix+"' " +
-			//					"AND wordSize = 'wordSize';");
-			//
-			//			while(rs.next())
-			//				if(rs.getString(2).contains(program) )
-			//					loadedGenes.add(rs.getString(1));
-
-
 			//get genes with less than numberOfAlignments hits if new eVal > setup eVal and hit eVal< eVal 
 			rs =statement.executeQuery("SELECT geneHomology.s_key, COUNT(referenceID), query, program " +
 					"FROM homologySetup " +
@@ -982,6 +970,26 @@ public class HomologyAPI {
 			while(rs.next()) {
 
 				if(rs.getInt(2) < numberOfAlignments && rs.getString(4).contains(program) ) {
+
+					loadedGenes.remove(rs.getString(3));
+					deleteGenes.add(rs.getString(1));
+				}
+			}
+
+
+			//
+			rs =statement.executeQuery("SELECT geneHomology.s_key, COUNT(referenceID), query, databaseID FROM homologySetup " +
+					" LEFT JOIN geneHomology ON (homologySetup.s_key = homologySetup_s_key) " +
+					" LEFT JOIN geneHomology_has_homologues ON (geneHomology.s_key = geneHomology_s_key) " +
+					" WHERE status='PROCESSED' AND geneHomology.s_key NOT IN (SELECT distinct (geneHomology.s_key) FROM homologySetup " +
+					" LEFT JOIN geneHomology ON (homologySetup.s_key = homologySetup_s_key) " +
+					" LEFT JOIN geneHomology_has_homologues ON (geneHomology.s_key = geneHomology_s_key) " +
+					" WHERE status='PROCESSED' AND geneHomology_has_homologues.eValue <" + eVal + ") " +
+					" GROUP BY geneHomology.s_key;");
+
+			while(rs.next()) {
+
+				if(!rs.getString(4).equals(databaseID)){
 
 					loadedGenes.remove(rs.getString(3));
 					deleteGenes.add(rs.getString(1));
@@ -1364,7 +1372,7 @@ public class HomologyAPI {
 		rs.close();
 		return result;
 	}
-	
+
 	/**
 	 * Get last database used in the last "session"
 	 * 
@@ -1384,7 +1392,7 @@ public class HomologyAPI {
 		rs.close();
 		return latestDB;
 	}
-	
+
 	/**
 	 * Get last database used in the last "session"
 	 * 
@@ -1395,11 +1403,11 @@ public class HomologyAPI {
 	public static void setLastestUsedBlastDatabase(Statement statement, String latestDB) throws SQLException{
 
 		statement.execute("UPDATE scorerConfig SET latest = false;");
-		
+
 		statement.execute("UPDATE scorerConfig SET latest = true WHERE blastDB = '" + latestDB + "';");
 
 	}
-	
+
 	/**
 	 * Resets the configurations of all databases by deleting them.
 	 * merlin will automatically provide new standard configurations.
@@ -1411,9 +1419,9 @@ public class HomologyAPI {
 	public static void resetAllScorers(Statement statement) throws SQLException{
 
 		statement.execute("DELETE FROM scorerConfig;");
-		
+
 	}
-	
+
 	/**
 	 * Deletes the configurations of a sprecific database.
 	 * merlin will automatically provide new standard configurations.
@@ -1425,7 +1433,7 @@ public class HomologyAPI {
 	public static void resetDatabaseScorer(Statement statement, String blastDatabase) throws SQLException{
 
 		statement.execute("DELETE FROm scorerConfig WHERE blastDB = '" + blastDatabase + "';");
-		
+
 	}
 
 	/**
@@ -1451,7 +1459,7 @@ public class HomologyAPI {
 		rs.close();
 		return result;
 	}
-	
+
 	/**
 	 * Method to indicate in the database that the best alpha for a specific blast database was found.
 	 * 
@@ -1464,7 +1472,7 @@ public class HomologyAPI {
 		statement.execute("UPDATE scorerConfig SET bestAlpha = true WHERE blastDB = '" + blastDatabase +"';");
 
 	}
-	
+
 	/**
 	 * Get all commited databases from scorerConfig table.
 	 * 
@@ -1916,10 +1924,10 @@ public class HomologyAPI {
 			result.add(list);
 		}
 		rs.close();
-		
+
 		return result;
 	}
-	
+
 	/**
 	 * Get gene blast database information.
 	 * @param stmt
@@ -1929,7 +1937,7 @@ public class HomologyAPI {
 	public static Map<String, Set<Integer>> getGenesPerDatabase(Statement stmt) throws SQLException{
 
 		Map<String, Set<Integer>> result = new TreeMap<>();
-		
+
 		ResultSet rs = stmt.executeQuery("SELECT geneHomology.s_key, databaseID" +
 				" FROM geneHomology" +
 				" INNER JOIN homologySetup ON (homologySetup.s_key = homologySetup_s_key)" +
@@ -1937,18 +1945,18 @@ public class HomologyAPI {
 				" ORDER BY locusTag, status DESC;");
 
 		while(rs.next()) {
-			
+
 			if(result.containsKey(rs.getObject(2))) {
-				
+
 				Set<Integer> keys = result.get(rs.getString(2));
 				keys.add(rs.getInt(1));
-				
+
 				result.put(rs.getString(2), keys);
 			}
 			else {
 				Set<Integer> keys = new HashSet<>();
 				keys.add(rs.getInt(1));
-				
+
 				result.put(rs.getString(2), keys);
 			}
 		}
@@ -2406,7 +2414,7 @@ public class HomologyAPI {
 		rs.close();
 	}
 
-	
+
 	/**
 	 * Method to return the databases used to perform the blast.
 	 * 
@@ -2417,7 +2425,7 @@ public class HomologyAPI {
 	public static String[] getBlastDatabases(Statement statement) throws SQLException{
 
 		String[] databases = new String[1];
-				
+
 		ResultSet rs = statement.executeQuery("SELECT COUNT(DISTINCT(databaseID)) FROM homologySetup");
 
 		if(rs.next())
@@ -2426,44 +2434,44 @@ public class HomologyAPI {
 		rs = statement.executeQuery("SELECT DISTINCT(databaseID) FROM homologySetup");
 
 		int i = 1;
-		
+
 		while(rs.next()){
 			databases[i] = rs.getString(1);
 			i++;
 		}
 
 		databases[0] = "all databases";
-		
+
 		rs.close();
 		return databases;
 	}
-		
-		/**
-		 * Method to check if the statement is still working. If not, the a new statement is generated. 
-		 * 
-		 * @param dbAccess
-		 * @param statement
-		 * @return
-		 * @throws SQLException 
-		 */
-		public static Statement checkStatement(DatabaseAccess dbAccess, Statement statement) throws SQLException{
-			
-			try {
-				
-				statement.executeQuery("SELECT * FROM scorerConfig");
-				
-			} 
-			catch(CommunicationsException e) {
-				
-				Connection connection = new Connection(dbAccess);
-				
-				statement = connection.createStatement();
-				
-				logger.info("New SQL connection generated due to communications exception.");
-				
-			}
-			
-			return statement;
+
+	/**
+	 * Method to check if the statement is still working. If not, the a new statement is generated. 
+	 * 
+	 * @param dbAccess
+	 * @param statement
+	 * @return
+	 * @throws SQLException 
+	 */
+	public static Statement checkStatement(DatabaseAccess dbAccess, Statement statement) throws SQLException{
+
+		try {
+
+			statement.executeQuery("SELECT * FROM scorerConfig");
+
+		} 
+		catch(CommunicationsException e) {
+
+			Connection connection = new Connection(dbAccess);
+
+			statement = connection.createStatement();
+
+			logger.info("New SQL connection generated due to communications exception.");
+
 		}
-		
+
+		return statement;
+	}
+
 }
