@@ -3823,5 +3823,24 @@ public class ProjectAPI {
 			receiverDbStatement.execute("INSERT INTO " + destinyDatabase + "." + tableName + " SELECT * FROM " + sourceDatabase + "." + tableName + ";");
 		}
 	}
+	
+	/**
+	 * @param table
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static List<String> getAllColumns(String table, Statement stmt) throws SQLException{
+
+		List<String> columns = new ArrayList<>();
+
+		ResultSet rs = stmt.executeQuery("SHOW COLUMNS FROM " + table + ";");
+
+		while(rs.next())
+			columns.add(rs.getString(1));
+
+		rs.close();
+		return columns;
+	}
 }
 
