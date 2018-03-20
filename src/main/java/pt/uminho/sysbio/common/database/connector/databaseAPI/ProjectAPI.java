@@ -332,7 +332,7 @@ public class ProjectAPI {
 				rs = meta.getTables(null, null, oldName, new String[] {"TABLE","VIEW"});
 				if(rs.next()) {
 					Statement stmt = connection.createStatement();
-					stmt.execute("ALTER TABLE "+oldName+" RENAME TO "+newName+";");
+					stmt.execute("RENAME TABLE "+oldName+" TO "+newName+";");
 					stmt.close();
 					return true;
 				}
@@ -3826,6 +3826,48 @@ public class ProjectAPI {
 		
 			receiverDbStatement.execute("INSERT INTO " + destinyDatabase + "." + tableName + " SELECT * FROM " + sourceDatabase + "." + tableName + ";");
 		}
+	}
+	
+	/**
+	 * Method to retrieve all columns in a specific table.
+	 * 
+	 * @param table
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static List<String> getAllColumns(String table, Statement stmt) throws SQLException{
+
+		List<String> columns = new ArrayList<>();
+
+		ResultSet rs = stmt.executeQuery("SHOW COLUMNS FROM " + table + ";");
+
+		while(rs.next())
+			columns.add(rs.getString(1));
+
+		rs.close();
+		return columns;
+	}
+	
+	/**
+	 * Method to retrieve the name of all tables existing in the database.
+	 * 
+	 * @param table
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static List<String> getAllTablesNames(Statement stmt) throws SQLException{
+
+		List<String> columns = new ArrayList<>();
+
+		ResultSet rs = stmt.executeQuery("SHOW TABLES;");
+
+		while(rs.next())
+			columns.add(rs.getString(1));
+
+		rs.close();
+		return columns;
 	}
 }
 

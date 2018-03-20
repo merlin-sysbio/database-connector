@@ -338,7 +338,7 @@ public class DatabaseSchemas {
 		List<String> list= new ArrayList<String>();
 		List<String> schemasList = new ArrayList<String>();
 		List<String> tablesCheck = new ArrayList<String>();
-		tablesCheck.add("enzymes_annotation_geneHomology");
+		tablesCheck.add("enzymes_annotation_genehomology");
 		tablesCheck.add("genehomology");
 		tablesCheck.add("geneblast");
 		
