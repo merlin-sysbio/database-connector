@@ -370,7 +370,7 @@ public class CompartmentsAPI {
 		Map<String, String> results = new HashMap<>();
 		
 		ResultSet rs = statement.executeQuery("SELECT id, query, locusTag FROM geneHomology "
-				+ " INNER JOIN psort_reports ON gene = locus_tag;");
+				+ " INNER JOIN psort_reports ON psort_reports.locus_tag = query;");
 		
 		while(rs.next()){
 			
