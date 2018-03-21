@@ -489,6 +489,32 @@ public class CompartmentsAPI {
 	}
 	
 	/**
+	 * Removes biochemical reactions assigned to the model.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static void removeNotOriginalBiochemicalReactions(Statement statement) throws SQLException{
+	
+		statement.execute("DELETE FROM reaction WHERE NOT originalReaction AND source <> 'TRANSPORTERS';");
+
+	}
+	
+	/**
+	 * Removes transport reactions assigned to the model.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static void removeNotOriginalTransportersReactions(Statement statement) throws SQLException{
+	
+		statement.execute("DELETE FROM reaction WHERE NOT originalReaction AND source = 'TRANSPORTERS';");
+
+	}
+	
+	/**
 	 * Method to retrieve all distinct compartments and abbreviations in gene_has_compartment table.
 	 * 
 	 * @param statement
