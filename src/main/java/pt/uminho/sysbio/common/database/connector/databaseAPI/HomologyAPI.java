@@ -1454,6 +1454,7 @@ public class HomologyAPI {
 			result.add(rs.getString(3));
 			result.add(rs.getString(4));
 			result.add(rs.getString(5));
+			result.add(rs.getString(6));
 		}
 
 		rs.close();
@@ -2484,7 +2485,6 @@ public class HomologyAPI {
 	public static boolean hasCommitedData(Statement statement) throws SQLException{
 		
 		int size = 0;
-		
 
 		ResultSet rs = statement.executeQuery("SELECT COUNT(s_key) FROM homologyData;");
 
