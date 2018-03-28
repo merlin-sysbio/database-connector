@@ -606,7 +606,7 @@ public class ModelAPI {
 	public static void loadReaction(int idCompartment, boolean inModel, String ecNumber, Statement statement, boolean isTransport, DatabaseType databaseType, String name, String equation, boolean reversible, boolean generic, boolean spontaneous, 
 			boolean nonEnzymatic, String reactionSource, String notes, List<String> proteins, List<String> enzymes, Map<String, List<String>> ecNumbers, List<String> pathways, List<Integer> compounds, List<Integer> compartments, List<String> stoichiometry, 
 			List<String> chains) throws SQLException {
-
+		
 		String aux ="name = '"+DatabaseUtilities.databaseStrConverter(name, databaseType)+"_C"+idCompartment+"' AND ";
 
 		if(isTransport)
