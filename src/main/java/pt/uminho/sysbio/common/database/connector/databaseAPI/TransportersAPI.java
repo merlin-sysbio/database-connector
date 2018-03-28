@@ -2742,7 +2742,7 @@ public class TransportersAPI {
 		
 		ResultSet rs = stmt.executeQuery("SELECT id as gene_id, sw_transporters.locus_tag, number_TMD, sw_transporters.tcdb_id,"
 				+ " sw_transporters.acc FROM sw_transporters LEFT JOIN sw_reports ON sw_reports.locus_tag=sw_transporters.locus_tag "
-				+ " GROUP BY sw_reports.locus_tag AND sw_transporters.tcdb_id "
+				+ " GROUP BY sw_reports.locus_tag"
 				+ " ORDER BY sw_transporters.locus_tag "//, sw_transporters.similarity "
 				+ " desc;");
 		
