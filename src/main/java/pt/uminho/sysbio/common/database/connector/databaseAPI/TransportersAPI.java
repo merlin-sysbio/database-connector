@@ -2730,36 +2730,118 @@ public class TransportersAPI {
 		return tcn;
 	}
 	
+//	/**
+//	 * gets Transporters data from sw_transporters view.
+//	 * @param stmt
+//	 * @return ArrayList<String[]>
+//	 * @throws SQLException
+//	 */
+//	public static ArrayList<String[]> getTransportersData(Statement stmt) throws SQLException{
+//		
+//		ArrayList<String[]> result = new ArrayList<>();
+//		
+//		ResultSet rs = stmt.executeQuery("SELECT id as gene_id, sw_transporters.locus_tag, number_TMD, sw_transporters.tcdb_id,"
+//				+ " sw_transporters.acc FROM sw_transporters LEFT JOIN sw_reports ON sw_reports.locus_tag=sw_transporters.locus_tag "
+//				+ " GROUP BY sw_reports.locus_tag"
+//				+ " ORDER BY sw_transporters.locus_tag "//, sw_transporters.similarity "
+//				+ " desc;");
+//		
+//		while(rs.next()){
+//			String[] list = new String[5];
+//
+//			list[0]=rs.getString(1); // gene_id
+//			list[1]=rs.getString(2); // locus_tag
+//			list[2]=rs.getString(3); // number_TMD
+//			list[3]=rs.getString(4); // tcdb_id
+//			list[4]=rs.getString(5); // accession
+//			
+//			result.add(list);
+//		}
+//		rs.close();
+//		return result;
+//	}
+	
 	/**
-	 * gets Transporters data from sw_transporters table.
+	 * gets Transporters data with accession, tcdbID and similarity for a wanted transporter.
 	 * @param stmt
 	 * @return ArrayList<String[]>
 	 * @throws SQLException
 	 */
-	public static ArrayList<String[]> getTransportersData(Statement stmt) throws SQLException{
+	public static ArrayList<String[]> getTransportersData(String id, Statement stmt) throws SQLException{
 		
 		ArrayList<String[]> result = new ArrayList<>();
 		
-		ResultSet rs = stmt.executeQuery("SELECT id as gene_id, sw_transporters.locus_tag, number_TMD, sw_transporters.tcdb_id,"
-				+ " sw_transporters.acc FROM sw_transporters LEFT JOIN sw_reports ON sw_reports.locus_tag=sw_transporters.locus_tag "
-				+ " GROUP BY sw_reports.locus_tag"
-				+ " ORDER BY sw_transporters.locus_tag "//, sw_transporters.similarity "
-				+ " desc;");
+		ResultSet rs = stmt.executeQuery("SELECT sw_hits.acc, sw_hits.tcdb_id, sw_similarities.similarity" 
+				+ " FROM ((sw_reports JOIN sw_similarities ON ((sw_reports.id = sw_similarities.sw_report_id)))"
+				+ " JOIN sw_hits ON ((sw_hits.id = sw_similarities.sw_hit_id))) WHERE sw_reports.id = " + id 
+				+ " ORDER BY sw_similarities.similarity desc;");
 		
 		while(rs.next()){
-			String[] list = new String[5];
+			String[] list = new String[3];
 
-			list[0]=rs.getString(1); // gene_id
-			list[1]=rs.getString(2); // locus_tag
-			list[2]=rs.getString(3); // number_TMD
-			list[3]=rs.getString(4); // tcdb_id
-			list[4]=rs.getString(5); // accession
+			list[0]=rs.getString(1); // accession
+			list[1]=rs.getString(2); // tcdb_id
+			list[2]=rs.getString(3); // similarity
 			
 			result.add(list);
 		}
 		rs.close();
 		return result;
 	}
+	
+	
+//	/**
+//	 * gets Transporters data from sw_transporters view.
+//	 * @param stmt
+//	 * @return ArrayList<String[]>
+//	 * @throws SQLException
+//	 */
+//	public static ArrayList<String[]> getTransportersData2(Statement stmt) throws SQLException{
+//		
+//		ArrayList<String[]> result = new ArrayList<>();
+//		
+//		ResultSet rs = stmt.executeQuery("SELECT sw_reports.number_TMD as number_TMD, sw_hits.tcdb_id AS tcdb_id, sw_hits.acc AS acc "
+//				+ "FROM ((sw_reports JOIN sw_similarities ON ((sw_reports.id = sw_similarities.sw_report_id)))" 
+//				+ "JOIN sw_hits ON ((sw_hits.id = sw_similarities.sw_hit_id))) GROUP BY sw_reports.locus_tag " 
+//				+"ORDER BY sw_reports.locus_tag desc;");
+//		
+//		while(rs.next()){
+//			String[] list = new String[3];
+//
+//			list[0]=rs.getString(1); // number_TMD
+//			list[1]=rs.getString(2); // tcdb_id
+//			list[2]=rs.getString(3); // accession
+//			
+//			result.add(list);
+//		}
+//		rs.close();
+//		return result;
+//	}
+	
+	/**
+	 * gets Transporters gene_id, locus_tag and number_TMD from sw_report table.
+	 * @param stmt
+	 * @return ArrayList<String[]>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String[]> getTransportersInfo(Statement stmt) throws SQLException{
+		
+		ArrayList<String[]> result = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT id as gene_id, locus_tag, number_TMD FROM sw_reports "
+				+ "ORDER BY locus_tag desc;");
+		
+		while(rs.next()){
+			String[] list = new String[3];
+
+			list[0]=rs.getString(1); // gene_id
+			list[1]=rs.getString(2); // locus_tag
+			list[2]=rs.getString(3); // number_TMD
+			result.add(list);
+		}
+		rs.close();
+		return result;
+	} 
 	
 	/**
 	 * Gets gene total score.
