@@ -2769,8 +2769,6 @@ public class TransportersAPI {
 	 */
 	public static ArrayList<String[]> getTransportersData(String id, Statement stmt) throws SQLException{
 		
-		System.out.println(id);
-		
 		ArrayList<String[]> result = new ArrayList<>();
 		
 		ResultSet rs = stmt.executeQuery("SELECT sw_hits.acc, sw_hits.tcdb_id, sw_similarities.similarity" 
