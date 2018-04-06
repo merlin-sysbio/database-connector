@@ -838,10 +838,6 @@ public class ProjectAPI {
 
 		while(rs.next()) {
 			
-			System.out.println(rs.getString(1));
-			System.out.println(qls.get(rs.getString(1)));
-			System.out.println(rs.getString(2));
-
 			qls.get(rs.getString(1))[2] = rs.getString(2);
 		}
 
