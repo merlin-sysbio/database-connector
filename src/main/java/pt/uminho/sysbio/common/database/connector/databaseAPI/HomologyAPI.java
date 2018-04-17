@@ -2324,6 +2324,11 @@ public class HomologyAPI {
 		String orthologLocus = capsule.getQuery().split(":")[1];
 
 		double score = capsule.getScore();
+		
+//		System.out.println("SCORE -------> "+capsule.getScore());
+//		System.out.println("ALIGNED SCORE -------> "+capsule.getAlignedScore());
+//		System.out.println("ALIGNMENT SCORE -------> "+capsule.getAlignmentScore());
+
 
 		String ecnumber = capsule.getEcNumber();
 
@@ -2361,7 +2366,7 @@ public class HomologyAPI {
 				orthology_id = rs.getString(1);
 			}
 			rs = statement.executeQuery("SELECT * FROM gene_has_orthology WHERE gene_idgene='"+idGene+"' AND orthology_id='"+orthology_id+"';");
-
+			
 			if(!rs.next())	
 				statement.execute("INSERT INTO gene_has_orthology (gene_idgene,orthology_id, similarity) VALUES("+idGene+","+orthology_id+", "+ score +" );");
 
@@ -2390,7 +2395,14 @@ public class HomologyAPI {
 				else
 					note = "";
 			}
+			
+			System.out.println("MODULES---->"+modules);
+			
 			if(modules != null){
+				
+				System.out.println("ORTHOLOG ---->"+ortholog);
+				System.out.println("MODULES IDS ---->"+modules.get(ortholog));
+				
 				for(String module_id : modules.get(ortholog)) {
 
 					if(modules_ids.contains(module_id)) {
