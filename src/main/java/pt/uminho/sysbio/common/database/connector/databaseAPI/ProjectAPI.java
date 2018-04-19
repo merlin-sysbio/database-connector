@@ -830,7 +830,6 @@ public class ProjectAPI {
 	 * @throws SQLException
 	 */
 	public static HashMap<String,String[]> countReactionsByPathwayID(HashMap<String,String[]> qls, Statement stmt) throws SQLException{
-
 		ResultSet rs = stmt.executeQuery("SELECT pathway_idpathway, count(reaction_idreaction) " +
 				"FROM pathway " +
 				"RIGHT JOIN pathway_has_reaction ON pathway_idpathway=pathway.idpathway " +
@@ -838,7 +837,9 @@ public class ProjectAPI {
 
 		while(rs.next()) {
 			
-			qls.get(rs.getString(1))[2] = rs.getString(2);
+			if(qls.containsKey(rs.getString(1)))
+				qls.get(rs.getString(1))[2] = rs.getString(2);
+			
 		}
 
 		rs.close();
@@ -859,8 +860,11 @@ public class ProjectAPI {
 				"RIGHT JOIN pathway_has_enzyme ON pathway_idpathway=pathway.idpathway " +
 				"GROUP BY pathway_idpathway ORDER BY name;");
 
-		while(rs.next()) 
-			qls.get(rs.getString(1))[3] = rs.getString(2);
+		while(rs.next()) {
+			
+			if(qls.containsKey(rs.getString(1)))
+				qls.get(rs.getString(1))[3] = rs.getString(2);
+		}
 
 		rs.close();
 		return qls;

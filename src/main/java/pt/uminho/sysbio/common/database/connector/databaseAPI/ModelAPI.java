@@ -1658,11 +1658,11 @@ public class ModelAPI {
 				" INNER JOIN gene ON (gene_has_orthology.gene_idgene = gene.idgene)" 
 				//+" WHERE similarity >= "+threshold				
 				);
-
+		
 		Map<String, ReactionsGPR_CI> rpgs = new HashMap<>();
 
 		while (rs.next()) {
-
+			
 			if(rs.getString("note")==null || !rs.getString("note").equalsIgnoreCase("unannotated") || (rs.getString("note").equalsIgnoreCase("unannotated") && rs.getDouble("similarity")>=threshold)) {
 
 				ReactionsGPR_CI rpg = new ReactionsGPR_CI(rs.getString(1));
