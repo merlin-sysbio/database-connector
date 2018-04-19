@@ -932,6 +932,8 @@ public class HomologyAPI {
 			while(rs.next()) {
 
 				if(rs.getString(3).contains(program) ) {
+					
+					System.out.println("4.0 delete " + rs.getString(2) + "     " + rs.getString(1));
 
 					loadedGenes.remove(rs.getString(2));
 					deleteGenes.add(rs.getString(1));
@@ -945,9 +947,13 @@ public class HomologyAPI {
 					" WHERE status = 'NO_SIMILARITY' " +
 					" AND databaseID <> '"+databaseID+"';");
 
+			System.out.println(databaseID);
+			
 			while(rs.next()) {
 
 				if(rs.getString(3).contains(program) ) {
+					
+					System.out.println("3.0 delete " + rs.getString(2) + "     " + rs.getString(1));
 
 					loadedGenes.remove(rs.getString(2));
 					deleteGenes.add(rs.getString(1));
@@ -957,7 +963,7 @@ public class HomologyAPI {
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			//get genes with less than numberOfAlignments hits if new eVal > setup eVal and hit eVal< eVal 
-			rs =statement.executeQuery("SELECT geneHomology.s_key, COUNT(referenceID), query, program " +
+			rs =statement.executeQuery("SELECT geneHomology.s_key, COUNT(referenceID), query, program, maxNumberOfAlignments " +
 					"FROM homologySetup " +
 					"INNER JOIN geneHomology ON (homologySetup.s_key = homologySetup_s_key) " +
 					"INNER JOIN geneHomology_has_homologues ON (geneHomology.s_key = geneHomology_s_key) " +
@@ -969,10 +975,14 @@ public class HomologyAPI {
 
 			while(rs.next()) {
 
-				if(rs.getInt(2) < numberOfAlignments && rs.getString(4).contains(program) ) {
+				System.out.println(">> " + rs.getString(3) + "     +     " + rs.getInt(5));
+				
+				if(rs.getInt(5) < numberOfAlignments && rs.getInt(2) < numberOfAlignments && rs.getString(4).contains(program) ) {
 
-					loadedGenes.remove(rs.getString(3));
-					deleteGenes.add(rs.getString(1));
+//					loadedGenes.remove(rs.getString(3));
+//					deleteGenes.add(rs.getString(1));
+					
+					System.out.println("to delete " + rs.getString(3));
 				}
 			}
 
@@ -991,8 +1001,10 @@ public class HomologyAPI {
 
 				if(!rs.getString(4).equals(databaseID)){
 
-					loadedGenes.remove(rs.getString(3));
-					deleteGenes.add(rs.getString(1));
+//					loadedGenes.remove(rs.getString(3));
+//					deleteGenes.add(rs.getString(1));
+					
+					System.out.println("2.0 to delete " + rs.getString(3));
 				}
 			}
 
