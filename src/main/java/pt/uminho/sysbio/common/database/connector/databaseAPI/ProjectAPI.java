@@ -2651,7 +2651,8 @@ public class ProjectAPI {
 				+ "notes, lowerBound, upperBound, boolean_rule " +
 				"FROM reaction WHERE inModel AND " +conditions );
 
-		while(rs.next()){
+		while(rs.next()) {
+			
 			String[] list = new String[9];
 
 			list[0]=rs.getString(1);
