@@ -5,8 +5,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author davidelagoa
@@ -213,10 +215,10 @@ public class CompartmentsAPI {
 	 * @return Map<String, List<String>>
 	 * @throws SQLException
 	 */
-	public static Map<String, List<Integer>> getTransportProteinsCompartments(Statement statement) throws SQLException{
+	public static Map<String, Set<Integer>> getTransportProteinsCompartments(Statement statement) throws SQLException{
 		
-		Map<String, List<Integer>> transportProteinsCompartments = new HashMap<>();
-		List<Integer> compartments;
+		Map<String, Set<Integer>> transportProteinsCompartments = new HashMap<>();
+		Set<Integer> compartments;
 		
 		ResultSet rs = statement.executeQuery("SELECT DISTINCT compartment_idcompartment, enzyme_ecnumber, enzyme_protein_idprotein FROM subunit " +
 				"INNER JOIN gene_has_compartment ON subunit.gene_idgene = gene_has_compartment.gene_idgene " +
@@ -225,7 +227,7 @@ public class CompartmentsAPI {
 		while(rs.next()) {
 
 			String key = rs.getString(2).concat("_").concat(rs.getString(3));
-			compartments = new ArrayList<>();
+			compartments = new HashSet<>();
 
 			if(transportProteinsCompartments.containsKey(key))
 				compartments = transportProteinsCompartments.get(key);	
