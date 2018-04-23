@@ -607,6 +607,11 @@ public class ModelAPI {
 			boolean nonEnzymatic, String reactionSource, String notes, List<String> proteins, List<String> enzymes, Map<String, List<String>> ecNumbers, List<String> pathways, List<Integer> compounds, List<Integer> compartments, List<String> stoichiometry, 
 			List<String> chains) throws SQLException {
 		
+		String saveNote = "";
+		
+		if(notes != null)
+			saveNote = notes;
+		
 		String aux ="name = '"+DatabaseUtilities.databaseStrConverter(name, databaseType)+"_C"+idCompartment+"' AND ";
 
 		if(isTransport)
@@ -638,7 +643,7 @@ public class ModelAPI {
 
 			statement.execute("INSERT INTO reaction (name, equation, reversible, inModel, isGeneric, isSpontaneous, isNonEnzymatic, source, originalReaction,compartment_idcompartment, notes) " +
 					"VALUES('"+DatabaseUtilities.databaseStrConverter(name+"_C"+idCompartment, databaseType)+"','"+DatabaseUtilities.databaseStrConverter(equation, databaseType)+"',"
-					+reversible+","+inModel+","+generic+","+spontaneous+","+nonEnzymatic+",'"+source+"',false,"+idCompartment+", '"+notes+"');");
+					+reversible+","+inModel+","+generic+","+spontaneous+","+nonEnzymatic+",'"+source+"',false,"+idCompartment+", '"+saveNote+"');");
 
 			rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
 			rs.next();
