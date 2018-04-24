@@ -2402,7 +2402,7 @@ public class ModelAPI {
 	 */		
 	public static Map<String, ArrayList<String>> getReactions (Statement stmt, String conditions) throws SQLException {
 
-		ResultSet rs = stmt.executeQuery("SELECT DISTINCT idreaction, name, equation, reversible, compartment_idcompartment, notes, lowerBound, upperBound " +
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT idreaction, name, equation, reversible, compartment_idcompartment, notes, lowerBound, upperBound, boolean_rule " +
 				"FROM reaction WHERE inModel AND " +conditions );
 
 		Map<String, ArrayList<String>> result = new HashMap<>();
@@ -2418,15 +2418,15 @@ public class ModelAPI {
 			list.add(rs.getString(6));
 			list.add(rs.getString(7));
 			list.add(rs.getString(8));
+			list.add(rs.getString(9));
 			result.put(rs.getString(1),list);
-
 		}
 
 		rs.close();
 		return result;		
 
 	}
-
+	
 	/**
 	 * Retrieves information from reaction_has_enzyme table
 	 * @param stmt
@@ -2497,7 +2497,7 @@ public class ModelAPI {
 				"INNER JOIN subunit ON (subunit.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein "
 				+ "AND subunit.enzyme_ecnumber = reaction_has_enzyme.enzyme_ecnumber) " +
 				"INNER JOIN gene ON (gene_idgene = gene.idgene) " +
-				"WHERE (note is null OR note NOT LIKE 'unannotated') " +
+//				"WHERE (note is null OR note NOT LIKE 'unannotated') " +
 				"ORDER BY reaction_idreaction;");
 
 		ArrayList<String[]> result = new ArrayList<>();
