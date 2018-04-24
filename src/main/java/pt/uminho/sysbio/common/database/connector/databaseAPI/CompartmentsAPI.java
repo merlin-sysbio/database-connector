@@ -441,6 +441,29 @@ public class CompartmentsAPI {
 	}
 	
 	/**
+	 * Get reactionsIDs WHERE source = 'TRANSPORTERS'.
+	 * @param statement
+	 * @return List<String>
+	 * @throws SQLException
+	 */
+	public static List<String> getTransportReactionID(Statement statement) throws SQLException{
+	
+		List<String> reactionsIDs = null;
+		reactionsIDs = new ArrayList<String>();
+		
+		ResultSet rs = statement.executeQuery("SELECT distinct idreaction " +
+				" FROM reaction "+
+				" LEFT JOIN reaction_has_enzyme ON reaction.idreaction = reaction_has_enzyme.reaction_idreaction " +
+				" WHERE source = 'TRANSPORTERS' AND reaction_has_enzyme.enzyme_ecnumber IS NULL AND originalReaction;");
+
+		while(rs.next())
+			reactionsIDs.add(rs.getString(1));
+		
+		rs.close();
+		return reactionsIDs;
+	}
+	
+	/**
 	 * Check the existence of biochemical reactions.
 	 * 
 	 * @param statement
