@@ -1338,7 +1338,7 @@ public class ModelAPI {
 	 * @param note
 	 * @throws SQLException
 	 */
-	public static void updateECNumberModule(Connection conn, String ec_number, int module_id, String note) throws SQLException {
+	public static void updateECNumberModule(Connection conn, String ec_number, int module_id) throws SQLException {
 
 		Statement stmt = conn.createStatement();
 
@@ -1346,7 +1346,7 @@ public class ModelAPI {
 
 		if(module_id>0) {
 
-			ResultSet rs = stmt.executeQuery("SELECT module_id FROM enzyme_has_module WHERE enzyme_ecnumber = '"+ec_number+"'");
+			ResultSet rs = stmt.executeQuery("SELECT module_id, note FROM enzyme_has_module WHERE enzyme_ecnumber = '"+ec_number+"'");
 
 			while (rs.next()) {
 
@@ -1358,9 +1358,9 @@ public class ModelAPI {
 			}
 		}
 
-		if(module_id < 0 || modules.contains(module_id)) {
-
-			stmt.execute("UPDATE enzyme_has_module SET note = '"+note+"' WHERE enzyme_ecnumber='"+ec_number+"' and module_id ="+module_id);
+		if(modules.contains(module_id)) {
+				
+//				stmt.execute("UPDATE enzyme_has_module SET note = '"+note+"' WHERE enzyme_ecnumber='"+ec_number+"' and module_id ="+module_id);
 		}
 		else {
 
@@ -1370,7 +1370,7 @@ public class ModelAPI {
 				proteins.add(rs.getInt(1));
 
 			for(int protein : proteins)
-				stmt.execute("INSERT INTO enzyme_has_module (enzyme_protein_idprotein, enzyme_ecnumber, note, module_id) VALUES(" + protein + ", '"+ec_number+"', '"+note+"'," +module_id+")");
+					stmt.execute("INSERT INTO enzyme_has_module (enzyme_protein_idprotein, enzyme_ecnumber, module_id) VALUES(" + protein + ", '"+ec_number+"', " +module_id+")");
 		}
 
 		stmt.close();
@@ -1386,7 +1386,16 @@ public class ModelAPI {
 	public static void updateECNumberModuleStatus(Connection conn, String ec_number, String status) throws SQLException {
 
 		Statement stmt = conn.createStatement();
-		stmt.execute("UPDATE enzyme_has_module SET gpr_status = '"+status+"' WHERE enzyme_ecnumber='"+ec_number+"'");
+		
+		Set<Integer> proteins = new HashSet<>();
+		ResultSet rs = stmt.executeQuery("SELECT protein_idprotein FROM enzyme WHERE ecnumber = '"+ec_number+"'");
+
+		while (rs.next())
+			proteins.add(rs.getInt(1));
+
+		for(int protein : proteins)
+			stmt.execute("UPDATE enzyme SET gpr_status = '"+status+"' WHERE enzyme.ecnumber='"+ec_number+"' AND protein_idprotein="+protein);
+		
 		stmt.close();
 	}
 
@@ -1507,7 +1516,7 @@ public class ModelAPI {
 
 		Statement stmt = conn.createStatement();
 
-		ResultSet rs = stmt.executeQuery("SELECT DISTINCT(enzyme_ecnumber) FROM enzyme_has_module WHERE gpr_status = 'PROCESSED'");
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT(enzyme.ecnumber) FROM enzyme WHERE gpr_status = 'PROCESSED'");
 
 		while(rs.next())
 			ec_numbers.add(rs.getString(1));
@@ -1670,13 +1679,6 @@ public class ModelAPI {
 					if(rpg.getProteins()!= null && rpg.getProteins().containsKey(rs.getString(2)))
 						pga = rpg.getProteins().get(rs.getString(2));
 
-//					String geneSurrogateName = rs.getString(6);
-//
-//					if(rs.getString(7)!=null && !rs.getString(7).isEmpty() && !rs.getString(7).equalsIgnoreCase("null"))
-//						geneSurrogateName = rs.getString(7)+"_"+geneSurrogateName;
-//					
-//					pga.addLocusTag(rs.getString(5), geneSurrogateName);
-					
 					String idGene = rs.getString(4);
 
 					pga.addLocusTag(rs.getString(5), idGene);
@@ -2224,28 +2226,40 @@ public class ModelAPI {
 	}
 
 	/**
-	 * Get all enzymes.
+	 * @param isCompartmentalisedModel
+	 * @param encoded
 	 * @param stmt
 	 * @return
 	 * @throws SQLException
 	 */
-	public static ArrayList<String[]> getAllEnzymes(String originalReaction, String encodedEnzyme, Statement stmt) throws SQLException{
+	public static ArrayList<String[]> getAllEnzymes(boolean isCompartmentalisedModel, boolean encoded, Statement stmt) throws SQLException{
 
+		String originalReaction = "";
+		if(isCompartmentalisedModel)
+			originalReaction = originalReaction.concat(" WHERE NOT originalReaction ");
+		else
+			originalReaction = originalReaction.concat(" WHERE originalReaction ");
+
+		String encodedEnzyme="";
+		if(encoded)
+			encodedEnzyme=" AND enzyme.inModel AND reaction.inModel";
+		
 		ArrayList<String[]> result = new ArrayList<>();
 
 		ResultSet rs = stmt.executeQuery("SELECT protein.name, enzyme.ecnumber," +
 				" COUNT(DISTINCT(reaction_has_enzyme.reaction_idreaction)), enzyme.source, enzyme.inModel, reaction.inModel, idprotein," +
-				" count(DISTINCT(reaction.inModel))" +
+				" COUNT(DISTINCT(reaction.inModel)), protein.idprotein" +
 				" FROM enzyme " +
 				" INNER JOIN protein ON protein.idprotein = enzyme.protein_idprotein " +
 				" INNER JOIN reaction_has_enzyme ON ecnumber = reaction_has_enzyme.enzyme_ecnumber " +
 				" AND protein.idprotein = reaction_has_enzyme.enzyme_protein_idprotein " +
 				" INNER JOIN reaction ON reaction.idreaction = reaction_has_enzyme.reaction_idreaction" +
 				originalReaction+encodedEnzyme+
-				" GROUP BY idprotein, ecnumber, reaction.inModel " +
+				" GROUP BY idprotein, ecnumber "+//, reaction.inModel " +
 				" ORDER BY ecnumber  ASC, reaction.inModel DESC;");
-
-		while(rs.next()){
+		
+		while(rs.next()) {
+			
 			String[] list = new String[8];
 
 			list[0]=rs.getString(1);
@@ -2365,7 +2379,7 @@ public class ModelAPI {
 
 		ArrayList<String[]> result = new ArrayList<>();
 
-		ResultSet rs = stmt.executeQuery("SELECT DISTINCT gene.name, gene.locusTag, orthology.entry_id, origin, note, similarity, locus_id FROM enzyme " +
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT gene.name, gene.locusTag, orthology.entry_id, origin, similarity, locus_id FROM enzyme " +
 				"INNER JOIN subunit ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein " +
 				"INNER JOIN gene ON gene.idgene = subunit.gene_idgene " +
 				"LEFT JOIN gene_has_orthology ON gene.idgene = gene_has_orthology.gene_idgene " +
@@ -2374,7 +2388,7 @@ public class ModelAPI {
 				"AND subunit.enzyme_protein_idprotein = " + id+";");
 
 		while(rs.next()){
-			String[] list = new String[7];
+			String[] list = new String[6];
 
 			list[0]=rs.getString(1);
 			list[1]=rs.getString(2);
@@ -2382,7 +2396,6 @@ public class ModelAPI {
 			list[3]=rs.getString(4);
 			list[4]=rs.getString(5);
 			list[5]=rs.getString(6);
-			list[6]=rs.getString(7);
 
 			result.add(list);
 		}
@@ -2618,10 +2631,10 @@ public class ModelAPI {
 
 		ArrayList<String[]> result = new ArrayList<>();
 
-		ResultSet rs = stmt.executeQuery("SELECT DISTINCT gpr_status, reaction,  definition, name FROM subunit " +
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT gpr_status, reaction, definition, module.name FROM enzyme_has_module " +
 				"INNER JOIN module ON (id = module_id) " +
-				"WHERE enzyme_ecnumber = '" + ecnumber+"' " +
-				"AND enzyme_protein_idprotein = " + id);
+				"INNER JOIN enzyme ON (enzyme_ecnumber = enzyme.ecnumber AND enzyme.protein_idprotein = enzyme_protein_idprotein) " +
+				"WHERE enzyme_ecnumber = '" + ecnumber+"' AND enzyme_protein_idprotein = " + id);
 
 		while(rs.next()){
 			String[] list = new String[4];
@@ -2900,7 +2913,7 @@ public class ModelAPI {
 					note = notes_map.get(name)+ " | ";
 				}
 
-				note += "Removed by GPR tool";
+				note += "Removed by GPR";
 
 				statement.setString(1, "false");
 				statement.setString(2, note);
@@ -2952,17 +2965,16 @@ public class ModelAPI {
 		int i = 0;
 		for (String name : kept) {
 
-			//String note = "GENE_ASSOCIATION: " + this.annotations.get(name)+" | GPR set from tool";
 			String note = annotations.get(name);
 
-			String old_note = "GPR set from tool";
+			String old_note = "automatic GPR";
 
 			if(notes_map.containsKey(name)) {
 
 				old_note = notes_map.get(name);
 
-				if(!old_note.contains("GPR set from tool"))
-					old_note = old_note.trim().concat(" | GPR set from tool");
+				if(!old_note.contains("automatic GPR"))
+					old_note = old_note.trim().concat(" | automatic GPR");
 			}
 
 			statement.setString(1, note);
@@ -4082,11 +4094,22 @@ public class ModelAPI {
 		ArrayList<String[]> result = new ArrayList<>();
 
 		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag, name, count(DISTINCT(module_id)), count(enzyme_ecnumber) "+
-				"FROM gene INNER JOIN subunit ON (gene.idgene = gene_idgene) "+
-				"INNER JOIN enzyme ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein "+
+				" FROM gene LEFT JOIN subunit ON gene.idgene = gene_idgene "+
+				" INNER JOIN enzyme ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein "+
+				" INNER JOIN gene_has_orthology ON gene_has_orthology.gene_idgene = gene.idgene "+
+				" INNER JOIN module_has_orthology ON module_has_orthology.orthology_id = gene_has_orthology.orthology_id "+
 				"GROUP BY locusTag;");
 
-		while(rs.next()){
+		System.out.println("SELECT idgene, locusTag, name, count(DISTINCT(reaction)), count(enzyme_ecnumber) "+
+				" FROM gene LEFT JOIN subunit ON gene.idgene = gene_idgene "+
+				" INNER JOIN enzyme ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein "+
+				" INNER JOIN gene_has_orthology ON gene_has_orthology.gene_idgene = gene.idgene "+
+				" INNER JOIN module_has_orthology ON module_has_orthology.orthology_id = gene_has_orthology.orthology_id "+
+				" INNER JOIN module ON module_has_orthology.module_id = module.id " +
+				" GROUP BY locusTag;");
+		
+		while(rs.next()) {
+			
 			String[] list = new String[5];
 
 			list[0]=rs.getString(1);
