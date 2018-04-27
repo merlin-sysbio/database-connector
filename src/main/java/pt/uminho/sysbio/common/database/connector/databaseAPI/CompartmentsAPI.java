@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,6 +16,7 @@ import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
 import pt.uminho.sysbio.merlin.utilities.containers.model.CompartmentContainer;
 import pt.uminho.sysbio.merlin.utilities.containers.model.MetaboliteContainer;
+import java.util.Set;
 
 /**
  * @author davidelagoa
@@ -258,10 +260,10 @@ public class CompartmentsAPI {
 	 * @return Map<String, List<String>>
 	 * @throws SQLException
 	 */
-	public static Map<String, List<Integer>> getTransportProteinsCompartments(Statement statement) throws SQLException{
+	public static Map<String, Set<Integer>> getTransportProteinsCompartments(Statement statement) throws SQLException{
 		
-		Map<String, List<Integer>> transportProteinsCompartments = new HashMap<>();
-		List<Integer> compartments;
+		Map<String, Set<Integer>> transportProteinsCompartments = new HashMap<>();
+		Set<Integer> compartments;
 		
 		ResultSet rs = statement.executeQuery("SELECT DISTINCT compartment_idcompartment, enzyme_ecnumber, enzyme_protein_idprotein FROM subunit " +
 				"INNER JOIN gene_has_compartment ON subunit.gene_idgene = gene_has_compartment.gene_idgene " +
@@ -270,7 +272,7 @@ public class CompartmentsAPI {
 		while(rs.next()) {
 
 			String key = rs.getString(2).concat("_").concat(rs.getString(3));
-			compartments = new ArrayList<>();
+			compartments = new HashSet<>();
 
 			if(transportProteinsCompartments.containsKey(key))
 				compartments = transportProteinsCompartments.get(key);	
@@ -391,10 +393,11 @@ public class CompartmentsAPI {
 		ArrayList<String> list = new ArrayList<>();
 		
 		while(rs.next()) {
+			
+			list = new ArrayList<>();
 			list.add(rs.getString(2));
 			list.add(rs.getString(3));
 			result.put(rs.getString(1),list);
-			
 		}
 		
 		rs.close();
@@ -414,7 +417,7 @@ public class CompartmentsAPI {
 		Map<String, String> results = new HashMap<>();
 		
 		ResultSet rs = statement.executeQuery("SELECT id, query, locusTag FROM geneHomology "
-				+ " INNER JOIN psort_reports ON gene = locus_tag;");
+				+ " INNER JOIN psort_reports ON psort_reports.locus_tag = query;");
 		
 		while(rs.next()){
 			
@@ -483,6 +486,29 @@ public class CompartmentsAPI {
 	}
 	
 	/**
+	 * Get reactionsIDs WHERE source = 'TRANSPORTERS'.
+	 * @param statement
+	 * @return List<String>
+	 * @throws SQLException
+	 */
+	public static List<String> getTransportReactionID(Statement statement) throws SQLException{
+	
+		List<String> reactionsIDs = null;
+		reactionsIDs = new ArrayList<String>();
+		
+		ResultSet rs = statement.executeQuery("SELECT distinct idreaction " +
+				" FROM reaction "+
+				" LEFT JOIN reaction_has_enzyme ON reaction.idreaction = reaction_has_enzyme.reaction_idreaction " +
+				" WHERE source = 'TRANSPORTERS' AND reaction_has_enzyme.enzyme_ecnumber IS NULL AND originalReaction;");
+
+		while(rs.next())
+			reactionsIDs.add(rs.getString(1));
+		
+		rs.close();
+		return reactionsIDs;
+	}
+	
+	/**
 	 * Check the existence of biochemical reactions.
 	 * 
 	 * @param statement
@@ -529,6 +555,32 @@ public class CompartmentsAPI {
 	public static void removeNotOriginalReactions(Statement statement) throws SQLException{
 	
 		statement.execute("DELETE FROM reaction WHERE NOT originalReaction;");
+
+	}
+	
+	/**
+	 * Removes biochemical reactions assigned to the model.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static void removeNotOriginalBiochemicalReactions(Statement statement) throws SQLException{
+	
+		statement.execute("DELETE FROM reaction WHERE NOT originalReaction AND source <> 'TRANSPORTERS';");
+
+	}
+	
+	/**
+	 * Removes transport reactions assigned to the model.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static void removeNotOriginalTransportersReactions(Statement statement) throws SQLException{
+	
+		statement.execute("DELETE FROM reaction WHERE NOT originalReaction AND source = 'TRANSPORTERS';");
 
 	}
 	

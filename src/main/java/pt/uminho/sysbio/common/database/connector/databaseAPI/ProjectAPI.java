@@ -332,7 +332,7 @@ public class ProjectAPI {
 				rs = meta.getTables(null, null, oldName, new String[] {"TABLE","VIEW"});
 				if(rs.next()) {
 					Statement stmt = connection.createStatement();
-					stmt.execute("ALTER TABLE "+oldName+" RENAME TO "+newName+";");
+					stmt.execute("RENAME TABLE "+oldName+" TO "+newName+";");
 					stmt.close();
 					return true;
 				}
@@ -624,7 +624,8 @@ public class ProjectAPI {
 		ResultSet rs = stmt.executeQuery("SELECT alias FROM aliases WHERE class = 'p' AND entity = "+id);
 
 		while(rs.next())
-			res.add(rs.getString(1));
+			if(rs.getString(1)!=null && !rs.getString(1).equalsIgnoreCase("null"))
+				res.add(rs.getString(1));
 
 		rs.close();
 		return res;
@@ -825,15 +826,16 @@ public class ProjectAPI {
 	 * @throws SQLException
 	 */
 	public static HashMap<String,String[]> countReactionsByPathwayID(HashMap<String,String[]> qls, Statement stmt) throws SQLException{
-
 		ResultSet rs = stmt.executeQuery("SELECT pathway_idpathway, count(reaction_idreaction) " +
 				"FROM pathway " +
 				"RIGHT JOIN pathway_has_reaction ON pathway_idpathway=pathway.idpathway " +
 				"GROUP BY pathway_idpathway ORDER BY name;");
 
 		while(rs.next()) {
-
-			qls.get(rs.getString(1))[2] = rs.getString(2);
+			
+			if(qls.containsKey(rs.getString(1)))
+				qls.get(rs.getString(1))[2] = rs.getString(2);
+			
 		}
 
 		rs.close();
@@ -854,8 +856,11 @@ public class ProjectAPI {
 				"RIGHT JOIN pathway_has_enzyme ON pathway_idpathway=pathway.idpathway " +
 				"GROUP BY pathway_idpathway ORDER BY name;");
 
-		while(rs.next()) 
-			qls.get(rs.getString(1))[3] = rs.getString(2);
+		while(rs.next()) {
+			
+			if(qls.containsKey(rs.getString(1)))
+				qls.get(rs.getString(1))[3] = rs.getString(2);
+		}
 
 		rs.close();
 		return qls;
@@ -998,6 +1003,36 @@ public class ProjectAPI {
 
 		rs.close();
 		return res;
+	}
+	
+	/**
+	 * Count compounds with a given name.
+	 * @param name
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String isMetaboliteEditable(String name, Statement stmt) throws SQLException{
+
+		int count = 0;
+
+		ResultSet rs = stmt.executeQuery("SELECT COUNT(name) FROM compound WHERE compound.name ='" + name + "';");
+		
+		if(rs.next())
+			count = Integer.parseInt(rs.getString(1));
+		
+		if(count == 0)
+			return "";
+		
+		else if(count == 1){
+			
+			rs = stmt.executeQuery("SELECT kegg_id FROM compound WHERE compound.name ='" + name + "';");
+			
+			return rs.getString(1);
+		}
+		
+		return null;
+		
 	}
 
 	/**
@@ -2597,6 +2632,7 @@ public class ProjectAPI {
 		return result;
 	}
 
+	
 	/**
 	 * Get all data from table.
 	 * @param conditions
@@ -3753,6 +3789,48 @@ public class ProjectAPI {
 		
 			receiverDbStatement.execute("INSERT INTO " + destinyDatabase + "." + tableName + " SELECT * FROM " + sourceDatabase + "." + tableName + ";");
 		}
+	}
+	
+	/**
+	 * Method to retrieve all columns in a specific table.
+	 * 
+	 * @param table
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static List<String> getAllColumns(String table, Statement stmt) throws SQLException{
+
+		List<String> columns = new ArrayList<>();
+
+		ResultSet rs = stmt.executeQuery("SHOW COLUMNS FROM " + table + ";");
+
+		while(rs.next())
+			columns.add(rs.getString(1));
+
+		rs.close();
+		return columns;
+	}
+	
+	/**
+	 * Method to retrieve the name of all tables existing in the database.
+	 * 
+	 * @param table
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static List<String> getAllTablesNames(Statement stmt) throws SQLException{
+
+		List<String> columns = new ArrayList<>();
+
+		ResultSet rs = stmt.executeQuery("SHOW TABLES;");
+
+		while(rs.next())
+			columns.add(rs.getString(1));
+
+		rs.close();
+		return columns;
 	}
 }
 

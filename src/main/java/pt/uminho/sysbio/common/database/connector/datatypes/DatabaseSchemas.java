@@ -69,14 +69,14 @@ public class DatabaseSchemas {
 		if (this.dbType.equals(DatabaseType.MYSQL)) {
 			
 			driver_class_name = "com.mysql.jdbc.Driver";
-			url_db_connection = "jdbc:mysql://"+this.host+":"+this.port+"/"+schema;
+			url_db_connection = "jdbc:mysql://"+this.host+":"+this.port+"/"+schema+"?autoReconnect=true";
 		}
 		else {
 			
 			String prefix = "jdbc:h2:";
 			String path = FileUtils.getHomeFolderPath();
 			driver_class_name = "org.h2.Driver";
-			url_db_connection = prefix+path+"/h2Database/"+schema+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE";
+			url_db_connection = prefix+path+"/h2Database/"+schema+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE;AUTO_RECONNECT=TRUE";
 			
 		}
 		
@@ -338,7 +338,7 @@ public class DatabaseSchemas {
 		List<String> list= new ArrayList<String>();
 		List<String> schemasList = new ArrayList<String>();
 		List<String> tablesCheck = new ArrayList<String>();
-		tablesCheck.add("enzymes_annotation_geneHomology");
+		tablesCheck.add("enzymes_annotation_genehomology");
 		tablesCheck.add("genehomology");
 		tablesCheck.add("geneblast");
 		
