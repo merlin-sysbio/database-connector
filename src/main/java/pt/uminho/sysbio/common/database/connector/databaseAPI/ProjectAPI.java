@@ -438,11 +438,6 @@ public class ProjectAPI {
 				+ " INNER JOIN psort_reports AS pr ON pc.psort_report_id=pr.id "
 				+ " WHERE pr.id='"+id+"' ORDER BY pc.score DESC");
 
-		System.out.println("SELECT c.name, pc.score FROM psort_reports_has_compartments  AS pc "
-				+ " INNER JOIN compartments AS c ON pc.compartment_id=c.id "
-				+ " INNER JOIN psort_reports AS pr ON pc.psort_report_id=pr.id "
-				+ " WHERE pr.id='"+id+"' ORDER BY pc.score DESC");
-		
 		while(rs.next()){
 			String[] list = new String[2];
 			list[0]=rs.getString(1);
