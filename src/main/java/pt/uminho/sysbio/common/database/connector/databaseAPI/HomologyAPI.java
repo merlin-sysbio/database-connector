@@ -2332,7 +2332,7 @@ public class HomologyAPI {
 
 		String ecnumber = capsule.getEcNumber();
 
-		Map<String, Set<String>> modules = capsule.getModules();
+		Map<String, Set<Integer>> modules = capsule.getModules();
 
 		Map<String, Set<String>> closestOrthologs = capsule.getClosestOrthologues();
 
@@ -2375,7 +2375,7 @@ public class HomologyAPI {
 			int protein_idprotein = rs.getInt(1);
 			rs = statement.executeQuery("SELECT module_id, note FROM subunit WHERE gene_idgene='"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"';");
 
-			List<String> modules_ids = new ArrayList<String>();
+			List<Integer> modules_ids = new ArrayList<>();
 			boolean exists = false, noModules=true;
 
 			String note = "unannotated";
@@ -2387,7 +2387,7 @@ public class HomologyAPI {
 				if(rs.getInt(1)>0) {
 
 					noModules = false;
-					modules_ids.add(rs.getString(1));
+					modules_ids.add(rs.getInt(1));
 				}
 
 				if(rs.getString(2)!=null && !rs.getString(2).equalsIgnoreCase("null"))
@@ -2396,14 +2396,9 @@ public class HomologyAPI {
 					note = "";
 			}
 			
-			System.out.println("MODULES---->"+modules);
-			
 			if(modules != null){
 				
-				System.out.println("ORTHOLOG ---->"+ortholog);
-				System.out.println("MODULES IDS ---->"+modules.get(ortholog));
-				
-				for(String module_id : modules.get(ortholog)) {
+				for(int module_id : modules.get(ortholog)) {
 
 					if(modules_ids.contains(module_id)) {
 
