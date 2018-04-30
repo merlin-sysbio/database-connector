@@ -438,11 +438,6 @@ public class ProjectAPI {
 				+ " INNER JOIN psort_reports AS pr ON pc.psort_report_id=pr.id "
 				+ " WHERE pr.id='"+id+"' ORDER BY pc.score DESC");
 
-		System.out.println("SELECT c.name, pc.score FROM psort_reports_has_compartments  AS pc "
-				+ " INNER JOIN compartments AS c ON pc.compartment_id=c.id "
-				+ " INNER JOIN psort_reports AS pr ON pc.psort_report_id=pr.id "
-				+ " WHERE pr.id='"+id+"' ORDER BY pc.score DESC");
-		
 		while(rs.next()){
 			String[] list = new String[2];
 			list[0]=rs.getString(1);
@@ -2637,41 +2632,7 @@ public class ProjectAPI {
 		return result;
 	}
 
-	/**
-	 * Get reactions.
-	 * @param conditions
-	 * @param stmt
-	 * @return ArrayList<String[]>
-	 * @throws SQLException
-	 */
-	public static ArrayList<String[]> getReactions(String conditions, Statement stmt) throws SQLException{
-
-		ArrayList<String[]> result = new ArrayList<>();	
-
-		ResultSet rs = stmt.executeQuery("SELECT DISTINCT idreaction, name, equation, reversible, compartment_idcompartment, "
-				+ "notes, lowerBound, upperBound, boolean_rule " +
-				"FROM reaction WHERE inModel AND " +conditions );
-
-		while(rs.next()) {
-			
-			String[] list = new String[9];
-
-			list[0]=rs.getString(1);
-			list[1]=rs.getString(2);
-			list[2]=rs.getString(3);
-			list[3]=rs.getBoolean(4)+"";
-			list[4]=rs.getString(5);
-			list[5]=rs.getString(6);
-			list[6]=rs.getString(7);
-			list[7]=rs.getString(8);
-			list[8]=rs.getString(9);
-
-			result.add(list);
-		}
-		rs.close();
-		return result;
-	}
-
+	
 	/**
 	 * Get all data from table.
 	 * @param conditions

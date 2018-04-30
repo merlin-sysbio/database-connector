@@ -1,5 +1,6 @@
 package pt.uminho.sysbio.common.database.connector.databaseAPI;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -8,6 +9,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
+import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.sysbio.merlin.utilities.containers.model.CompartmentContainer;
+import pt.uminho.sysbio.merlin.utilities.containers.model.MetaboliteContainer;
 import java.util.Set;
 
 /**
@@ -37,7 +45,44 @@ public class CompartmentsAPI {
 		rs.close();
 		
 	}
-
+	
+	
+//	/**
+//	 * @param compartments
+//	 * @param metabolites_id
+//	 * @param concurrentLinkedQueue
+//	 * @param statement
+//	 * @param databaseType
+//	 * @throws SQLException 
+//	 */
+//	public static void loadCompartments(ConcurrentLinkedQueue<CompartmentContainer> compartments, PreparedStatement statement, DatabaseType databaseType) throws SQLException{
+//		
+//		int i = 0;
+//		for (CompartmentContainer compartmentContainer : compartments) {
+//			
+//			String name = null;
+//			String abreviation = null;
+//			
+//			if(compartmentContainer.getName()!=null)
+//				name = DatabaseUtilities.databaseStrConverter(compartmentContainer.getName(), databaseType);
+//
+//			if(compartmentContainer.getAbbreviation()!=null)
+//				abreviation = DatabaseUtilities.databaseStrConverter(compartmentContainer.getAbbreviation(), databaseType);
+//
+//			statement.setString(1, name);
+//			statement.setString(2, abreviation);
+//			statement.addBatch();
+//
+//			if ((i + 1) % 5 == 0) {
+//
+//				statement.executeBatch(); 
+//			}
+//			i++;
+//		}
+//		statement.executeBatch();
+//	}
+	
+	
 	/**
 	 * Get the number of reactants in compartment.
 	 * @param aux
