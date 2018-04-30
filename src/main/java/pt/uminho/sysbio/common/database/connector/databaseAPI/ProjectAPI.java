@@ -629,7 +629,8 @@ public class ProjectAPI {
 		ResultSet rs = stmt.executeQuery("SELECT alias FROM aliases WHERE class = 'p' AND entity = "+id);
 
 		while(rs.next())
-			res.add(rs.getString(1));
+			if(rs.getString(1)!=null && !rs.getString(1).equalsIgnoreCase("null"))
+				res.add(rs.getString(1));
 
 		rs.close();
 		return res;
@@ -2651,7 +2652,8 @@ public class ProjectAPI {
 				+ "notes, lowerBound, upperBound, boolean_rule " +
 				"FROM reaction WHERE inModel AND " +conditions );
 
-		while(rs.next()){
+		while(rs.next()) {
+			
 			String[] list = new String[9];
 
 			list[0]=rs.getString(1);

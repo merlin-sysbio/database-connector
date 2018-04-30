@@ -3079,7 +3079,7 @@ public class TransportersAPI {
 	}
 	
 	/**
-	 * Get reactionIDs and ecNumbers WHERE source <> 'TRANSPORTERS'.
+	 * Get reactionIDs and ecNumbers WHERE source = 'TRANSPORTERS'.
 	 * @param statement
 	 * @return ArrayList<String[]> 
 	 * @throws SQLException
