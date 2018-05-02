@@ -606,12 +606,12 @@ public class ModelAPI {
 	public static void loadReaction(int idCompartment, boolean inModel, String ecNumber, Statement statement, boolean isTransport, DatabaseType databaseType, String name, String equation, boolean reversible, boolean generic, boolean spontaneous, 
 			boolean nonEnzymatic, String reactionSource, String notes, List<String> proteins, List<String> enzymes, Map<String, List<String>> ecNumbers, List<String> pathways, List<Integer> compounds, List<Integer> compartments, List<String> stoichiometry, 
 			List<String> chains) throws SQLException {
-		
+
 		String saveNote = "";
-		
+
 		if(notes != null)
 			saveNote = notes;
-		
+
 		String aux ="name = '"+DatabaseUtilities.databaseStrConverter(name, databaseType)+"_C"+idCompartment+"' AND ";
 
 		if(isTransport)
@@ -1359,8 +1359,8 @@ public class ModelAPI {
 		}
 
 		if(modules.contains(module_id)) {
-				
-//				stmt.execute("UPDATE enzyme_has_module SET note = '"+note+"' WHERE enzyme_ecnumber='"+ec_number+"' and module_id ="+module_id);
+
+			//				stmt.execute("UPDATE enzyme_has_module SET note = '"+note+"' WHERE enzyme_ecnumber='"+ec_number+"' and module_id ="+module_id);
 		}
 		else {
 
@@ -1370,7 +1370,7 @@ public class ModelAPI {
 				proteins.add(rs.getInt(1));
 
 			for(int protein : proteins)
-					stmt.execute("INSERT INTO enzyme_has_module (enzyme_protein_idprotein, enzyme_ecnumber, module_id) VALUES(" + protein + ", '"+ec_number+"', " +module_id+")");
+				stmt.execute("INSERT INTO enzyme_has_module (enzyme_protein_idprotein, enzyme_ecnumber, module_id) VALUES(" + protein + ", '"+ec_number+"', " +module_id+")");
 		}
 
 		stmt.close();
@@ -1386,7 +1386,7 @@ public class ModelAPI {
 	public static void updateECNumberModuleStatus(Connection conn, String ec_number, String status) throws SQLException {
 
 		Statement stmt = conn.createStatement();
-		
+
 		Set<Integer> proteins = new HashSet<>();
 		ResultSet rs = stmt.executeQuery("SELECT protein_idprotein FROM enzyme WHERE ecnumber = '"+ec_number+"'");
 
@@ -1395,7 +1395,7 @@ public class ModelAPI {
 
 		for(int protein : proteins)
 			stmt.execute("UPDATE enzyme SET gpr_status = '"+status+"' WHERE enzyme.ecnumber='"+ec_number+"' AND protein_idprotein="+protein);
-		
+
 		stmt.close();
 	}
 
@@ -1902,29 +1902,34 @@ public class ModelAPI {
 
 						for(String pathway:newPathwaysID.keySet()) {
 
-							statement.execute("INSERT INTO pathway_has_reaction (pathway_idpathway, reaction_idreaction) " +
-									"VALUES ("+pathway+","+idNewReaction+")");
+							rs = statement.executeQuery("SELECT * FROM pathway_has_reaction WHERE pathway_idpathway = '"+pathway+"' AND reaction_idreaction = "+idNewReaction);
 
-							for(String enzyme: newPathwaysID.get(pathway)) {
+							if(!rs.next()) {
 
-								String ecnumber = enzyme.split("___")[0];
+								statement.execute("INSERT INTO pathway_has_reaction (pathway_idpathway, reaction_idreaction) " +
+										"VALUES ("+pathway+","+idNewReaction+")");
 
-								String idProtein = enzyme.split("___")[2];
+								for(String enzyme: newPathwaysID.get(pathway)) {
 
-								rs = statement.executeQuery("SELECT * FROM pathway_has_enzyme WHERE enzyme_ecnumber='" + ecnumber+ "' AND pathway_idpathway = "+pathway+ " AND enzyme_protein_idprotein = "+idProtein);
+									String ecnumber = enzyme.split("___")[0];
 
-								if(!rs.next()) {
+									String idProtein = enzyme.split("___")[2];
 
-									statement.execute("INSERT INTO pathway_has_enzyme (pathway_idpathway, enzyme_ecnumber,enzyme_protein_idprotein) " +
-											"VALUES ("+pathway+",'"+ecnumber+"',"+idProtein+")");
-								}
+									rs = statement.executeQuery("SELECT * FROM pathway_has_enzyme WHERE enzyme_ecnumber='" + ecnumber+ "' AND pathway_idpathway = "+pathway+ " AND enzyme_protein_idprotein = "+idProtein);
 
-								rs = statement.executeQuery("SELECT * FROM reaction_has_enzyme WHERE enzyme_ecnumber = '"+ecnumber+"' AND reaction_idreaction = "+idNewReaction+" AND enzyme_protein_idprotein = "+idProtein);
+									if(!rs.next()) {
 
-								if(!rs.next()) {
+										statement.execute("INSERT INTO pathway_has_enzyme (pathway_idpathway, enzyme_ecnumber,enzyme_protein_idprotein) " +
+												"VALUES ("+pathway+",'"+ecnumber+"',"+idProtein+")");
+									}
 
-									statement.execute("INSERT INTO reaction_has_enzyme (enzyme_ecnumber,enzyme_protein_idprotein,reaction_idreaction) " +
-											"VALUES ('"+ecnumber+"',"+idProtein+","+idNewReaction+") ");
+									rs = statement.executeQuery("SELECT * FROM reaction_has_enzyme WHERE enzyme_ecnumber = '"+ecnumber+"' AND reaction_idreaction = "+idNewReaction+" AND enzyme_protein_idprotein = "+idProtein);
+
+									if(!rs.next()) {
+
+										statement.execute("INSERT INTO reaction_has_enzyme (enzyme_ecnumber,enzyme_protein_idprotein,reaction_idreaction) " +
+												"VALUES ('"+ecnumber+"',"+idProtein+","+idNewReaction+") ");
+									}
 								}
 							}
 						}
@@ -2243,7 +2248,7 @@ public class ModelAPI {
 		String encodedEnzyme="";
 		if(encoded)
 			encodedEnzyme=" AND enzyme.inModel AND reaction.inModel";
-		
+
 		ArrayList<String[]> result = new ArrayList<>();
 
 		ResultSet rs = stmt.executeQuery("SELECT protein.name, enzyme.ecnumber," +
@@ -2257,9 +2262,9 @@ public class ModelAPI {
 				originalReaction+encodedEnzyme+
 				" GROUP BY idprotein, ecnumber "+//, reaction.inModel " +
 				" ORDER BY ecnumber  ASC, reaction.inModel DESC;");
-		
+
 		while(rs.next()) {
-			
+
 			String[] list = new String[8];
 
 			list[0]=rs.getString(1);
@@ -3502,15 +3507,15 @@ public class ModelAPI {
 		ResultSet rs = statement.executeQuery("SELECT locusTag, name FROM gene;");
 
 		while(rs.next()) {
-		
+
 			String gene = rs.getString(1);
-			
+
 			if(rs.getString(2) != null && !rs.getString(2).trim().isEmpty())
 				gene = gene.concat(" (").concat(rs.getString(2)).concat(")");
-			
+
 			lls.add(gene);
 		}
-		
+
 		rs.close();
 		return lls;
 	}
@@ -3671,29 +3676,29 @@ public class ModelAPI {
 		ResultSet rs = statement.executeQuery("SELECT boolean_rule FROM reaction WHERE idreaction = " + id);
 
 		if(rs.next()) {
-			
+
 			res = new ArrayList<>();
 			rawData = rs.getString(1);
 		}
-		
+
 		if(rawData != null) {
-			
+
 			String [] rules = rawData.split(" OR ");
-			
+
 			for(String rule : rules) {
-			
+
 				String [] ids = rule.split(" AND ");
-				
+
 				List<Pair<String, String>> pairList= new ArrayList<>();
-				
+
 				for(String idString : ids) {
-					
+
 					int geneId = Integer.parseInt(idString.trim());
-					
+
 					rs = statement.executeQuery("SELECT locusTag, name FROM gene WHERE idgene = " + geneId);
-					
+
 					while(rs.next()) {
-						
+
 						Pair<String, String> pair = new Pair<String, String> (rs.getString(1), rs.getString(2));
 						pairList.add(pair);
 					}
@@ -3701,7 +3706,7 @@ public class ModelAPI {
 				res.add(pairList);
 			}
 		}
-		
+
 		rs.close();
 		return res;
 	}
@@ -4107,9 +4112,9 @@ public class ModelAPI {
 				" INNER JOIN module_has_orthology ON module_has_orthology.orthology_id = gene_has_orthology.orthology_id "+
 				" INNER JOIN module ON module_has_orthology.module_id = module.id " +
 				" GROUP BY locusTag;");
-		
+
 		while(rs.next()) {
-			
+
 			String[] list = new String[5];
 
 			list[0]=rs.getString(1);
@@ -5520,20 +5525,20 @@ public class ModelAPI {
 	 * @throws SQLException 
 	 */
 	public static Map<Integer, Pair<String, String>> getGenesFromDatabase(Statement statement) throws SQLException {
-		
+
 		ResultSet rs = statement.executeQuery("SELECT locusTag, name, idgene FROM gene;");
-		
+
 		Map<Integer, Pair<String, String>> pairMap = new HashMap<>();
 		while(rs.next()) {
-			
+
 			Pair<String, String> pair = new Pair<String, String> (rs.getString(1), rs.getString(2));
 			pairMap.put(rs.getInt(3), pair);
 		}
-		
+
 		return pairMap;
 	}
-	
-	
+
+
 	/**
 	 * Get genes and locus from database
 	 * 
@@ -5542,16 +5547,16 @@ public class ModelAPI {
 	 * @throws SQLException 
 	 */
 	public static Map<Integer, Pair<String, String>> getGeneFromDatabase(int geneId, Statement statement) throws SQLException {
-		
+
 		ResultSet rs = statement.executeQuery("SELECT locusTag, name, idgene FROM gene WHERE idgene = " + geneId);
-		
+
 		Map<Integer, Pair<String, String>> pairMap = new HashMap<>();
 		while(rs.next()) {
-			
+
 			Pair<String, String> pair = new Pair<String, String> (rs.getString(1), rs.getString(2));
 			pairMap.put(rs.getInt(3), pair);
 		}
-		
+
 		return pairMap;
 	}
 
