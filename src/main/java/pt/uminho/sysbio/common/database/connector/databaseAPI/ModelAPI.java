@@ -3668,12 +3668,12 @@ public class ModelAPI {
 	 * @return String
 	 * @throws SQLException
 	 */
-	public static List<List<Pair<String, String>>> getBooleanRuleFromReaction(int id, Statement statement) throws SQLException{
+	public static List<List<Pair<String, String>>> getBooleanRuleFromReaction(String name, Statement statement) throws SQLException{
 
 		List<List<Pair<String, String>>> res = null;
 		String rawData = null;
 
-		ResultSet rs = statement.executeQuery("SELECT boolean_rule FROM reaction WHERE idreaction = " + id);
+		ResultSet rs = statement.executeQuery("SELECT boolean_rule FROM reaction WHERE name = '" + name+"';");
 
 		if(rs.next()) {
 
@@ -3692,6 +3692,8 @@ public class ModelAPI {
 				List<Pair<String, String>> pairList= new ArrayList<>();
 
 				for(String idString : ids) {
+					
+					if(!idString.isEmpty()) {
 
 					int geneId = Integer.parseInt(idString.trim());
 
@@ -3701,6 +3703,7 @@ public class ModelAPI {
 
 						Pair<String, String> pair = new Pair<String, String> (rs.getString(1), rs.getString(2));
 						pairList.add(pair);
+					}
 					}
 				}
 				res.add(pairList);
