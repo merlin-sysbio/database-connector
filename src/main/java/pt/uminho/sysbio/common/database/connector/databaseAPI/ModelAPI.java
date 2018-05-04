@@ -5312,7 +5312,7 @@ public class ModelAPI {
 	 * @return ArrayList<String[]>
 	 * @throws SQLException
 	 */
-	public static ArrayList<String[]> getReactionHasEnzymeData4(Statement stmt) throws SQLException{
+	public static ArrayList<String[]> getReactionGenes(Statement stmt) throws SQLException{
 
 		ArrayList<String[]> result = new ArrayList<>();
 
