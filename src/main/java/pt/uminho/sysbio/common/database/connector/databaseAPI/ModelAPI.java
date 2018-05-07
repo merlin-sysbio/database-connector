@@ -2441,7 +2441,7 @@ public class ModelAPI {
 		return result;		
 
 	}
-	
+
 	/**
 	 * Retrieves information from reaction_has_enzyme table
 	 * @param stmt
@@ -2512,7 +2512,7 @@ public class ModelAPI {
 				"INNER JOIN subunit ON (subunit.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein "
 				+ "AND subunit.enzyme_ecnumber = reaction_has_enzyme.enzyme_ecnumber) " +
 				"INNER JOIN gene ON (gene_idgene = gene.idgene) " +
-//				"WHERE (note is null OR note NOT LIKE 'unannotated') " +
+				//				"WHERE (note is null OR note NOT LIKE 'unannotated') " +
 				"ORDER BY reaction_idreaction;");
 
 		ArrayList<String[]> result = new ArrayList<>();
@@ -3681,6 +3681,27 @@ public class ModelAPI {
 			rawData = rs.getString(1);
 		}
 
+		rs.close();
+		
+		res = ModelAPI.parseBooleanRule(rawData, statement);
+		
+		return res;
+	}
+	
+
+	/**
+	 * Parse boolean_rule from reaction for a given reactionID.
+	 * 
+	 * @param id
+	 * @param statement
+	 * @return String
+	 * @throws SQLException
+	 */
+	public static List<List<Pair<String, String>>> parseBooleanRule(String rawData, Statement statement) throws SQLException{
+
+		List<List<Pair<String, String>>> res = new ArrayList<>();;
+		ResultSet rs = null;
+
 		if(rawData != null) {
 
 			String [] rules = rawData.split(" OR ");
@@ -3692,27 +3713,29 @@ public class ModelAPI {
 				List<Pair<String, String>> pairList= new ArrayList<>();
 
 				for(String idString : ids) {
-					
+
 					if(!idString.isEmpty()) {
 
-					int geneId = Integer.parseInt(idString.trim());
+						int geneId = Integer.parseInt(idString.trim());
 
-					rs = statement.executeQuery("SELECT locusTag, name FROM gene WHERE idgene = " + geneId);
+						rs = statement.executeQuery("SELECT locusTag, name FROM gene WHERE idgene = " + geneId);
 
-					while(rs.next()) {
+						while(rs.next()) {
 
-						Pair<String, String> pair = new Pair<String, String> (rs.getString(1), rs.getString(2));
-						pairList.add(pair);
-					}
+							Pair<String, String> pair = new Pair<String, String> (rs.getString(1), rs.getString(2));
+							pairList.add(pair);
+						}
+						
+						rs.close();
 					}
 				}
 				res.add(pairList);
 			}
 		}
-
-		rs.close();
 		return res;
 	}
+
+
 
 	/**
 	 * Get data from compound table for a given reactionID.
@@ -4108,13 +4131,13 @@ public class ModelAPI {
 				" INNER JOIN module_has_orthology ON module_has_orthology.orthology_id = gene_has_orthology.orthology_id "+
 				"GROUP BY locusTag;");
 
-		System.out.println("SELECT idgene, locusTag, name, count(DISTINCT(reaction)), count(enzyme_ecnumber) "+
-				" FROM gene LEFT JOIN subunit ON gene.idgene = gene_idgene "+
-				" INNER JOIN enzyme ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein "+
-				" INNER JOIN gene_has_orthology ON gene_has_orthology.gene_idgene = gene.idgene "+
-				" INNER JOIN module_has_orthology ON module_has_orthology.orthology_id = gene_has_orthology.orthology_id "+
-				" INNER JOIN module ON module_has_orthology.module_id = module.id " +
-				" GROUP BY locusTag;");
+		//		System.out.println("SELECT idgene, locusTag, name, count(DISTINCT(reaction)), count(enzyme_ecnumber) "+
+		//				" FROM gene LEFT JOIN subunit ON gene.idgene = gene_idgene "+
+		//				" INNER JOIN enzyme ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein "+
+		//				" INNER JOIN gene_has_orthology ON gene_has_orthology.gene_idgene = gene.idgene "+
+		//				" INNER JOIN module_has_orthology ON module_has_orthology.orthology_id = gene_has_orthology.orthology_id "+
+		//				" INNER JOIN module ON module_has_orthology.module_id = module.id " +
+		//				" GROUP BY locusTag;");
 
 		while(rs.next()) {
 
@@ -5320,7 +5343,7 @@ public class ModelAPI {
 				"FROM reaction_has_enzyme " +
 				"INNER JOIN subunit ON (subunit.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein AND subunit.enzyme_ecnumber = reaction_has_enzyme.enzyme_ecnumber) " +
 				"INNER JOIN gene ON (gene_idgene = gene.idgene) " +
-				"WHERE (note is null OR note NOT LIKE 'unannotated') " +
+				//"WHERE (note is null OR note NOT LIKE 'unannotated') " +
 				"ORDER BY reaction_idreaction;");
 
 		while(rs.next()){
