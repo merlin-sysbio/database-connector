@@ -5437,7 +5437,7 @@ public class ModelAPI {
 	 */
 	public static String getDrainsPathway(Statement stmt) throws SQLException{
 
-		String res = "";
+		String res = null;
 
 		ResultSet rs = stmt.executeQuery("SELECT name FROM pathway WHERE name = 'Drains pathway'");
 
