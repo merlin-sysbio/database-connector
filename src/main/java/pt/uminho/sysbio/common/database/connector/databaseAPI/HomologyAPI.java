@@ -1890,7 +1890,7 @@ public class HomologyAPI {
 
 		ArrayList<String[]> result = new ArrayList<>();
 
-		ResultSet rs = stmt.executeQuery("SELECT s_key, geneHomology_s_key, productName, rank  FROM productRank");
+		ResultSet rs = stmt.executeQuery("SELECT s_key, geneHomology_s_key, productName, rank FROM productRank");
 
 		while(rs.next()){
 			String[] list = new String[4];
