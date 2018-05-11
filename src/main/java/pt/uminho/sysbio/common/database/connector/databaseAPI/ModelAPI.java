@@ -39,7 +39,6 @@ import pt.uminho.sysbio.merlin.utilities.containers.model.MetaboliteContainer;
 public class ModelAPI {
 
 
-
 	private static final int BATCH_SIZE = 500;
 
 	/**
@@ -5613,6 +5612,28 @@ public class ModelAPI {
 		}
 
 		return pairMap;
+	}
+	
+	/**
+	 * Get drains in model
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException 
+	 */
+	public static Set<Integer> getModelDrains(Statement statement) throws SQLException {
+
+		ResultSet rs = statement.executeQuery("SELECT idreaction, COUNT(stoichiometry.compound_idcompound),  COUNT(stoichiometry.compartment_idcompartment) FROM reaction "
+				+ " INNER JOIN stoichiometry on reaction_idreaction = idreaction "
+				+ " GROUP BY idreaction");
+
+		Set<Integer> ret = new HashSet<>();
+		
+		while(rs.next())
+			if(rs.getInt(2)==1 && rs.getInt(3)==1)
+				ret.add(rs.getInt(1));
+
+		return ret;
 	}
 
 }	
