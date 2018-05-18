@@ -2673,7 +2673,7 @@ public class ProjectAPI {
 	public static String countTableEntries(String table, Statement stmt) throws SQLException{
 
 		String result = "";
-
+		
 		ResultSet rs = stmt.executeQuery("SELECT count(*) FROM "+table+";");
 		if(rs.next())
 			result = rs.getString(1);
