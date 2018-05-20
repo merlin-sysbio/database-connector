@@ -39,7 +39,6 @@ import pt.uminho.sysbio.merlin.utilities.containers.model.MetaboliteContainer;
 public class ModelAPI {
 
 
-
 	private static final int BATCH_SIZE = 500;
 
 	/**
@@ -2512,7 +2511,7 @@ public class ModelAPI {
 				"INNER JOIN subunit ON (subunit.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein "
 				+ "AND subunit.enzyme_ecnumber = reaction_has_enzyme.enzyme_ecnumber) " +
 				"INNER JOIN gene ON (gene_idgene = gene.idgene) " +
-				//				"WHERE (note is null OR note NOT LIKE 'unannotated') " +
+//				"WHERE (note is null OR note NOT LIKE 'unannotated') " +
 				"ORDER BY reaction_idreaction;");
 
 		ArrayList<String[]> result = new ArrayList<>();
@@ -3668,12 +3667,12 @@ public class ModelAPI {
 	 * @return String
 	 * @throws SQLException
 	 */
-	public static List<List<Pair<String, String>>> getBooleanRuleFromReaction(String name, Statement statement) throws SQLException{
+	public static List<List<Pair<String, String>>> getBooleanRuleFromReaction(int idReaction, Statement statement) throws SQLException{
 
 		List<List<Pair<String, String>>> res = null;
 		String rawData = null;
 
-		ResultSet rs = statement.executeQuery("SELECT boolean_rule FROM reaction WHERE name = '" + name+"';");
+		ResultSet rs = statement.executeQuery("SELECT boolean_rule FROM reaction WHERE idreaction = '" + idReaction+"';");
 
 		if(rs.next()) {
 
@@ -3712,6 +3711,8 @@ public class ModelAPI {
 
 				List<Pair<String, String>> pairList= new ArrayList<>();
 
+				
+				
 				for(String idString : ids) {
 
 					if(!idString.isEmpty()) {
@@ -3732,6 +3733,59 @@ public class ModelAPI {
 				res.add(pairList);
 			}
 		}
+		return res;
+	}
+	
+	/**
+	 * Get boolean_rule from reaction for a given reactionID.
+	 * 
+	 * @param id
+	 * @param statement
+	 * @return String
+	 * @throws SQLException
+	 */
+	public static List<List<Pair<String, String>>> getOldBooleanRuleFromReaction(int id, Statement statement) throws SQLException{
+
+		List<List<Pair<String, String>>> res = null;
+		String rawData = null;
+
+		ResultSet rs = statement.executeQuery("SELECT boolean_rule FROM reaction WHERE idreaction = " + id);
+
+		if(rs.next()) {
+
+			res = new ArrayList<>();
+			rawData = rs.getString(1);
+		}
+
+		if(rawData != null) {
+
+			String [] rules = rawData.split(" OR ");
+
+			for(String rule : rules) {
+
+				String [] ids = rule.split(" AND ");
+
+				List<Pair<String, String>> pairList= new ArrayList<>();
+
+				for(String idString : ids) {
+
+					String locusTag = idString;
+					if(idString.contains("_"))
+						locusTag = idString.split("_")[1];
+						
+					rs = statement.executeQuery("SELECT locusTag, name FROM gene WHERE locusTag = '" +locusTag+"'");
+
+					while(rs.next()) {
+
+						Pair<String, String> pair = new Pair<String, String> (rs.getString(1), rs.getString(2));
+						pairList.add(pair);
+					}
+				}
+				res.add(pairList);
+			}
+		}
+		
+		rs.close();
 		return res;
 	}
 
@@ -4064,7 +4118,7 @@ public class ModelAPI {
 
 		ArrayList<String[]> result = new ArrayList<>();
 
-		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag, name, count(DISTINCT(module_id)), count(DISTINCT(enzyme_ecnumber)) "+
+		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag, name, count(DISTINCT(module_has_orthology.module_id)), count(DISTINCT(enzyme_ecnumber)) "+
 				" FROM gene LEFT JOIN subunit ON gene.idgene = gene_idgene "+
 				" LEFT JOIN enzyme ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein "+
 				" LEFT JOIN gene_has_orthology ON gene_has_orthology.gene_idgene = gene.idgene "+
@@ -5408,7 +5462,7 @@ public class ModelAPI {
 	 */
 	public static String getDrainsPathway(Statement stmt) throws SQLException{
 
-		String res = "";
+		String res = null;
 
 		ResultSet rs = stmt.executeQuery("SELECT name FROM pathway WHERE name = 'Drains pathway'");
 
@@ -5584,6 +5638,28 @@ public class ModelAPI {
 		}
 
 		return pairMap;
+	}
+	
+	/**
+	 * Get drains in model
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException 
+	 */
+	public static Set<Integer> getModelDrains(Statement statement) throws SQLException {
+
+		ResultSet rs = statement.executeQuery("SELECT idreaction, COUNT(stoichiometry.compound_idcompound),  COUNT(stoichiometry.compartment_idcompartment) FROM reaction "
+				+ " INNER JOIN stoichiometry on reaction_idreaction = idreaction "
+				+ " GROUP BY idreaction");
+
+		Set<Integer> ret = new HashSet<>();
+		
+		while(rs.next())
+			if(rs.getInt(2)==1 && rs.getInt(3)==1)
+				ret.add(rs.getInt(1));
+
+		return ret;
 	}
 
 }	
