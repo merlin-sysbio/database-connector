@@ -2,9 +2,9 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>pt.uminho.sysbio.merlin</groupId>
+	<groupId>pt.uminho.ceb.biosystems.merlin</groupId>
 	<artifactId>database-connector</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>database-connector</name>
@@ -14,7 +14,9 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.7</maven.compiler.source>
 		<maven.compiler.target>1.7</maven.compiler.target>
-		<pt.uminho.sysbio.version>0.0.1-SNAPSHOT</pt.uminho.sysbio.version>
+		<pt.uminho.ceb.biosystems.merlin.version>0.0.2-SNAPSHOT</pt.uminho.ceb.biosystems.merlin.version>
+		<pt.uminho.ceb.biosystems.merlin.groupId>pt.uminho.ceb.biosystems.merlin</pt.uminho.ceb.biosystems.merlin.groupId>
+
 	</properties>
 
 	<repositories>
@@ -100,9 +102,9 @@
 		</dependency>
 		
 		<dependency>
-			<groupId>pt.uminho.sysbio.merlin</groupId>
+			<groupId>${pt.uminho.ceb.biosystems.merlin.groupId}</groupId>
 			<artifactId>merlin-utilities</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>${pt.uminho.ceb.biosystems.merlin.version}</version>
 		</dependency>
 	</dependencies>
 

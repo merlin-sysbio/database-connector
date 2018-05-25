@@ -1,4 +1,4 @@
-package pt.uminho.sysbio.common.database.connector.datatypes;
+package pt.uminho.ceb.biosystems.merlin.database.connector.datatypes;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,9 +12,9 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
-import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
-import pt.uminho.sysbio.merlin.utilities.DatabaseFilesPaths;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.ceb.biosystems.merlin.utilities.DatabaseFilesPaths;
+import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 
 public class DatabaseSchemas {
 
@@ -338,7 +338,7 @@ public class DatabaseSchemas {
 		List<String> list= new ArrayList<String>();
 		List<String> schemasList = new ArrayList<String>();
 		List<String> tablesCheck = new ArrayList<String>();
-		tablesCheck.add("enzymes_annotation_geneHomology");
+		tablesCheck.add("enzymes_annotation_genehomology");
 		tablesCheck.add("genehomology");
 		tablesCheck.add("geneblast");
 		

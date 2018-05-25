@@ -1,5 +1,6 @@
-package pt.uminho.sysbio.common.database.connector.databaseAPI;
+package pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -17,15 +18,25 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
+import pt.uminho.ceb.biosystems.merlin.utilities.containers.model.MetaboliteContainer;
+import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
-import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
-import pt.uminho.sysbio.merlin.utilities.containers.model.MetaboliteContainer;
 
 /**
  * @author Oscar Dias
  *
  */
 public class ProjectAPI {
+	
+	private static final Logger logger = LoggerFactory.getLogger(ProjectAPI.class);
+
+	private static final String CLEAN_TABLES_FILE = FileUtils.getConfFolderPath()+"cleanFK.txt";
+	private static final String SEPARATOR = "\t";
+	private static final int DEFAULT_INDEX_KEY = 0;
 
 	/**
 	 * Get project id.
@@ -329,7 +340,7 @@ public class ProjectAPI {
 				rs = meta.getTables(null, null, oldName, new String[] {"TABLE","VIEW"});
 				if(rs.next()) {
 					Statement stmt = connection.createStatement();
-					stmt.execute("ALTER TABLE "+oldName+" RENAME TO "+newName+";");
+					stmt.execute("RENAME TABLE "+oldName+" TO "+newName+";");
 					stmt.close();
 					return true;
 				}
@@ -435,11 +446,6 @@ public class ProjectAPI {
 				+ " INNER JOIN psort_reports AS pr ON pc.psort_report_id=pr.id "
 				+ " WHERE pr.id='"+id+"' ORDER BY pc.score DESC");
 
-		System.out.println("SELECT c.name, pc.score FROM psort_reports_has_compartments  AS pc "
-				+ " INNER JOIN compartments AS c ON pc.compartment_id=c.id "
-				+ " INNER JOIN psort_reports AS pr ON pc.psort_report_id=pr.id "
-				+ " WHERE pr.id='"+id+"' ORDER BY pc.score DESC");
-		
 		while(rs.next()){
 			String[] list = new String[2];
 			list[0]=rs.getString(1);
@@ -626,7 +632,8 @@ public class ProjectAPI {
 		ResultSet rs = stmt.executeQuery("SELECT alias FROM aliases WHERE class = 'p' AND entity = "+id);
 
 		while(rs.next())
-			res.add(rs.getString(1));
+			if(rs.getString(1)!=null && !rs.getString(1).equalsIgnoreCase("null"))
+				res.add(rs.getString(1));
 
 		rs.close();
 		return res;
@@ -826,16 +833,25 @@ public class ProjectAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static HashMap<String,String[]> countReactionsByPathwayID(HashMap<String,String[]> qls, Statement stmt) throws SQLException{
-
+	public static HashMap<String,String[]> countReactionsByPathwayID(HashMap<String,String[]> qls, Statement stmt) throws SQLException {
+		
+		String aux = " originalReaction";
+		
+		if(ProjectAPI.isCompartmentalisedModel(stmt))
+			aux = " NOT originalReaction ";
+		
 		ResultSet rs = stmt.executeQuery("SELECT pathway_idpathway, count(reaction_idreaction) " +
-				"FROM pathway " +
-				"RIGHT JOIN pathway_has_reaction ON pathway_idpathway=pathway.idpathway " +
-				"GROUP BY pathway_idpathway ORDER BY name;");
+				" FROM pathway " +
+				" INNER JOIN pathway_has_reaction ON pathway_idpathway=pathway.idpathway " +
+				" INNER JOIN reaction ON (reaction.idreaction = reaction_idreaction) " +
+				" WHERE " +aux+
+				" GROUP BY pathway_idpathway ORDER BY pathway.name;");
 
 		while(rs.next()) {
-
-			qls.get(rs.getString(1))[2] = rs.getString(2);
+			
+			if(qls.containsKey(rs.getString(1)))
+				qls.get(rs.getString(1))[2] = rs.getString(2);
+			
 		}
 
 		rs.close();
@@ -856,8 +872,11 @@ public class ProjectAPI {
 				"RIGHT JOIN pathway_has_enzyme ON pathway_idpathway=pathway.idpathway " +
 				"GROUP BY pathway_idpathway ORDER BY name;");
 
-		while(rs.next()) 
-			qls.get(rs.getString(1))[3] = rs.getString(2);
+		while(rs.next()) {
+			
+			if(qls.containsKey(rs.getString(1)))
+				qls.get(rs.getString(1))[3] = rs.getString(2);
+		}
 
 		rs.close();
 		return qls;
@@ -874,12 +893,23 @@ public class ProjectAPI {
 
 		ArrayList<String[]> result = new ArrayList<>();
 
+		String aux = " AND originalReaction";
+		
+		if(ProjectAPI.isCompartmentalisedModel(stmt));
+			aux = " AND NOT originalReaction ";
+		
 		ResultSet rs = stmt.executeQuery("SELECT distinct(reaction.idreaction), name, equation " +
 				"FROM pathway_has_reaction " +
 				"INNER JOIN reaction ON idreaction = reaction_idreaction " +
-				"WHERE pathway_idpathway = " + id + " " +
+				"WHERE pathway_idpathway = " + id + aux +
 				"ORDER BY name;");
 
+		System.out.println("SELECT distinct(reaction.idreaction), name, equation " +
+				"FROM pathway_has_reaction " +
+				"INNER JOIN reaction ON idreaction = reaction_idreaction " +
+				"WHERE pathway_idpathway = " + id + aux +
+				"ORDER BY name;");
+		
 		while(rs.next()){
 			String[] list = new String[3];
 			list[0]=rs.getString(1);
@@ -2140,11 +2170,11 @@ public class ProjectAPI {
 
 			if(!index.containsKey(rs.getString(1))) {
 
-				index.put(rs.getString(1), new Integer(1));
+				index.put(rs.getString(1), Integer.valueOf(1));
 			}
 			else {
 
-				Integer ne = new Integer(index.get(rs.getString(1)).intValue() + 1);
+				Integer ne = Integer.valueOf(index.get(rs.getString(1)).intValue() + 1);
 				index.put(rs.getString(1), ne);
 			}
 		}
@@ -2481,7 +2511,7 @@ public class ProjectAPI {
 		ResultSet rs = stmt.executeQuery("SELECT count(distinct(promoter_idpromoter)) FROM transcription_unit_promoter");
 
 		if(rs.next())
-			promoters_by_tus = (new Double(rs.getString(1)).doubleValue()) / (new Double(num).doubleValue());
+			promoters_by_tus = (Double.valueOf(rs.getString(1))) / (Double.valueOf(num));
 
 		rs.close();
 		return promoters_by_tus;
@@ -2500,7 +2530,7 @@ public class ProjectAPI {
 		ResultSet rs = stmt.executeQuery("SELECT count(distinct(gene_idgene)) FROM transcription_unit_gene");
 
 		if(rs.next())
-			gens_tu = new Integer(rs.getString(1)).intValue();
+			gens_tu = Integer.valueOf(rs.getString(1)).intValue();
 
 		rs.close();
 		return gens_tu;
@@ -2629,40 +2659,7 @@ public class ProjectAPI {
 		return result;
 	}
 
-	/**
-	 * Get reactions.
-	 * @param conditions
-	 * @param stmt
-	 * @return ArrayList<String[]>
-	 * @throws SQLException
-	 */
-	public static ArrayList<String[]> getReactions(String conditions, Statement stmt) throws SQLException{
-
-		ArrayList<String[]> result = new ArrayList<>();	
-
-		ResultSet rs = stmt.executeQuery("SELECT DISTINCT idreaction, name, equation, reversible, compartment_idcompartment, "
-				+ "notes, lowerBound, upperBound, boolean_rule " +
-				"FROM reaction WHERE inModel AND " +conditions );
-
-		while(rs.next()){
-			String[] list = new String[9];
-
-			list[0]=rs.getString(1);
-			list[1]=rs.getString(2);
-			list[2]=rs.getString(3);
-			list[3]=rs.getBoolean(4)+"";
-			list[4]=rs.getString(5);
-			list[5]=rs.getString(6);
-			list[6]=rs.getString(7);
-			list[7]=rs.getString(8);
-			list[8]=rs.getString(9);
-
-			result.add(list);
-		}
-		rs.close();
-		return result;
-	}
-
+	
 	/**
 	 * Get all data from table.
 	 * @param conditions
@@ -3813,12 +3810,100 @@ public class ProjectAPI {
 	 */
 	public static void mergeTables (Statement receiverDbStatement, String[] tableNames, String sourceDatabase, String destinyDatabase) throws SQLException{
 		
-		for(String tableName : tableNames){
-			
-			System.out.println(tableName);
-		
+		for(String tableName : tableNames)			
 			receiverDbStatement.execute("INSERT INTO " + destinyDatabase + "." + tableName + " SELECT * FROM " + sourceDatabase + "." + tableName + ";");
+	}
+	
+	/**
+	 * Method to retrieve all columns in a specific table.
+	 * 
+	 * @param table
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static List<String> getAllColumns(String table, Statement stmt) throws SQLException{
+
+		List<String> columns = new ArrayList<>();
+
+		ResultSet rs = stmt.executeQuery("SHOW COLUMNS FROM " + table + ";");
+
+		while(rs.next())
+			columns.add(rs.getString(1));
+
+		rs.close();
+		return columns;
+	}
+	
+	/**
+	 * Method to retrieve the name of all tables existing in the database.
+	 * 
+	 * @param table
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static List<String> getAllTablesNames(Statement stmt) throws SQLException{
+
+		List<String> columns = new ArrayList<>();
+
+		ResultSet rs = stmt.executeQuery("SHOW TABLES;");
+
+		while(rs.next())
+			columns.add(rs.getString(1));
+
+		rs.close();
+		return columns;
+	}
+	
+	
+	/**
+	 * Clean project tables with orphan foreign keys.
+	 * 
+	 * @param stmt
+	 * @throws IOException 
+	 * @throws SQLException 
+	 */
+	public static void cleanProjectsTables(boolean h2, Statement stmt) throws IOException, SQLException {
+
+		Map<String, String[]> data = FileUtils.readTableFileFormat(new File(CLEAN_TABLES_FILE), SEPARATOR, DEFAULT_INDEX_KEY);
+		
+		for(String id : data.keySet())
+			ProjectAPI.cleanNMTables(data.get(id)[1], data.get(id)[2], data.get(id)[4], data.get(id)[3], h2, stmt);
+		
+	}
+
+	/**
+	 * Delete orphan foreign keys.
+	 * 
+	 * @param table1
+	 * @param table1_id2
+	 * @param table2
+	 * @param table2_id2
+	 * @param stmt
+	 * @throws SQLException
+	 */
+	public static void cleanNMTables(String table1, String table1_id2, String table2, String table2_id2, boolean h2, Statement stmt) throws SQLException {
+		
+		
+		ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM "+table1+" tb1 WHERE  tb1."+table1_id2+" NOT IN (SELECT tb2."+table2_id2+" FROM  "+table2+" tb2);");
+		
+		
+		if(rs.next()) {
+			
+			int entries = rs.getInt(1);
+			logger.warn("warning, {} entries will be removed from table {} ",entries, table1);
+			if(entries>0) {
+				
+				if(h2)
+					stmt.execute("DELETE FROM "+table1+" tb1 WHERE  tb1."+table1_id2+" NOT IN (SELECT tb2."+table2_id2+" FROM  "+table2+" tb2);");
+				else 
+					stmt.execute("DELETE tb1 FROM "+table1+" tb1 WHERE  tb1."+table1_id2+" NOT IN (SELECT tb2."+table2_id2+" FROM  "+table2+" tb2);");
+				
+			}
 		}
 	}
+
 }
+
 

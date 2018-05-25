@@ -1,4 +1,4 @@
-package pt.uminho.sysbio.common.database.connector.databaseAPI;
+package pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -19,11 +19,11 @@ import org.slf4j.LoggerFactory;
 
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 
-import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
-import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseAccess;
-import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
-import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
-import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseAccess;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.ceb.biosystems.merlin.utilities.containers.capsules.AlignmentCapsule;
 
 
 /**
@@ -888,7 +888,7 @@ public class HomologyAPI {
 	 * @param statement
 	 * @return
 	 */
-	public static Set<String> getGenesFromDatabase(String eVal, String matrix, int numberOfAlignments, short word, String program, String databaseID, boolean deleteProcessing, Statement statement) {
+	public static Set<String> getGenesFromDatabase(double eVal, String matrix, int numberOfAlignments, short word, String program, String databaseID, boolean deleteProcessing, Statement statement) {
 
 		Set<String> loadedGenes = new HashSet<String>();
 
@@ -932,6 +932,8 @@ public class HomologyAPI {
 			while(rs.next()) {
 
 				if(rs.getString(3).contains(program) ) {
+					
+					System.out.println("4.0 delete " + rs.getString(2) + "     " + rs.getString(1));
 
 					loadedGenes.remove(rs.getString(2));
 					deleteGenes.add(rs.getString(1));
@@ -945,9 +947,13 @@ public class HomologyAPI {
 					" WHERE status = 'NO_SIMILARITY' " +
 					" AND databaseID <> '"+databaseID+"';");
 
+			System.out.println(databaseID);
+			
 			while(rs.next()) {
 
 				if(rs.getString(3).contains(program) ) {
+					
+					System.out.println("3.0 delete " + rs.getString(2) + "     " + rs.getString(1));
 
 					loadedGenes.remove(rs.getString(2));
 					deleteGenes.add(rs.getString(1));
@@ -956,20 +962,8 @@ public class HomologyAPI {
 
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-			//			// get processed genes
-			//			rs =statement.executeQuery("SELECT query, program FROM geneHomology " +
-			//					"INNER JOIN homologySetup ON (homologySetup.s_key = homologySetup_s_key) " +
-			//					"WHERE status = 'PROCESSED' " +
-			//					"AND matrix = '"+matrix+"' " +
-			//					"AND wordSize = 'wordSize';");
-			//
-			//			while(rs.next())
-			//				if(rs.getString(2).contains(program) )
-			//					loadedGenes.add(rs.getString(1));
-
-
 			//get genes with less than numberOfAlignments hits if new eVal > setup eVal and hit eVal< eVal 
-			rs =statement.executeQuery("SELECT geneHomology.s_key, COUNT(referenceID), query, program " +
+			rs =statement.executeQuery("SELECT geneHomology.s_key, COUNT(referenceID), query, program, maxNumberOfAlignments " +
 					"FROM homologySetup " +
 					"INNER JOIN geneHomology ON (homologySetup.s_key = homologySetup_s_key) " +
 					"INNER JOIN geneHomology_has_homologues ON (geneHomology.s_key = geneHomology_s_key) " +
@@ -981,10 +975,36 @@ public class HomologyAPI {
 
 			while(rs.next()) {
 
-				if(rs.getInt(2) < numberOfAlignments && rs.getString(4).contains(program) ) {
+				System.out.println(">> " + rs.getString(3) + "     +     " + rs.getInt(5));
+				
+				if(rs.getInt(5) < numberOfAlignments && rs.getInt(2) < numberOfAlignments && rs.getString(4).contains(program) ) {
 
-					loadedGenes.remove(rs.getString(3));
-					deleteGenes.add(rs.getString(1));
+//					loadedGenes.remove(rs.getString(3));
+//					deleteGenes.add(rs.getString(1));
+					
+					System.out.println("to delete " + rs.getString(3));
+				}
+			}
+
+
+			//
+			rs =statement.executeQuery("SELECT geneHomology.s_key, COUNT(referenceID), query, databaseID FROM homologySetup " +
+					" LEFT JOIN geneHomology ON (homologySetup.s_key = homologySetup_s_key) " +
+					" LEFT JOIN geneHomology_has_homologues ON (geneHomology.s_key = geneHomology_s_key) " +
+					" WHERE status='PROCESSED' AND geneHomology.s_key NOT IN (SELECT distinct (geneHomology.s_key) FROM homologySetup " +
+					" LEFT JOIN geneHomology ON (homologySetup.s_key = homologySetup_s_key) " +
+					" LEFT JOIN geneHomology_has_homologues ON (geneHomology.s_key = geneHomology_s_key) " +
+					" WHERE status='PROCESSED' AND geneHomology_has_homologues.eValue <" + eVal + ") " +
+					" GROUP BY geneHomology.s_key;");
+
+			while(rs.next()) {
+
+				if(!rs.getString(4).equals(databaseID)){
+
+//					loadedGenes.remove(rs.getString(3));
+//					deleteGenes.add(rs.getString(1));
+					
+					System.out.println("2.0 to delete " + rs.getString(3));
 				}
 			}
 
@@ -1366,16 +1386,79 @@ public class HomologyAPI {
 	}
 
 	/**
+	 * Get last database used in the last "session"
+	 * 
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String getLastestUsedBlastDatabase(Statement statement) throws SQLException{
+
+		String latestDB = "";
+
+		ResultSet rs = statement.executeQuery("SELECT blastDB FROM scorerConfig WHERE latest;");
+
+		if(rs.next())
+			latestDB = rs.getString(1);
+
+		rs.close();
+		return latestDB;
+	}
+
+	/**
+	 * Get last database used in the last "session"
+	 * 
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static void setLastestUsedBlastDatabase(Statement statement, String latestDB) throws SQLException{
+
+		statement.execute("UPDATE scorerConfig SET latest = false;");
+
+		statement.execute("UPDATE scorerConfig SET latest = true WHERE blastDB = '" + latestDB + "';");
+
+	}
+
+	/**
+	 * Resets the configurations of all databases by deleting them.
+	 * merlin will automatically provide new standard configurations.
+	 * 
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static void resetAllScorers(Statement statement) throws SQLException{
+
+		statement.execute("DELETE FROM scorerConfig;");
+
+	}
+
+	/**
+	 * Deletes the configurations of a sprecific database.
+	 * merlin will automatically provide new standard configurations.
+	 * 
+	 * @param statement
+	 * @param blastDatabase
+	 * @throws SQLException
+	 */
+	public static void resetDatabaseScorer(Statement statement, String blastDatabase) throws SQLException{
+
+		statement.execute("DELETE FROm scorerConfig WHERE blastDB = '" + blastDatabase + "';");
+
+	}
+
+	/**
 	 * Get all data from scorerConfig table.
 	 * @param stmt
 	 * @return ArrayList<String>
 	 * @throws SQLException
 	 */
-	public static ArrayList<String> getCommitedScorerData(Statement stmt) throws SQLException{
+	public static ArrayList<String> getCommitedScorerData(Statement statement, String blastDatabase) throws SQLException{
 
 		ArrayList<String> result = new ArrayList<>();
 
-		ResultSet rs = stmt.executeQuery("SELECT * FROM scorerConfig;");
+		ResultSet rs = statement.executeQuery("SELECT * FROM scorerConfig WHERE blastDB = '" + blastDatabase +"';");
 
 		while(rs.next()){
 			result.add(rs.getString(1));
@@ -1383,7 +1466,41 @@ public class HomologyAPI {
 			result.add(rs.getString(3));
 			result.add(rs.getString(4));
 			result.add(rs.getString(5));
+			result.add(rs.getString(6));
 		}
+
+		rs.close();
+		return result;
+	}
+
+	/**
+	 * Method to indicate in the database that the best alpha for a specific blast database was found.
+	 * 
+	 * @param stmt
+	 * @return ArrayList<String>
+	 * @throws SQLException
+	 */
+	public static void setBestAlphaFound(Statement statement, String blastDatabase) throws SQLException{
+
+		statement.execute("UPDATE scorerConfig SET bestAlpha = true WHERE blastDB = '" + blastDatabase +"';");
+
+	}
+
+	/**
+	 * Get all commited databases from scorerConfig table.
+	 * 
+	 * @param stmt
+	 * @return ArrayList<String>
+	 * @throws SQLException
+	 */
+	public static ArrayList<String> bestAlphasFound(Statement statement) throws SQLException{
+
+		ArrayList<String> result = new ArrayList<>();
+
+		ResultSet rs = statement.executeQuery("SELECT blastDB FROM scorerConfig WHERE bestAlpha;");
+
+		while(rs.next())
+			result.add(rs.getString(1));
 
 		rs.close();
 		return result;
@@ -1773,7 +1890,7 @@ public class HomologyAPI {
 
 		ArrayList<String[]> result = new ArrayList<>();
 
-		ResultSet rs = stmt.executeQuery("SELECT s_key, geneHomology_s_key, productName, rank  FROM productRank");
+		ResultSet rs = stmt.executeQuery("SELECT s_key, geneHomology_s_key, productName, rank FROM productRank");
 
 		while(rs.next()){
 			String[] list = new String[4];
@@ -1820,10 +1937,10 @@ public class HomologyAPI {
 			result.add(list);
 		}
 		rs.close();
-		
+
 		return result;
 	}
-	
+
 	/**
 	 * Get gene blast database information.
 	 * @param stmt
@@ -1833,7 +1950,7 @@ public class HomologyAPI {
 	public static Map<String, Set<Integer>> getGenesPerDatabase(Statement stmt) throws SQLException{
 
 		Map<String, Set<Integer>> result = new TreeMap<>();
-		
+
 		ResultSet rs = stmt.executeQuery("SELECT geneHomology.s_key, databaseID" +
 				" FROM geneHomology" +
 				" INNER JOIN homologySetup ON (homologySetup.s_key = homologySetup_s_key)" +
@@ -1841,18 +1958,18 @@ public class HomologyAPI {
 				" ORDER BY locusTag, status DESC;");
 
 		while(rs.next()) {
-			
+
 			if(result.containsKey(rs.getObject(2))) {
-				
+
 				Set<Integer> keys = result.get(rs.getString(2));
 				keys.add(rs.getInt(1));
-				
+
 				result.put(rs.getString(2), keys);
 			}
 			else {
 				Set<Integer> keys = new HashSet<>();
 				keys.add(rs.getInt(1));
-				
+
 				result.put(rs.getString(2), keys);
 			}
 		}
@@ -2222,7 +2339,7 @@ public class HomologyAPI {
 
 		String ecnumber = capsule.getEcNumber();
 
-		Map<String, Set<String>> modules = capsule.getModules();
+		Map<String, Set<Integer>> modules = capsule.getModules();
 
 		Map<String, Set<String>> closestOrthologs = capsule.getClosestOrthologues();
 
@@ -2256,16 +2373,17 @@ public class HomologyAPI {
 				orthology_id = rs.getString(1);
 			}
 			rs = statement.executeQuery("SELECT * FROM gene_has_orthology WHERE gene_idgene='"+idGene+"' AND orthology_id='"+orthology_id+"';");
-
+			
 			if(!rs.next())	
 				statement.execute("INSERT INTO gene_has_orthology (gene_idgene,orthology_id, similarity) VALUES("+idGene+","+orthology_id+", "+ score +" );");
 
 			rs = statement.executeQuery("SELECT protein_idprotein FROM enzyme WHERE ecnumber='"+ecnumber+"';");
 			rs.next();
 			int protein_idprotein = rs.getInt(1);
-			rs = statement.executeQuery("SELECT module_id, note FROM subunit WHERE gene_idgene='"+idGene+"' AND enzyme_ecnumber = '"+ecnumber+"';");
+			
+			rs = statement.executeQuery("SELECT module_id, note FROM enzyme_has_module WHERE enzyme_protein_idprotein = '"+protein_idprotein+"';");
 
-			List<String> modules_ids = new ArrayList<String>();
+			List<Integer> modules_ids = new ArrayList<>();
 			boolean exists = false, noModules=true;
 
 			String note = "unannotated";
@@ -2277,7 +2395,7 @@ public class HomologyAPI {
 				if(rs.getInt(1)>0) {
 
 					noModules = false;
-					modules_ids.add(rs.getString(1));
+					modules_ids.add(rs.getInt(1));
 				}
 
 				if(rs.getString(2)!=null && !rs.getString(2).equalsIgnoreCase("null"))
@@ -2285,8 +2403,10 @@ public class HomologyAPI {
 				else
 					note = "";
 			}
+			
 			if(modules != null){
-				for(String module_id : modules.get(ortholog)) {
+				
+				for(int module_id : modules.get(ortholog)) {
 
 					if(modules_ids.contains(module_id)) {
 
@@ -2310,7 +2430,7 @@ public class HomologyAPI {
 		rs.close();
 	}
 
-	
+
 	/**
 	 * Method to return the databases used to perform the blast.
 	 * 
@@ -2321,7 +2441,7 @@ public class HomologyAPI {
 	public static String[] getBlastDatabases(Statement statement) throws SQLException{
 
 		String[] databases = new String[1];
-				
+
 		ResultSet rs = statement.executeQuery("SELECT COUNT(DISTINCT(databaseID)) FROM homologySetup");
 
 		if(rs.next())
@@ -2330,44 +2450,66 @@ public class HomologyAPI {
 		rs = statement.executeQuery("SELECT DISTINCT(databaseID) FROM homologySetup");
 
 		int i = 1;
-		
+
 		while(rs.next()){
 			databases[i] = rs.getString(1);
 			i++;
 		}
 
 		databases[0] = "all databases";
-		
+
 		rs.close();
 		return databases;
 	}
-		
-		/**
-		 * Method to check if the statement is still working. If not, the a new statement is generated. 
-		 * 
-		 * @param dbAccess
-		 * @param statement
-		 * @return
-		 * @throws SQLException 
-		 */
-		public static Statement checkStatement(DatabaseAccess dbAccess, Statement statement) throws SQLException{
-			
-			try {
-				
-				statement.executeQuery("SELECT * FROM scorerConfig");
-				
-			} 
-			catch(CommunicationsException e) {
-				
-				Connection connection = new Connection(dbAccess);
-				
-				statement = connection.createStatement();
-				
-				logger.info("New SQL connection generated due to communications exception.");
-				
-			}
-			
-			return statement;
+
+	/**
+	 * Method to check if the statement is still working. If not, the a new statement is generated. 
+	 * 
+	 * @param dbAccess
+	 * @param statement
+	 * @return
+	 * @throws SQLException 
+	 */
+	public static Statement checkStatement(DatabaseAccess dbAccess, Statement statement) throws SQLException{
+
+		try {
+
+			statement.executeQuery("SELECT * FROM scorerConfig");
+
+		} 
+		catch(CommunicationsException e) {
+
+			Connection connection = new Connection(dbAccess);
+
+			statement = connection.createStatement();
+
+			logger.info("New SQL connection generated due to communications exception.");
+
 		}
+
+		return statement;
+	}
+	
+	/**
+	 * Method to check if the database has commited data.
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException 
+	 */
+	public static boolean hasCommitedData(Statement statement) throws SQLException{
 		
+		int size = 0;
+
+		ResultSet rs = statement.executeQuery("SELECT COUNT(s_key) FROM homologyData;");
+
+		if(rs.next())
+			size = rs.getInt(1);
+
+		if(size > 0)
+			return true;
+
+		return false;
+	}
+
 }
