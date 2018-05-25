@@ -17,9 +17,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.swing.table.TableStringConverter;
-import javax.swing.text.html.parser.Parser;
-
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
 import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
 import pt.uminho.sysbio.merlin.utilities.containers.model.MetaboliteContainer;

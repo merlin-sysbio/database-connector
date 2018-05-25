@@ -1,7 +1,6 @@
 package pt.uminho.sysbio.common.database.connector.datatypes;
 
 	import java.io.Externalizable;
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
