@@ -3,7 +3,6 @@ package tests;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -11,12 +10,12 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI.ModelAPI;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseAccess;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.MySQLDatabaseAccess;
+import pt.uminho.ceb.biosystems.merlin.utilities.Utilities;
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
-import pt.uminho.sysbio.common.database.connector.databaseAPI.ModelAPI;
-import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
-import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseAccess;
-import pt.uminho.sysbio.common.database.connector.datatypes.MySQLDatabaseAccess;
-import pt.uminho.sysbio.merlin.utilities.Utilities;
 
 public class Tests {
 

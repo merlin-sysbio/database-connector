@@ -1,7 +1,6 @@
-package pt.uminho.sysbio.common.database.connector.datatypes;
+package pt.uminho.ceb.biosystems.merlin.database.connector.datatypes;
 
 	import java.io.Externalizable;
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -14,57 +13,76 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.LinkedList;
 
-import org.h2.jdbcx.JdbcConnectionPool;
+import javax.sql.PooledConnection;
 
-import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
-import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
+import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource;
+
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 
 	/**
-	 * @author António Dias
+	 * @author Oscar Dias
 	 *
 	 */
-	public class H2DatabaseAccess implements DatabaseAccess, Externalizable{
+	public class MySQLDatabaseAccess implements DatabaseAccess, Externalizable {
 
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = 1L;
-		private String database_name, database_port, database_user, database_password, database_path;
+		private String database_host, database_port, database_name, database_user, database_password;
 		private Connection connection;
-		
+		private transient MysqlConnectionPoolDataSource dataSource;
+
 		/**
 		 * 
 		 */
-		public H2DatabaseAccess() {
-			super();
-		}
-		
-		/**
-		 * @param user
-		 * @param password
-		 * @param database_name
-		 */
-		public H2DatabaseAccess(String user, String password, String database_name){
+		public MySQLDatabaseAccess() {
 			
-			this.database_name=database_name;
-			this.database_user=user;
-			this.database_password=password;
-			this.database_path=FileUtils.getHomeFolderPath();
+			this.dataSource = new MysqlConnectionPoolDataSource();
 		}
 
 		/**
 		 * @param user
 		 * @param password
-		 * @param database_name
+		 * @param server
+		 * @param port
+		 * @param database
 		 */
-		public H2DatabaseAccess(String user, String password, String database_name, String database_path){
+		public MySQLDatabaseAccess(String user, String password, String server, String port, String database) {
 			
-			this.database_name=database_name;
+			this.database_host=server;
+			this.database_port=port+"";
+			this.database_name=database;
 			this.database_user=user;
 			this.database_password=password;
-			this.database_path=database_path;
-			if(this.database_path==null)
-				this.database_path=FileUtils.getHomeFolderPath();
+			this.dataSource = new MysqlConnectionPoolDataSource();
+			this.dataSource.setUser(user);
+			this.dataSource.setPassword(password);
+			this.dataSource.setServerName(server);
+			this.dataSource.setPortNumber(Integer.valueOf(port));
+			this.dataSource.setDatabaseName(database);
+			this.dataSource.setAutoReconnect(true);
+		}
+
+		/**
+		 * @param user
+		 * @param password
+		 * @param server
+		 * @param port
+		 * @param database
+		 */
+		public MySQLDatabaseAccess(String user, String password, String server, int port, String database) {
+			
+			this(user, password, server, port+"", database);
+//			this.database_host=server;
+//			this.database_port=port+"";
+//			this.database_name=database;
+//			this.database_user=user;
+//			this.database_password=password;
+//			this.dataSource = new MysqlConnectionPoolDataSource();
+//			this.dataSource.setUser(user);
+//			this.dataSource.setPassword(password);
+//			this.dataSource.setServerName(server);
+//			this.dataSource.setPortNumber(Integer.valueOf(port));
+//			this.dataSource.setDatabaseName(database);
+//			this.dataSource.setAutoReconnect(true);
 		}
 
 		/**
@@ -75,11 +93,8 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		 */
 		public Connection openConnection() throws SQLException {
 			
-//			String path = new File(FileUtils.getCurrentDirectory()).getParentFile().getParent();
-//			JdbcConnectionPool connect = JdbcConnectionPool.create("jdbc:h2:"+path+"/h2Database/"+this.database_name+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;MODE=MySQL;DATABASE_TO_UPPER=FALSE;",this.database_user,this.database_password);
-			JdbcConnectionPool connect = JdbcConnectionPool.create("jdbc:h2:"+this.database_path+"/h2Database/"+this.database_name+";MODE=MySQL;DATABASE_TO_UPPER=FALSE;MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE",this.database_user,this.database_password);
+			PooledConnection connect = this.dataSource.getPooledConnection();
 			this.connection=connect.getConnection();
-
 			return this.connection;
 		}
 
@@ -542,7 +557,7 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		 * @return
 		 * @throws SQLException 
 		 */
-		public String[] getMeta(String table, pt.uminho.sysbio.common.database.connector.datatypes.Connection connection) throws SQLException {
+		public String[] getMeta(String table, pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection connection) throws SQLException {
 
 			String[] res = null;
 
@@ -574,7 +589,7 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 
 
 		public String get_database_host() {
-			return database_name;
+			return database_host;
 		}
 
 		public String get_database_port() {
@@ -594,18 +609,15 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		}
 		
 		public DatabaseType get_database_type() {
-			return DatabaseType.H2;
-		}
-		
-		public String get_database_path() {
-			return database_path;
+			return DatabaseType.MYSQL;
 		}
 
 		/**
-		 * @param database_name the database_name to set
+		 * @param database_host the database_host to set
 		 */
 		public void setDatabase_host(String database_host) {
-			this.database_name = database_host;
+			this.database_host = database_host;
+			this.dataSource.setServerName(database_host);
 		}
 
 		/**
@@ -613,14 +625,23 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		 */
 		public void setDatabase_port(String database_port) {
 			this.database_port = database_port;
+			this.dataSource.setPortNumber(Integer.valueOf(database_port));
 		}
 
+		/**
+		 * @param database_name the database_name to set
+		 */
+		public void setDatabase_name(String database_name) {
+			this.database_name = database_name;
+			this.dataSource.setDatabaseName(database_name);
+		}
 
 		/**
 		 * @param database_user the database_user to set
 		 */
 		public void setDatabase_user(String database_user) {
 			this.database_user = database_user;
+			this.dataSource.setUser(database_user);
 		}
 
 		/**
@@ -628,21 +649,32 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		 */
 		public void setDatabase_password(String database_password) {
 			this.database_password = database_password;
+			this.dataSource.setPassword(database_password);
 		}
 
 		@Override
 		public void readExternal(ObjectInput arg0) throws IOException,	ClassNotFoundException {
+			this.database_host=arg0.readUTF();	
 			this.database_name=arg0.readUTF();	
-			this.database_password=arg0.readUTF();
-			this.database_user=arg0.readUTF();
+			this.database_password=arg0.readUTF();	
+			this.database_port=arg0.readUTF();	
+			this.database_user=arg0.readUTF();	
+
+			this.dataSource.setUser(this.database_user);
+			this.dataSource.setPassword(this.database_password);
+			this.dataSource.setServerName(this.database_host);
+			this.dataSource.setPortNumber(Integer.valueOf(this.database_port));
+			this.dataSource.setDatabaseName(this.database_name);
+			this.dataSource.setAutoReconnect(true);
 		}
 
 		@Override
 		public void writeExternal(ObjectOutput arg0) throws IOException {
+			arg0.writeUTF(this.database_host);
 			arg0.writeUTF(this.database_name);
 			arg0.writeUTF(this.database_password);
+			arg0.writeUTF(this.database_port);
 			arg0.writeUTF(this.database_user);
-			
 		}
 
 }

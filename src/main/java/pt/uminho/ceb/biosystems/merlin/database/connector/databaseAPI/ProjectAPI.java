@@ -1,4 +1,4 @@
-package pt.uminho.sysbio.common.database.connector.databaseAPI;
+package pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,10 +21,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
+import pt.uminho.ceb.biosystems.merlin.utilities.containers.model.MetaboliteContainer;
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
 import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
-import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
-import pt.uminho.sysbio.merlin.utilities.containers.model.MetaboliteContainer;
 
 /**
  * @author Oscar Dias
@@ -837,7 +837,7 @@ public class ProjectAPI {
 		
 		String aux = " originalReaction";
 		
-		if(ProjectAPI.isCompartmentalisedModel(stmt));
+		if(ProjectAPI.isCompartmentalisedModel(stmt))
 			aux = " NOT originalReaction ";
 		
 		ResultSet rs = stmt.executeQuery("SELECT pathway_idpathway, count(reaction_idreaction) " +
@@ -3864,12 +3864,12 @@ public class ProjectAPI {
 	 * @throws IOException 
 	 * @throws SQLException 
 	 */
-	public static void cleanProjectsTables(Statement stmt) throws IOException, SQLException {
+	public static void cleanProjectsTables(boolean h2, Statement stmt) throws IOException, SQLException {
 
 		Map<String, String[]> data = FileUtils.readTableFileFormat(new File(CLEAN_TABLES_FILE), SEPARATOR, DEFAULT_INDEX_KEY);
 		
 		for(String id : data.keySet())
-			ProjectAPI.cleanNMTables(data.get(id)[1], data.get(id)[2], data.get(id)[4], data.get(id)[3], stmt);
+			ProjectAPI.cleanNMTables(data.get(id)[1], data.get(id)[2], data.get(id)[4], data.get(id)[3], h2, stmt);
 		
 	}
 
@@ -3883,17 +3883,24 @@ public class ProjectAPI {
 	 * @param stmt
 	 * @throws SQLException
 	 */
-	public static void cleanNMTables(String table1, String table1_id2, String table2, String table2_id2, Statement stmt) throws SQLException {
+	public static void cleanNMTables(String table1, String table1_id2, String table2, String table2_id2, boolean h2, Statement stmt) throws SQLException {
 		
 		
 		ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM "+table1+" tb1 WHERE  tb1."+table1_id2+" NOT IN (SELECT tb2."+table2_id2+" FROM  "+table2+" tb2);");
+		
 		
 		if(rs.next()) {
 			
 			int entries = rs.getInt(1);
 			logger.warn("warning, {} entries will be removed from table {} ",entries, table1);
-			if(entries>0)
-				stmt.execute("DELETE tb1 FROM "+table1+" tb1 WHERE  tb1."+table1_id2+" NOT IN (SELECT tb2."+table2_id2+" FROM  "+table2+" tb2);");
+			if(entries>0) {
+				
+				if(h2)
+					stmt.execute("DELETE FROM "+table1+" tb1 WHERE  tb1."+table1_id2+" NOT IN (SELECT tb2."+table2_id2+" FROM  "+table2+" tb2);");
+				else 
+					stmt.execute("DELETE tb1 FROM "+table1+" tb1 WHERE  tb1."+table1_id2+" NOT IN (SELECT tb2."+table2_id2+" FROM  "+table2+" tb2);");
+				
+			}
 		}
 	}
 
