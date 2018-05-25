@@ -151,12 +151,12 @@ public class ProjectAPI {
 		boolean ret = false;
 
 		String query = "SELECT * FROM reaction WHERE NOT originalReaction;";
-
 		ResultSet rs = statement.executeQuery(query);
 
 		if(rs.next())
 			ret=true;
-
+		
+		rs.close();
 		return ret;
 	}
 
@@ -837,8 +837,9 @@ public class ProjectAPI {
 		
 		String aux = " originalReaction";
 		
-		if(ProjectAPI.isCompartmentalisedModel(stmt));
+		if(ProjectAPI.isCompartmentalisedModel(stmt))
 			aux = " NOT originalReaction ";
+		
 		
 		ResultSet rs = stmt.executeQuery("SELECT pathway_idpathway, count(reaction_idreaction) " +
 				" FROM pathway " +
@@ -849,9 +850,8 @@ public class ProjectAPI {
 
 		while(rs.next()) {
 			
-			if(qls.containsKey(rs.getString(1)))
+			if(qls.containsKey(rs.getString(1))) 
 				qls.get(rs.getString(1))[2] = rs.getString(2);
-			
 		}
 
 		rs.close();
