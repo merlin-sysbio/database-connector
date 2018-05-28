@@ -1,7 +1,7 @@
 /**
  * 
  */
-package pt.uminho.sysbio.common.database.connector.datatypes;
+package pt.uminho.ceb.biosystems.merlin.database.connector.datatypes;
 
 import java.io.File;
 import java.sql.Connection;
@@ -16,8 +16,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
-import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 
 /**
  * @author oscar

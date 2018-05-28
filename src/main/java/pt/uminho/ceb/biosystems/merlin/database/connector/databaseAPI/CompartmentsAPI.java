@@ -1,6 +1,5 @@
-package pt.uminho.sysbio.common.database.connector.databaseAPI;
+package pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI;
 
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -9,13 +8,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
-import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
-import pt.uminho.sysbio.merlin.utilities.containers.model.CompartmentContainer;
-import pt.uminho.sysbio.merlin.utilities.containers.model.MetaboliteContainer;
 import java.util.Set;
 
 /**

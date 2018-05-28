@@ -1,4 +1,4 @@
-package pt.uminho.sysbio.common.database.connector.datatypes;
+package pt.uminho.ceb.biosystems.merlin.database.connector.datatypes;
 
 import java.io.Serializable;
 
