@@ -1,4 +1,4 @@
-package pt.uminho.sysbio.common.database.connector.databaseAPI;
+package pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,17 +19,17 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.ceb.biosystems.merlin.utilities.containers.capsules.ReactionsCapsule;
+import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.GeneAssociation;
+import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ModuleCI;
+import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ProteinsGPR_CI;
+import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ReactionProteinGeneAssociation;
+import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ReactionsGPR_CI;
+import pt.uminho.ceb.biosystems.merlin.utilities.containers.model.MetaboliteContainer;
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
-import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
-import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
-import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
-import pt.uminho.sysbio.merlin.utilities.containers.capsules.ReactionsCapsule;
-import pt.uminho.sysbio.merlin.utilities.containers.gpr.GeneAssociation;
-import pt.uminho.sysbio.merlin.utilities.containers.gpr.ModuleCI;
-import pt.uminho.sysbio.merlin.utilities.containers.gpr.ProteinsGPR_CI;
-import pt.uminho.sysbio.merlin.utilities.containers.gpr.ReactionProteinGeneAssociation;
-import pt.uminho.sysbio.merlin.utilities.containers.gpr.ReactionsGPR_CI;
-import pt.uminho.sysbio.merlin.utilities.containers.model.MetaboliteContainer;
 
 
 /**
@@ -5673,5 +5673,43 @@ public class ModelAPI {
 
 		return ret;
 	}
+	
+	/**
+	 * retrieve the auto increment value for a given table
+	 * 
+	 * @param stmt
+	 * @param tableName
+	 * @return
+	 * @throws SQLException
+	 */
+	public static int getAutoIncrementValue(Statement stmt, String databaseName, String tableName) throws SQLException{
+		
+		ResultSet rs = stmt.executeQuery("SELECT `AUTO_INCREMENT` FROM  INFORMATION_SCHEMA.TABLES "
+				+ "WHERE TABLE_SCHEMA = '"+ databaseName +"' AND TABLE_NAME = '"+ tableName +"';");
+		
+		int res = -1;
+		
+		if(rs.next())
+			res = rs.getInt(1);
+		
+		rs.close();
+		return res;
+	}
+	
+	/**
+	 * return last inserted id for a given table in the database
+	 * 
+	 * @param stmt
+	 * @param tableName
+	 * @return
+	 * @throws SQLException
+	 */
+	public static int getLastInsertedID(Statement stmt, String databaseName, String tableName) throws SQLException{
+		
+		int id = getAutoIncrementValue(stmt, databaseName, tableName) - 1;
+		
+		return id;
+	}
+
 
 }	

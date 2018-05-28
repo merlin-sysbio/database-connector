@@ -2,9 +2,9 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>pt.uminho.sysbio.merlin</groupId>
+	<groupId>pt.uminho.ceb.biosystems.merlin</groupId>
 	<artifactId>database-connector</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>database-connector</name>
@@ -14,26 +14,28 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.7</maven.compiler.source>
 		<maven.compiler.target>1.7</maven.compiler.target>
-		<pt.uminho.sysbio.version>0.0.1-SNAPSHOT</pt.uminho.sysbio.version>
+		<pt.uminho.ceb.biosystems.merlin.version>0.0.2-SNAPSHOT</pt.uminho.ceb.biosystems.merlin.version>
+		<pt.uminho.ceb.biosystems.merlin.groupId>pt.uminho.ceb.biosystems.merlin</pt.uminho.ceb.biosystems.merlin.groupId>
+
 	</properties>
 
 	<repositories>
- 	    <repository>
+		<repository>
 			<id>nexus</id>
 			<name>Nexus BioSystems Server</name>
 			<!-- <url>http://192.168.1.99/nexus/content/groups/public/</url> -->
 			<url>http://193.137.11.210/nexus/content/groups/public/</url>
-		</repository> 
-  </repositories> 
-  
+		</repository>
+	</repositories>
+
 	<!-- <build> <sourceDirectory>D:\workspaces\maven\database-connector\src</sourceDirectory> 
 		<scriptSourceDirectory>D:\workspaces\maven\database-connector\src\main\scripts</scriptSourceDirectory> 
 		<testSourceDirectory>D:\workspaces\maven\database-connector\test</testSourceDirectory> 
 		<outputDirectory>D:\workspaces\maven\database-connector\bin\</outputDirectory> 
 		<testOutputDirectory>D:\workspaces\maven\database-connector\test-bin</testOutputDirectory> 
 		</build> -->
-		
-		<build>
+
+	<build>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -48,10 +50,8 @@
 				<artifactId>nexus-staging-maven-plugin</artifactId>
 				<version>1.6.6</version>
 				<extensions>true</extensions>
-				<!-- <configuration>
-					<serverId>watson</serverId>
-					<nexusUrl>http://193.137.11.210/nexus/</nexusUrl>
-				</configuration> -->
+				<!-- <configuration> <serverId>watson</serverId> <nexusUrl>http://193.137.11.210/nexus/</nexusUrl> 
+					</configuration> -->
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -65,18 +65,9 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- <plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>attach-javadocs</id>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin> -->
+			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-javadoc-plugin</artifactId> 
+				<executions> <execution> <id>attach-javadocs</id> <goals> <goal>jar</goal> 
+				</goals> </execution> </executions> </plugin> -->
 		</plugins>
 	</build>
 
@@ -92,18 +83,25 @@
 			<artifactId>h2</artifactId>
 			<version>1.4.196</version>
 		</dependency>
-		
-				<dependency>
-			<groupId>pt.uminho.ceb.biosystems.mew</groupId>
-			<artifactId>utilities</artifactId>
-			<version>0.0.1.M-SNAPSHOT</version>
-		</dependency>
-		
 		<dependency>
-			<groupId>pt.uminho.sysbio.merlin</groupId>
+			<groupId>${pt.uminho.ceb.biosystems.merlin.groupId}</groupId>
 			<artifactId>merlin-utilities</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>${pt.uminho.ceb.biosystems.merlin.version}</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.25</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/junit/junit -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
 
 	<distributionManagement>

@@ -1,4 +1,4 @@
-package pt.uminho.sysbio.common.database.connector.datatypes;
+package pt.uminho.ceb.biosystems.merlin.database.connector.datatypes;
 
 	import java.io.Externalizable;
 import java.io.IOException;
@@ -17,7 +17,7 @@ import javax.sql.PooledConnection;
 
 import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource;
 
-import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 
 	/**
 	 * @author Oscar Dias
@@ -557,7 +557,7 @@ import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.Database
 		 * @return
 		 * @throws SQLException 
 		 */
-		public String[] getMeta(String table, pt.uminho.sysbio.common.database.connector.datatypes.Connection connection) throws SQLException {
+		public String[] getMeta(String table, pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection connection) throws SQLException {
 
 			String[] res = null;
 

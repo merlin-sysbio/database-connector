@@ -1,4 +1,4 @@
-package pt.uminho.sysbio.common.database.connector.databaseAPI;
+package pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI;
 
 
 import java.io.BufferedWriter;
@@ -17,11 +17,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import pt.uminho.sysbio.common.database.connector.datatypes.Connection;
-import pt.uminho.sysbio.common.database.connector.datatypes.DatabaseUtilities;
-import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
-import pt.uminho.sysbio.merlin.utilities.containers.capsules.AlignmentCapsule;
-import pt.uminho.sysbio.merlin.utilities.containers.capsules.DatabaseReactionContainer;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.ceb.biosystems.merlin.utilities.containers.capsules.AlignmentCapsule;
+import pt.uminho.ceb.biosystems.merlin.utilities.containers.capsules.DatabaseReactionContainer;
 
 /**
  * @author Oscar Dias

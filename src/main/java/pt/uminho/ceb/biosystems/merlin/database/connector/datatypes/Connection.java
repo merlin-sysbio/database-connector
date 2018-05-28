@@ -1,7 +1,7 @@
 /**
  * 
  */
-package pt.uminho.sysbio.common.database.connector.datatypes;
+package pt.uminho.ceb.biosystems.merlin.database.connector.datatypes;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -15,7 +15,7 @@ import java.sql.Statement;
 
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 
-import pt.uminho.sysbio.common.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 
 /**
  * @author ODias
