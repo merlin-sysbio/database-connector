@@ -3511,11 +3511,11 @@ public class ModelAPI {
 	 * @return ArrayList<String> 
 	 * @throws SQLException
 	 */
-	public static ArrayList<String> getGenesModel(Statement statement) throws SQLException{
+	public static List<String> getGenesModel(Statement statement) throws SQLException{
+		
+		List<String> lls = new ArrayList<>();
 
-		ArrayList<String> lls = new ArrayList<String>();
-
-		ResultSet rs = statement.executeQuery("SELECT locusTag, name FROM gene;");
+		ResultSet rs = statement.executeQuery("SELECT locusTag, name, idgene FROM gene ORDER BY locusTag;");
 
 		while(rs.next()) {
 
@@ -3529,6 +3529,31 @@ public class ModelAPI {
 
 		rs.close();
 		return lls;
+	}
+	
+	/**
+	 * Get locusTag and name from gene table.
+	 * @param statement
+	 * @return ArrayList<String> 
+	 * @throws SQLException
+	 */
+	public static Map<String, String> getGenesModelID(Statement statement) throws SQLException{
+		
+		Map<String, String> ret = new HashMap<>();
+		ResultSet rs = statement.executeQuery("SELECT locusTag, name, idgene FROM gene;");
+
+		while(rs.next()) {
+
+			String gene = rs.getString(1);
+
+			if(rs.getString(2) != null && !rs.getString(2).trim().isEmpty())
+				gene = gene.concat(" (").concat(rs.getString(2)).concat(")");
+
+			ret.put(gene, rs.getString(3));
+		}
+
+		rs.close();
+		return ret;
 	}
 
 	/**
