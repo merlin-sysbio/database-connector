@@ -1,7 +1,6 @@
 package pt.uminho.ceb.biosystems.merlin.database.connector.datatypes;
 
-	import java.io.Externalizable;
-import java.io.File;
+import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -17,7 +16,7 @@ import java.util.LinkedList;
 import org.h2.jdbcx.JdbcConnectionPool;
 
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
-import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
+import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 
 	/**
 	 * @author António Dias

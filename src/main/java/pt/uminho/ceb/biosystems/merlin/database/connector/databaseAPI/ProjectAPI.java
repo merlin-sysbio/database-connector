@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
 
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.model.MetaboliteContainer;
+import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
-import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
 
 /**
  * @author Oscar Dias

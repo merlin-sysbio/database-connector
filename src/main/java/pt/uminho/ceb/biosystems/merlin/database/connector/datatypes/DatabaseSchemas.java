@@ -14,7 +14,7 @@ import java.util.List;
 
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 import pt.uminho.ceb.biosystems.merlin.utilities.DatabaseFilesPaths;
-import pt.uminho.ceb.biosystems.mew.utilities.io.FileUtils;
+import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 
 public class DatabaseSchemas {
 
