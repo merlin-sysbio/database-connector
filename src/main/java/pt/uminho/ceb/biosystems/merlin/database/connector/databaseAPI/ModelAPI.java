@@ -1398,6 +1398,58 @@ public class ModelAPI {
 		stmt.close();
 	}
 
+	
+	/**
+	 * Get locus tag ec numbers from database.
+	 * 
+	 * @param dba
+	 * @param originalReactions 
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, List<String>> getGPRsECNumbers(Connection connection) throws SQLException {
+
+		String originalReaction = "";
+		if(ProjectAPI.isCompartmentalisedModel(connection))
+			originalReaction = originalReaction.concat(" WHERE NOT originalReaction ");
+		else
+			originalReaction = originalReaction.concat(" WHERE originalReaction ");
+		
+		Map<String, List<String>> ec_numbers = new HashMap<>();
+
+		Statement stmt = connection.createStatement();
+
+		ResultSet rs = stmt.executeQuery("SELECT locusTag, enzyme.ecnumber FROM subunit "
+				+ " INNER JOIN gene ON (gene.idgene = gene_idgene) "
+				+ " INNER JOIN enzyme ON (subunit.enzyme_protein_idprotein = enzyme.protein_idprotein  AND subunit.enzyme_ecnumber  = enzyme.ecnumber)"
+				+ " INNER JOIN reaction_has_enzyme ON ecnumber = reaction_has_enzyme.enzyme_ecnumber AND enzyme.protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein "
+				+ " INNER JOIN reaction ON reaction.idreaction = reaction_has_enzyme.reaction_idreaction "
+				+ originalReaction + "  AND enzyme.inModel AND reaction.inModel;"
+				);
+
+		while(rs.next()) {
+
+			List<String> genes = new ArrayList<>();
+
+			String gene = rs.getString(1);
+			String enzyme = rs.getString(2);
+
+			if(ec_numbers.containsKey(enzyme))
+				genes = ec_numbers.get(enzyme);
+
+			genes.add(gene);
+
+			ec_numbers.put(enzyme, genes);
+
+		}
+		rs.close();
+		stmt.close();
+
+		return ec_numbers;
+	}
+
+	
+	
 	/**
 	 * Get locus tag ec numbers from database.
 	 * 
