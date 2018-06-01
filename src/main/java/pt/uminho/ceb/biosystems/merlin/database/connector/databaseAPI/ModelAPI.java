@@ -2417,7 +2417,7 @@ public class ModelAPI {
 	public static Map<String, ArrayList<String>> getReactions (Statement stmt, String conditions) throws SQLException {
 
 		ResultSet rs = stmt.executeQuery("SELECT DISTINCT idreaction, name, equation, reversible, compartment_idcompartment, notes, lowerBound, upperBound, boolean_rule " +
-				"FROM reaction WHERE inModel AND " +conditions );
+				"FROM reaction WHERE inModel AND " +conditions+ ";" );
 
 		Map<String, ArrayList<String>> result = new HashMap<>();
 
