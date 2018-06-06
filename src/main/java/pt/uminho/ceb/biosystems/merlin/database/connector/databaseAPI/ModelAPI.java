@@ -5776,5 +5776,63 @@ public class ModelAPI {
 		return id;
 	}
 
+	
+	
+	/**
+	 * Update locusTags using protein_ids
+	 * 
+	 * @param locusTagsByQueries
+	 * @param statement
+	 * @param databaseType
+	 * @throws SQLException
+	 */
+	public static void updateLocusTags(Map<String,String> locusTagsByQueries, PreparedStatement statement, DatabaseType databaseType) throws SQLException {
+		
+		
+		int i = 0;
+		for (String query : locusTagsByQueries.keySet()) {
+			
+			String locusTag = locusTagsByQueries.get(query);
+
+			statement.setString(1, locusTag);
+			statement.setString(2, query);
+			statement.addBatch();
+
+			if ((i + 1) % 100 == 0) {
+
+				statement.executeBatch(); // Execute every 1000 items.
+			}
+			i++;
+		}
+		statement.executeBatch();
+	}
+	
+	
+	/**
+	 * @param sequences
+	 * @param pStmt
+	 * @throws SQLException
+	 */
+	public static void loadFastaSequences(Map<String, String[]> sequences, PreparedStatement pStmt) throws SQLException{
+		
+		int i = 0;
+		for (String query : sequences.keySet()) {
+			
+			String[] locusTag = sequences.get(query);
+
+			pStmt.setString(1, locusTag[0]);
+			pStmt.setString(2, query);
+			pStmt.addBatch();
+
+			if ((i + 1) % 100 == 0) {
+
+				pStmt.executeBatch(); // Execute every 1000 items.
+			}
+			i++;
+		}
+		pStmt.executeBatch();
+		
+	}
+
 
 }	

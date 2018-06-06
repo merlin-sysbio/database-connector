@@ -1108,11 +1108,11 @@ public class TransportersAPI {
 		
 		Map<String, ArrayList<String>> table = new HashMap<String, ArrayList<String>>();
 		
-		ArrayList<String> list = new ArrayList<>();
-		
 		ResultSet rs =	stmt.executeQuery("SELECT metabolite_id, gene_id, similarity_score_sum, taxonomy_score_sum, frequency FROM genes_has_metabolites;");
 
 		while(rs.next()){
+			
+			ArrayList<String> list = new ArrayList<>();
 			
 			list.add(rs.getString(2));
 			list.add(rs.getString(3));
