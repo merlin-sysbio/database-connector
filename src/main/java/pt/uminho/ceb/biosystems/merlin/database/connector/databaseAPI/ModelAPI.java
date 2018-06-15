@@ -5588,14 +5588,16 @@ public class ModelAPI {
 	 */
 	public static ArrayList<String[]> getGeneIdLocusTag (Statement stmt) throws SQLException {
 
-		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag FROM gene;");
+		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag, sequence_id FROM gene;");
 		ArrayList<String[]> result = new ArrayList<>();
 
 		while(rs.next()) {
-			String[] list = new String[2];
+			String[] list = new String[3];
 
-			list[0] = rs.getString(0);
+			list[0] = rs.getString(1);
 			list[1] = rs.getString(2);
+			list[2] = rs.getString(3);
+			
 			result.add(list);
 		}
 
@@ -5735,7 +5737,7 @@ public class ModelAPI {
 		while(rs.next())
 			if(rs.getInt(2)==1 && rs.getInt(3)==1)
 				ret.add(rs.getInt(1));
-
+		
 		return ret;
 	}
 	
@@ -5792,15 +5794,15 @@ public class ModelAPI {
 		int i = 0;
 		for (String query : locusTagsByQueries.keySet()) {
 			
-			String locusTag = locusTagsByQueries.get(query);
+			String locusTag = locusTagsByQueries.get(query).toUpperCase().trim();
 
 			statement.setString(1, locusTag);
 			statement.setString(2, query);
 			statement.addBatch();
 
-			if ((i + 1) % 100 == 0) {
+			if ((i + 1) % BATCH_SIZE == 0) {
 
-				statement.executeBatch(); // Execute every 1000 items.
+				statement.executeBatch(); // Execute every 500 items.
 			}
 			i++;
 		}
@@ -5813,26 +5815,94 @@ public class ModelAPI {
 	 * @param pStmt
 	 * @throws SQLException
 	 */
-	public static void loadFastaSequences(Map<String, String[]> sequences, PreparedStatement pStmt) throws SQLException{
+	public static void loadFastaSequences(Map<Integer, List<String>> sequences, String seqType, java.sql.Connection conn) throws SQLException{
 		
+		PreparedStatement pStmt = conn.prepareStatement("INSERT INTO sequence (gene_idgene,sequence_type,sequence,sequence_length) VALUES(?,?,?,?);");
+				
 		int i = 0;
-		for (String query : sequences.keySet()) {
+		for (Integer geneID : sequences.keySet()) {
 			
-			String[] locusTag = sequences.get(query);
-
-			pStmt.setString(1, locusTag[0]);
-			pStmt.setString(2, query);
+			List<String> seqInfo = sequences.get(geneID);
+			
+			pStmt.setInt(1, geneID);
+			pStmt.setString(2, seqType);
+			pStmt.setString(3, seqInfo.get(0));
+			pStmt.setInt(4, Integer.parseInt(seqInfo.get(1)));
 			pStmt.addBatch();
 
-			if ((i + 1) % 100 == 0) {
+			if ((i + 1) % BATCH_SIZE == 0) {
 
-				pStmt.executeBatch(); // Execute every 1000 items.
+				pStmt.executeBatch(); // Execute every 500 items.
 			}
 			i++;
 		}
 		pStmt.executeBatch();
 		
 	}
+	
+	/**
+	 * retrieve the number of reactions associated with each gene using subunit and reaction_has_enzyme tables
+	 * 
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String,Integer> countGenesReactionsBySubunit(Statement stmt) throws SQLException{
+		
+		Map<String, Integer> res = new HashMap<>();
 
+		ResultSet rs = stmt.executeQuery("SELECT gene.sequence_id, gene.locusTag, COUNT(DISTINCT(reaction_has_enzyme.reaction_idreaction))"
+				+" FROM subunit INNER JOIN reaction_has_enzyme ON (subunit.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein"
+				+" AND subunit.enzyme_ecnumber = reaction_has_enzyme.enzyme_ecnumber)"
+				+" INNER JOIN gene ON gene.idgene = subunit.gene_idgene"
+				+" GROUP BY gene.sequence_id"
+				+" ORDER BY gene.locusTag;");
+
+		while(rs.next())
+			res.put(rs.getString(2), rs.getInt(3));
+		
+		rs.close();
+		return res;
+	
+	}
+	
+	
+	/**
+	 * For each gene, retrieve the number of reactions that have the geneID in their boolean_rule
+	 * 
+	 * @param geneID
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, Integer> countGenesReactionsByBooleanRule(Statement stmt) throws SQLException{
+		
+		Map<String, Integer> res = new HashMap<>();
+				
+		ResultSet rs = stmt.executeQuery("SELECT idgene, gene.locusTag, (Select count(*)"
+				+ " FROM reaction WHERE reaction.boolean_rule RLIKE CONCAT('^', gene.idgene, ' ') or reaction.boolean_rule RLIKE CONCAT(' ', gene.idgene, ' ')"
+				+ " or reaction.boolean_rule RLIKE CONCAT(' ', gene.idgene, '$')) AS 'Count' FROM gene;");
+		
+		while(rs.next())
+			res.put(rs.getString(2), rs.getInt(3));
+		
+		rs.close();
+		return res;
+	}
+	
+	
+	/**
+	 * delete all data from Gene and Sequence tables
+	 * 
+	 * @param stmt
+	 * @throws SQLException 
+	 */
+	public static void deleteGeneAndSequenceTables(Statement stmt) throws SQLException{
+		
+		stmt.execute("DELETE FROM sequence");
+		stmt.execute("DELETE FROM gene;");
+		
+	}
+	
 
 }	
