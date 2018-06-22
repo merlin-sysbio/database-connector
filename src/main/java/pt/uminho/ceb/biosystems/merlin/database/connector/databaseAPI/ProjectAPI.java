@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -3903,6 +3904,110 @@ public class ProjectAPI {
 			}
 		}
 	}
+	
+	/**
+     * Method to retrieve the name of all tables existing in the database.
+     * 
+     * @param table
+     * @param stmt
+     * @return
+     * @throws SQLException
+     */
+    public static String[] getAllOrganisms(Statement stmt) throws SQLException{
+         
+        ResultSet rs = stmt.executeQuery("SELECT COUNT(DISTINCT(organism)) FROM organism;");
+         
+        rs.next();
+ 
+        String[] organisms = new String[rs.getInt(1)];
+         
+//      organisms[0] = "any";
+         
+        rs = stmt.executeQuery("SELECT DISTINCT(organism) FROM organism;");
+ 
+        int i = 0; 
+         
+        while(rs.next()) {
+             
+            organisms[i] = rs.getString(1);
+            i++;
+        }
+ 
+        rs.close();
+        return organisms;
+    }
+     
+    /**
+     * Method to retrieve all genus from organism table.
+     * 
+     * @param table
+     * @param stmt
+     * @return
+     * @throws SQLException
+     */
+    public static String[] getAllGenus(Statement stmt) throws SQLException{
+         
+        Set<String> allGenus = new HashSet<>();
+         
+        ResultSet rs = stmt.executeQuery("SELECT taxonomy FROM organism;");
+         
+        while(rs.next()) {
+             
+            String[] entry = rs.getString(1).split(";");
+             
+            allGenus.add(entry[entry.length-1]);
+        }
+         
+        String[] result = new String[allGenus.size()];
+         
+        int i = 0;
+         
+        for(String text : allGenus) {
+             
+            result[i] = text;
+            i++;
+        }
+         
+        rs.close();
+         
+        return result;
+    }
+     
+    /**
+     * Method to retrieve the EValue used during Blast.
+     * 
+     * @param table
+     * @param stmt
+     * @return
+     * @throws SQLException
+     */
+    public static Double getBlastEValue(String database, Statement stmt) throws SQLException{
+         
+        Double eValue;
+        ArrayList<Double> eValueList = new ArrayList<Double>();
+        Double toRemove = 1000.0;
+         
+        ResultSet rs; 
+         
+        if(database.isEmpty())
+            rs = stmt.executeQuery("SELECT eValue FROM homologySetup");
+        else   
+            rs = stmt.executeQuery("SELECT eValue FROM homologySetup WHERE databaseID ='" + database + "';");
+         
+        while(rs.next()) {
+             
+            eValueList.add(Double.valueOf(rs.getString(1)));
+             
+        }
+        rs.close();
+         
+        //exclude the 1000.0 in the list and retrieve the maximum e-value
+        while(eValueList.remove(toRemove)){}
+         
+        eValue = Collections.max(eValueList);
+         
+        return eValue;
+    } 
 
 }
 

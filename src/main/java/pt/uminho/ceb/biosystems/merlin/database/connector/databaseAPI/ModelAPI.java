@@ -5880,8 +5880,9 @@ public class ModelAPI {
 		Map<String, Integer> res = new HashMap<>();
 				
 		ResultSet rs = stmt.executeQuery("SELECT idgene, gene.locusTag, (Select count(*)"
-				+ " FROM reaction WHERE reaction.boolean_rule RLIKE CONCAT('^', gene.idgene, ' ') or reaction.boolean_rule RLIKE CONCAT(' ', gene.idgene, ' ')"
-				+ " or reaction.boolean_rule RLIKE CONCAT(' ', gene.idgene, '$')) AS 'Count' FROM gene;");
+				+ " FROM reaction WHERE reaction.boolean_rule REGEXP CONCAT('^', gene.idgene, ' ')"
+				+ " OR reaction.boolean_rule REGEXP CONCAT(' ', gene.idgene, ' ')"
+				+ " OR reaction.boolean_rule REGEXP CONCAT(' ', gene.idgene, '$')) FROM gene;");
 		
 		while(rs.next())
 			res.put(rs.getString(2), rs.getInt(3));
