@@ -933,7 +933,7 @@ public class HomologyAPI {
 			while(rs.next()) {
 
 				if(rs.getString(3).contains(program) ) {
-					
+
 					System.out.println("4.0 delete " + rs.getString(2) + "     " + rs.getString(1));
 
 					loadedGenes.remove(rs.getString(2));
@@ -949,11 +949,11 @@ public class HomologyAPI {
 					" AND databaseID <> '"+databaseID+"';");
 
 			System.out.println(databaseID);
-			
+
 			while(rs.next()) {
 
 				if(rs.getString(3).contains(program) ) {
-					
+
 					System.out.println("3.0 delete " + rs.getString(2) + "     " + rs.getString(1));
 
 					loadedGenes.remove(rs.getString(2));
@@ -977,12 +977,12 @@ public class HomologyAPI {
 			while(rs.next()) {
 
 				System.out.println(">> " + rs.getString(3) + "     +     " + rs.getInt(5));
-				
+
 				if(rs.getInt(5) < numberOfAlignments && rs.getInt(2) < numberOfAlignments && rs.getString(4).contains(program) ) {
 
-//					loadedGenes.remove(rs.getString(3));
-//					deleteGenes.add(rs.getString(1));
-					
+					//					loadedGenes.remove(rs.getString(3));
+					//					deleteGenes.add(rs.getString(1));
+
 					System.out.println("to delete " + rs.getString(3));
 				}
 			}
@@ -1002,9 +1002,9 @@ public class HomologyAPI {
 
 				if(!rs.getString(4).equals(databaseID)){
 
-//					loadedGenes.remove(rs.getString(3));
-//					deleteGenes.add(rs.getString(1));
-					
+					//					loadedGenes.remove(rs.getString(3));
+					//					deleteGenes.add(rs.getString(1));
+
 					System.out.println("2.0 to delete " + rs.getString(3));
 				}
 			}
@@ -1414,11 +1414,9 @@ public class HomologyAPI {
 	 * @throws SQLException
 	 */
 	public static void setLastestUsedBlastDatabase(Statement statement, String latestDB) throws SQLException{
-
-		statement.execute("UPDATE scorerConfig SET latest = false;");
-
-		statement.execute("UPDATE scorerConfig SET latest = true WHERE blastDB = '" + latestDB + "';");
-
+		
+			statement.execute("UPDATE scorerConfig SET latest = false;");
+			statement.execute("UPDATE scorerConfig SET latest = true WHERE blastDB = '" + latestDB + "';");
 	}
 
 	/**
@@ -1445,7 +1443,7 @@ public class HomologyAPI {
 	 */
 	public static void resetDatabaseScorer(Statement statement, String blastDatabase) throws SQLException{
 
-		statement.execute("DELETE FROm scorerConfig WHERE blastDB = '" + blastDatabase + "';");
+		statement.execute("DELETE FROM scorerConfig WHERE blastDB = '" + blastDatabase + "';");
 
 	}
 
@@ -1462,6 +1460,7 @@ public class HomologyAPI {
 		ResultSet rs = statement.executeQuery("SELECT * FROM scorerConfig WHERE blastDB = '" + blastDatabase +"';");
 
 		while(rs.next()){
+			
 			result.add(rs.getString(1));
 			result.add(rs.getString(2));
 			result.add(rs.getString(3));
@@ -2374,14 +2373,14 @@ public class HomologyAPI {
 				orthology_id = rs.getString(1);
 			}
 			rs = statement.executeQuery("SELECT * FROM gene_has_orthology WHERE gene_idgene='"+idGene+"' AND orthology_id='"+orthology_id+"';");
-			
+
 			if(!rs.next())	
 				statement.execute("INSERT INTO gene_has_orthology (gene_idgene,orthology_id, similarity) VALUES("+idGene+","+orthology_id+", "+ score +" );");
 
 			rs = statement.executeQuery("SELECT protein_idprotein FROM enzyme WHERE ecnumber='"+ecnumber+"';");
 			rs.next();
 			int protein_idprotein = rs.getInt(1);
-			
+
 			rs = statement.executeQuery("SELECT module_id, note FROM enzyme_has_module WHERE enzyme_protein_idprotein = '"+protein_idprotein+"';");
 
 			List<Integer> modules_ids = new ArrayList<>();
@@ -2404,9 +2403,9 @@ public class HomologyAPI {
 				else
 					note = "";
 			}
-			
+
 			if(modules != null){
-				
+
 				for(int module_id : modules.get(ortholog)) {
 
 					if(modules_ids.contains(module_id)) {
@@ -2490,7 +2489,7 @@ public class HomologyAPI {
 
 		return statement;
 	}
-	
+
 	/**
 	 * Method to check if the database has commited data.
 	 * 
@@ -2499,7 +2498,7 @@ public class HomologyAPI {
 	 * @throws SQLException 
 	 */
 	public static boolean hasCommitedData(Statement statement) throws SQLException{
-		
+
 		int size = 0;
 
 		ResultSet rs = statement.executeQuery("SELECT COUNT(s_key) FROM homologyData;");
@@ -2513,90 +2512,100 @@ public class HomologyAPI {
 		return false;
 	}
 	
+	
+	public static void deleteHomologyData(String database, Statement statement) throws SQLException {
+		
+		String aux = "";
+		
+		if(database!= null)
+			aux = " WHERE geneHomology_s_key IN (SELECT geneHomology.s_key FROM geneHomology INNER JOIN homologySetup ON (homologySetup_s_key = homologySetup.s_key) WHERE databaseID ='" + database + "')";
+		
+		 statement.execute("DELETE FROM homologyData "+aux+";");
+	}
+
 	/**
-     * Get all entries for automatic annotation for a given blast database (with ecNumber only).
-     * 
-     * @param blastDatabase
-     * @param statement
-     * @return
-     * @throws SQLException
-     */
-    public static Set<Integer> getSKeyForAutomaticAnnotation(String blastDatabase, Statement statement) throws SQLException{
-         
-        List<Integer> homologySKey = new ArrayList<>();
-         
-        Set<Integer> queries = new HashSet<>();
-         
-        ResultSet rs;
-         
-        if(blastDatabase.isEmpty())
-            rs = statement.executeQuery("SELECT s_key FROM homologySetup;");
-        else
-            rs = statement.executeQuery("SELECT s_key FROM homologySetup WHERE databaseID ='" + blastDatabase + "';");
-         
-        while(rs.next())
-            homologySKey.add(rs.getInt(1));
-         
-        for(Integer key : homologySKey) {
-             
-            ResultSet rs2 = statement.executeQuery("SELECT DISTINCT(geneHomology.s_key) FROM geneHomology\n" + 
-                    "INNER JOIN geneHomology_has_homologues ON geneHomology.s_key = geneHomology_has_homologues.geneHomology_s_key\n" + 
-                    "INNER JOIN homologues ON geneHomology_has_homologues.homologues_s_key = homologues.s_key\n" + 
-                    "INNER JOIN homologues_has_ecNumber ON homologues_has_ecNumber.homologues_s_key = homologues.s_key\n" + 
-                    "WHERE homologySetup_s_key = " + key + ";");
-         
-            while(rs2.next())
-                queries.add(rs2.getInt(1));
-             
-            rs2.close();
-        }
-         
-        rs.close();
-         
-         
-        return queries;
-    }
- 
-    
-    /**
-     * @param connection
-     * @param locusTag
-     * @param geneName
-     * @param ecMap
-     * @param confLevelMap
-     * @throws SQLException
-     */
-    public static void insertAutomaticEnzymeAnnotation(Connection connection, Map<Integer, String> locusTag, Map<Integer, String> geneName, 
-    		Map<Integer, String> ecMap, Map<Integer, String> confLevelMap) throws SQLException {
+	 * Get all entries for automatic annotation for a given blast database (with ecNumber only).
+	 * 
+	 * @param blastDatabase
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Set<Integer> getSKeyForAutomaticAnnotation(String blastDatabase, Statement statement) throws SQLException{
 
-    	String query = "INSERT INTO homologyData (geneHomology_s_key, locusTag, geneName, product, ecNumber, selected, chromosome, notes)"
-    			+ "VALUES( ?, ?, ?, ?, ?, ?, ?, ?);";
+		Set<Integer> queries = new HashSet<>();
 
-    	PreparedStatement statement = connection.prepareStatement(query);
+		String aux = "SELECT s_key FROM homologySetup WHERE databaseID ='" + blastDatabase + "'";
 
-    	int i = 0;
+		if(blastDatabase.isEmpty())
+			aux = "SELECT s_key FROM homologySetup";
 
-    	for (int sKey : ecMap.keySet()) {
+		ResultSet rs2 = statement.executeQuery("SELECT DISTINCT(geneHomology.s_key) FROM geneHomology " + 
+				"INNER JOIN geneHomology_has_homologues ON geneHomology.s_key = geneHomology_has_homologues.geneHomology_s_key " + 
+				"INNER JOIN homologues ON geneHomology_has_homologues.homologues_s_key = homologues.s_key " + 
+				"INNER JOIN homologues_has_ecNumber ON homologues_has_ecNumber.homologues_s_key = homologues.s_key " + 
+				"WHERE homologySetup_s_key IN ("+aux+");");
 
-    		statement.setInt(1, sKey);
-    		statement.setString(2, locusTag.get(sKey));
-    		statement.setString(3, geneName.get(sKey));
-    		statement.setString(4, "null");
-    		statement.setString(5, ecMap.get(sKey));
-    		statement.setBoolean(6, true);
-    		statement.setString(7, null);
-    		statement.setString(8, confLevelMap.get(sKey));
+		while(rs2.next())
+			queries.add(rs2.getInt(1));
 
-    		statement.addBatch();
+		rs2.close();
 
-    		if ((i + 1) % 500 == 0) {
+		return queries;
+	}
 
-    			statement.executeBatch();
-    		}
-    		i++;
-    	}
-    	statement.executeBatch();
-    }
-             
+
+	/**
+	 * @param connection
+	 * @param locusTag
+	 * @param geneName
+	 * @param ecMap
+	 * @param confLevelMap
+	 * @throws SQLException
+	 */
+	public static void insertAutomaticEnzymeAnnotation(Connection connection, Map<Integer, String> locusTag, Map<Integer, String> geneName, 
+			Map<Integer, String> ecMap, Map<Integer, String> confLevelMap) throws SQLException {
+
+		///TODO verificar se já existem as entradas!!!!!!
+//		 a previous "automatic" or not just manual data annotation was detected. All information will be lost, do you wish to proceed!!
+		
+		String query = "INSERT INTO homologyData (geneHomology_s_key, locusTag, geneName, product, ecNumber, selected, chromosome, notes)"
+				+ "VALUES( ?, ?, ?, ?, ?, ?, ?, ?);";
+
+		PreparedStatement statement = connection.prepareStatement(query);
+
+		int i = 0;
+
+		for (int sKey : ecMap.keySet()) {
+
+			statement.setInt(1, sKey);
+			statement.setString(2, locusTag.get(sKey));
+			statement.setString(3, geneName.get(sKey));
+			statement.setString(4, "null");
+			statement.setString(5, ecMap.get(sKey));
+			statement.setBoolean(6, true);
+			statement.setString(7, null);
+			statement.setString(8, confLevelMap.get(sKey));
+
+			statement.addBatch();
+
+			if ((i + 1) % 500 == 0) {
+
+				statement.executeBatch();
+			}
+			i++;
+		}
+		statement.executeBatch();
+	}
+
+	public static String getSetupProgram(Statement statement) throws SQLException {
+
+		ResultSet rs = statement.executeQuery("SELECT DISTINCT(program) FROM homologySetup;");
+		if(rs.next())
+			return rs.getString(1);
+
+		return null;
+	}
+
 
 }
