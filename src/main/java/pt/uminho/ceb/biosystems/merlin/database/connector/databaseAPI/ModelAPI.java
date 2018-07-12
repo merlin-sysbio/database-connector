@@ -1,5 +1,12 @@
 package pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -19,9 +26,12 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import javax.print.attribute.standard.OutputDeviceAssigned;
+
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.ceb.biosystems.merlin.utilities.containers.capsules.DatabaseReactionContainer;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.capsules.ReactionsCapsule;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.GeneAssociation;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ModuleCI;
@@ -29,6 +39,7 @@ import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ProteinsGPR_CI;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ReactionProteinGeneAssociation;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ReactionsGPR_CI;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.model.MetaboliteContainer;
+import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
 
 
@@ -4258,8 +4269,8 @@ public class ModelAPI {
 		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag, name, count(DISTINCT(module_has_orthology.module_id)), count(enzyme_ecnumber) "+
 				" FROM gene LEFT JOIN subunit ON gene.idgene = gene_idgene "+
 				" INNER JOIN enzyme ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein "+
-				" INNER JOIN gene_has_orthology ON gene_has_orthology.gene_idgene = gene.idgene "+
-				" INNER JOIN module_has_orthology ON module_has_orthology.orthology_id = gene_has_orthology.orthology_id "+
+				" LEFT JOIN gene_has_orthology ON gene_has_orthology.gene_idgene = gene.idgene "+
+				" LEFT JOIN module_has_orthology ON module_has_orthology.orthology_id = gene_has_orthology.orthology_id "+
 				"GROUP BY locusTag;");
 
 		//		System.out.println("SELECT idgene, locusTag, name, count(DISTINCT(reaction)), count(enzyme_ecnumber) "+
@@ -5771,13 +5782,35 @@ public class ModelAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static int getLastInsertedID(Statement stmt, String databaseName, String tableName) throws SQLException{
+	public static int getLastInsertedIdMySQL(Statement stmt, String databaseName, String tableName) throws SQLException{
 		
 		int id = getAutoIncrementValue(stmt, databaseName, tableName) - 1;
 		
 		return id;
 	}
 
+	
+	/**
+	 * return the last position id value for a given table in H2 database
+	 * 
+	 * @param stmt
+	 * @param tableName
+	 * @param sKey
+	 * @return
+	 * @throws SQLException
+	 */
+	public static int getLastInsertedIdH2(Statement stmt, String tableName, String sKey) throws SQLException{
+		
+		ResultSet rs = stmt.executeQuery("SELECT MAX(" + sKey +") FROM " + tableName + ";");
+		
+		int id = -1;
+		
+		if(rs.next())
+			id = rs.getInt(1);
+		
+		rs.close();
+		return id;
+	}
 	
 	
 	/**
@@ -5904,6 +5937,103 @@ public class ModelAPI {
 		stmt.execute("DELETE FROM gene;");
 		
 	}
+	
+	
+	/**
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 * @throws IOException 
+	 */
+	public static boolean checkManualyInsertedCompartments(Statement stmt) throws SQLException, IOException{
+
+
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT(compartment_idcompartment), compartment.abbreviation FROM stoichiometry "
+				+ "INNER JOIN compartment ON compartment.idcompartment = stoichiometry.compartment_idcompartment;");
+
+		while(rs.next()){
+
+			if(!rs.getString(2).equals("in") && !rs.getString(2).equals("out"))
+				return false;
+		}
+		
+		return true;
+	}
+
+	/**
+	 * @param stmt
+	 * @param text
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String getCompartmentAbbreviation(Statement stmt, String compartmentName) throws SQLException {
+		
+		String abb = null;
+		
+		ResultSet rs = stmt.executeQuery("SELECT abbreviation FROM compartments where name = '"+  compartmentName  + "';");
+		
+		if(rs.next())
+			abb = rs.getString(1);
+		
+		return abb;
+	}
+	
+//	/**
+//	 * @param stmt
+//	 * @return
+//	 * @throws SQLException
+//	 * @throws IOException 
+//	 */
+//	public static List<String> checkManualyInsertedCompartments(Statement stmt) throws SQLException, IOException{
+//		
+//		Map<Integer,String> manualCompartments = new HashMap<>();
+//		
+//		ResultSet rs = stmt.executeQuery("SELECT DISTINCT(compartment_idcompartment), compartment.abbreviation, compartment.name FROM stoichiometry "
+//				+ "INNER JOIN compartment ON compartment.idcompartment = stoichiometry.compartment_idcompartment;");
+//		
+//		while(rs.next()){
+//			
+//			if(!rs.getString(2).equals("in") && !rs.getString(2).equals("out"))
+//				manualCompartments.put(rs.getInt(1),rs.getString(3));
+//			
+//		}
+//		
+//		String getReactionsQuery = "SELECT DISTINCT(reaction_idreaction), stoichiometry.compartment_idcompartment, reaction.name FROM stoichiometry "
+//				+ "INNER JOIN reaction ON stoichiometry.reaction_idreaction=reaction.idreaction WHERE stoichiometry.compartment_idcompartment = ";
+//		
+//		String deleteReactionsQuery = "DELETE FROM stoichiometry WHERE compartment_idcompartment = ";
+//		
+//		if(!manualCompartments.isEmpty()){
+//			
+//			for(Integer compartmentID : manualCompartments.keySet()){
+//				
+//				getReactionsQuery.concat(Integer.toString(compartmentID)).concat(" OR compartment_idcompartment = ");
+//				
+//				deleteReactionsQuery.concat(Integer.toString(compartmentID)).concat(" OR compartment_idcompartment = ");
+//			}
+//		}
+//		getReactionsQuery = getReactionsQuery.substring(0, getReactionsQuery.lastIndexOf(" OR ")).trim().concat(";");
+//		deleteReactionsQuery = getReactionsQuery.substring(0, getReactionsQuery.lastIndexOf(" OR ")).trim().concat(";");
+//
+//		
+//		List<String> reactionsInfo = new ArrayList<>();
+//		
+//		rs = stmt.executeQuery(getReactionsQuery);
+//		while(rs.next()){
+//			reactionsInfo.add(rs.getString(3).concat("\t").concat(manualCompartments.get(rs.getInt(2))));
+//		}
+//		
+//		rs = stmt.executeQuery(deleteReactionsQuery);
+//		
+////		FileWriter writer = new FileWriter("output.txt"); 
+////		for(String info: reactionsInfo) {
+////		  writer.write(str);
+////		}
+////		writer.close();
+//		
+//		return reactionsInfo;
+//		
+//	}
 	
 
 }	

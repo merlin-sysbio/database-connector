@@ -3954,8 +3954,13 @@ public class ProjectAPI {
         while(rs.next()) {
              
             String[] entry = rs.getString(1).split(";");
-             
-            allGenus.add(entry[entry.length-1]);
+            
+            if(entry[entry.length-1].trim().contains("\\s")){
+            	allGenus.add(entry[entry.length-1].trim().split("\\s")[0]);
+            }
+            else{
+            	allGenus.add(entry[entry.length-1].trim());
+            }
         }
          
         String[] result = new String[allGenus.size()];
@@ -3964,7 +3969,7 @@ public class ProjectAPI {
          
         for(String text : allGenus) {
              
-            result[i] = text;
+            result[i] = text.trim();
             i++;
         }
          
