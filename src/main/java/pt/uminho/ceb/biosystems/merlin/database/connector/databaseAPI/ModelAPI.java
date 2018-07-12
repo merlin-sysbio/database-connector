@@ -4255,7 +4255,7 @@ public class ModelAPI {
 
 		ArrayList<String[]> result = new ArrayList<>();
 
-		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag, name, count(DISTINCT(module_id)), count(enzyme_ecnumber) "+
+		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag, name, count(DISTINCT(module_has_orthology.module_id)), count(enzyme_ecnumber) "+
 				" FROM gene LEFT JOIN subunit ON gene.idgene = gene_idgene "+
 				" INNER JOIN enzyme ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein "+
 				" INNER JOIN gene_has_orthology ON gene_has_orthology.gene_idgene = gene.idgene "+
