@@ -1418,7 +1418,7 @@ public class ModelAPI {
 
 		Statement stmt = connection.createStatement();
 
-		ResultSet rs = stmt.executeQuery("SELECT locusTag, enzyme.ecnumber FROM subunit "
+		ResultSet rs = stmt.executeQuery("SELECT locusTag, enzyme.ecnumber, sequence_id FROM subunit "
 				+ " INNER JOIN gene ON (gene.idgene = gene_idgene) "
 				+ " INNER JOIN enzyme ON (subunit.enzyme_protein_idprotein = enzyme.protein_idprotein  AND subunit.enzyme_ecnumber  = enzyme.ecnumber)"
 				+ " INNER JOIN reaction_has_enzyme ON ecnumber = reaction_has_enzyme.enzyme_ecnumber AND enzyme.protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein "
@@ -1432,12 +1432,16 @@ public class ModelAPI {
 
 			String gene = rs.getString(1);
 			String enzyme = rs.getString(2);
+			
+			String seqID = rs.getString(3);
 
 			if(ec_numbers.containsKey(enzyme))
 				genes = ec_numbers.get(enzyme);
 
-			genes.add(gene);
+			genes.add(seqID);
 
+//			genes.add(gene);
+			
 			ec_numbers.put(enzyme, genes);
 
 		}
