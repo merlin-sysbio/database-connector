@@ -1437,11 +1437,13 @@ public class ModelAPI {
 
 			if(ec_numbers.containsKey(enzyme))
 				genes = ec_numbers.get(enzyme);
-
-			genes.add(seqID);
-
-//			genes.add(gene);
 			
+			if(seqID!=null && !seqID.isEmpty())
+				genes.add(seqID);
+
+			else
+				genes.add(gene);
+
 			ec_numbers.put(enzyme, genes);
 
 		}
