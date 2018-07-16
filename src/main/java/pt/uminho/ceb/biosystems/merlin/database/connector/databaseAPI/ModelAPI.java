@@ -1,5 +1,12 @@
 package pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -19,9 +26,12 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import javax.print.attribute.standard.OutputDeviceAssigned;
+
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.ceb.biosystems.merlin.utilities.containers.capsules.DatabaseReactionContainer;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.capsules.ReactionsCapsule;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.GeneAssociation;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ModuleCI;
@@ -29,6 +39,7 @@ import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ProteinsGPR_CI;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ReactionProteinGeneAssociation;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ReactionsGPR_CI;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.model.MetaboliteContainer;
+import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
 
 
@@ -1400,6 +1411,7 @@ public class ModelAPI {
 		stmt.close();
 	}
 
+	
 	/**
 	 * Get locus tag ec numbers from database.
 	 * 
@@ -1445,6 +1457,47 @@ public class ModelAPI {
 
 			else
 				genes.add(gene);
+
+			ec_numbers.put(enzyme, genes);
+
+		}
+		rs.close();
+		stmt.close();
+
+		return ec_numbers;
+	}
+
+	
+	
+	/**
+	 * Get locus tag ec numbers from database.
+	 * 
+	 * @param dba
+	 * @param originalReactions 
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, List<String>> getECNumbers(Connection connection) throws SQLException {
+
+		Map<String, List<String>> ec_numbers = new HashMap<>();
+
+		Statement stmt = connection.createStatement();
+
+		ResultSet rs = stmt.executeQuery("SELECT locusTag, enzyme_ecnumber FROM subunit " +
+				"INNER JOIN gene ON (gene.idgene = gene_idgene)"
+				);
+
+		while(rs.next()) {
+
+			List<String> genes = new ArrayList<>();
+
+			String gene = rs.getString(1);
+			String enzyme = rs.getString(2);
+
+			if(ec_numbers.containsKey(enzyme))
+				genes = ec_numbers.get(enzyme);
+
+			genes.add(gene);
 
 			ec_numbers.put(enzyme, genes);
 
@@ -2268,19 +2321,17 @@ public class ModelAPI {
 
 		ArrayList<String[]> result = new ArrayList<>();
 
-		String query  = "SELECT protein.name, enzyme.ecnumber," +
+		ResultSet rs = stmt.executeQuery("SELECT protein.name, enzyme.ecnumber," +
 				" COUNT(DISTINCT(reaction_has_enzyme.reaction_idreaction)), enzyme.source, enzyme.inModel, reaction.inModel, idprotein," +
 				" COUNT(DISTINCT(reaction.inModel)), protein.idprotein" +
 				" FROM enzyme " +
 				" INNER JOIN protein ON protein.idprotein = enzyme.protein_idprotein " +
-				" LEFT JOIN reaction_has_enzyme ON ecnumber = reaction_has_enzyme.enzyme_ecnumber " +
+				" INNER JOIN reaction_has_enzyme ON ecnumber = reaction_has_enzyme.enzyme_ecnumber " +
 				" AND protein.idprotein = reaction_has_enzyme.enzyme_protein_idprotein " +
 				" INNER JOIN reaction ON reaction.idreaction = reaction_has_enzyme.reaction_idreaction" +
 				originalReaction+encodedEnzyme+
 				" GROUP BY idprotein, ecnumber "+//, reaction.inModel " +
-				" ORDER BY ecnumber  ASC, reaction.inModel DESC;";
-		
-		ResultSet rs = stmt.executeQuery(query);
+				" ORDER BY ecnumber  ASC, reaction.inModel DESC;");
 
 		while(rs.next()) {
 
@@ -2437,7 +2488,7 @@ public class ModelAPI {
 	public static Map<String, ArrayList<String>> getReactions (Statement stmt, String conditions) throws SQLException {
 
 		ResultSet rs = stmt.executeQuery("SELECT DISTINCT idreaction, name, equation, reversible, compartment_idcompartment, notes, lowerBound, upperBound, boolean_rule " +
-				"FROM reaction WHERE inModel AND " +conditions );
+				"FROM reaction WHERE inModel AND " +conditions+ ";" );
 
 		Map<String, ArrayList<String>> result = new HashMap<>();
 
@@ -3519,11 +3570,11 @@ public class ModelAPI {
 	 * @return ArrayList<String> 
 	 * @throws SQLException
 	 */
-	public static ArrayList<String> getGenesModel(Statement statement) throws SQLException{
+	public static List<String> getGenesModel(Statement statement) throws SQLException{
+		
+		List<String> lls = new ArrayList<>();
 
-		ArrayList<String> lls = new ArrayList<String>();
-
-		ResultSet rs = statement.executeQuery("SELECT locusTag, name FROM gene;");
+		ResultSet rs = statement.executeQuery("SELECT locusTag, name, idgene FROM gene ORDER BY locusTag;");
 
 		while(rs.next()) {
 
@@ -3537,6 +3588,31 @@ public class ModelAPI {
 
 		rs.close();
 		return lls;
+	}
+	
+	/**
+	 * Get locusTag and name from gene table.
+	 * @param statement
+	 * @return ArrayList<String> 
+	 * @throws SQLException
+	 */
+	public static Map<String, String> getGenesModelID(Statement statement) throws SQLException{
+		
+		Map<String, String> ret = new HashMap<>();
+		ResultSet rs = statement.executeQuery("SELECT locusTag, name, idgene FROM gene;");
+
+		while(rs.next()) {
+
+			String gene = rs.getString(1);
+
+			if(rs.getString(2) != null && !rs.getString(2).trim().isEmpty())
+				gene = gene.concat(" (").concat(rs.getString(2)).concat(")");
+
+			ret.put(gene, rs.getString(3));
+		}
+
+		rs.close();
+		return ret;
 	}
 
 	/**
@@ -4201,8 +4277,8 @@ public class ModelAPI {
 		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag, name, count(DISTINCT(module_id)), count(enzyme_ecnumber) "+
 				" FROM gene LEFT JOIN subunit ON gene.idgene = gene_idgene "+
 				" INNER JOIN enzyme ON subunit.enzyme_protein_idprotein = enzyme.protein_idprotein "+
-				" INNER JOIN gene_has_orthology ON gene_has_orthology.gene_idgene = gene.idgene "+
-				" INNER JOIN module_has_orthology ON module_has_orthology.orthology_id = gene_has_orthology.orthology_id "+
+				" LEFT JOIN gene_has_orthology ON gene_has_orthology.gene_idgene = gene.idgene "+
+				" LEFT JOIN module_has_orthology ON module_has_orthology.orthology_id = gene_has_orthology.orthology_id "+
 				"GROUP BY locusTag;");
 
 		//		System.out.println("SELECT idgene, locusTag, name, count(DISTINCT(reaction)), count(enzyme_ecnumber) "+
@@ -5531,14 +5607,16 @@ public class ModelAPI {
 	 */
 	public static ArrayList<String[]> getGeneIdLocusTag (Statement stmt) throws SQLException {
 
-		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag FROM gene;");
+		ResultSet rs = stmt.executeQuery("SELECT idgene, locusTag, sequence_id FROM gene;");
 		ArrayList<String[]> result = new ArrayList<>();
 
 		while(rs.next()) {
-			String[] list = new String[2];
+			String[] list = new String[3];
 
-			list[0] = rs.getString(0);
+			list[0] = rs.getString(1);
 			list[1] = rs.getString(2);
+			list[2] = rs.getString(3);
+			
 			result.add(list);
 		}
 
@@ -5678,7 +5756,7 @@ public class ModelAPI {
 		while(rs.next())
 			if(rs.getInt(2)==1 && rs.getInt(3)==1)
 				ret.add(rs.getInt(1));
-
+		
 		return ret;
 	}
 	
@@ -5712,12 +5790,258 @@ public class ModelAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static int getLastInsertedID(Statement stmt, String databaseName, String tableName) throws SQLException{
+	public static int getLastInsertedIdMySQL(Statement stmt, String databaseName, String tableName) throws SQLException{
 		
 		int id = getAutoIncrementValue(stmt, databaseName, tableName) - 1;
 		
 		return id;
 	}
 
+	
+	/**
+	 * return the last position id value for a given table in H2 database
+	 * 
+	 * @param stmt
+	 * @param tableName
+	 * @param sKey
+	 * @return
+	 * @throws SQLException
+	 */
+	public static int getLastInsertedIdH2(Statement stmt, String tableName, String sKey) throws SQLException{
+		
+		ResultSet rs = stmt.executeQuery("SELECT MAX(" + sKey +") FROM " + tableName + ";");
+		
+		int id = -1;
+		
+		if(rs.next())
+			id = rs.getInt(1);
+		
+		rs.close();
+		return id;
+	}
+	
+	
+	/**
+	 * Update locusTags using protein_ids
+	 * 
+	 * @param locusTagsByQueries
+	 * @param statement
+	 * @param databaseType
+	 * @throws SQLException
+	 */
+	public static void updateLocusTags(Map<String,String> locusTagsByQueries, PreparedStatement statement, DatabaseType databaseType) throws SQLException {
+		
+		
+		int i = 0;
+		for (String query : locusTagsByQueries.keySet()) {
+			
+			String locusTag = locusTagsByQueries.get(query).toUpperCase().trim();
+
+			statement.setString(1, locusTag);
+			statement.setString(2, query);
+			statement.addBatch();
+
+			if ((i + 1) % BATCH_SIZE == 0) {
+
+				statement.executeBatch(); // Execute every 500 items.
+			}
+			i++;
+		}
+		statement.executeBatch();
+	}
+	
+	
+	/**
+	 * @param sequences
+	 * @param pStmt
+	 * @throws SQLException
+	 */
+	public static void loadFastaSequences(Map<Integer, List<String>> sequences, String seqType, java.sql.Connection conn) throws SQLException{
+		
+		PreparedStatement pStmt = conn.prepareStatement("INSERT INTO sequence (gene_idgene,sequence_type,sequence,sequence_length) VALUES(?,?,?,?);");
+				
+		int i = 0;
+		for (Integer geneID : sequences.keySet()) {
+			
+			List<String> seqInfo = sequences.get(geneID);
+			
+			pStmt.setInt(1, geneID);
+			pStmt.setString(2, seqType);
+			pStmt.setString(3, seqInfo.get(0));
+			pStmt.setInt(4, Integer.parseInt(seqInfo.get(1)));
+			pStmt.addBatch();
+
+			if ((i + 1) % BATCH_SIZE == 0) {
+
+				pStmt.executeBatch(); // Execute every 500 items.
+			}
+			i++;
+		}
+		pStmt.executeBatch();
+		
+	}
+	
+	/**
+	 * retrieve the number of reactions associated with each gene using subunit and reaction_has_enzyme tables
+	 * 
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String,Integer> countGenesReactionsBySubunit(Statement stmt) throws SQLException{
+		
+		Map<String, Integer> res = new HashMap<>();
+
+		ResultSet rs = stmt.executeQuery("SELECT gene.sequence_id, gene.locusTag, COUNT(DISTINCT(reaction_has_enzyme.reaction_idreaction))"
+				+" FROM subunit INNER JOIN reaction_has_enzyme ON (subunit.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein"
+				+" AND subunit.enzyme_ecnumber = reaction_has_enzyme.enzyme_ecnumber)"
+				+" INNER JOIN gene ON gene.idgene = subunit.gene_idgene"
+				+" GROUP BY gene.sequence_id"
+				+" ORDER BY gene.locusTag;");
+
+		while(rs.next())
+			res.put(rs.getString(2), rs.getInt(3));
+		
+		rs.close();
+		return res;
+	
+	}
+	
+	
+	/**
+	 * For each gene, retrieve the number of reactions that have the geneID in their boolean_rule
+	 * 
+	 * @param geneID
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, Integer> countGenesReactionsByBooleanRule(Statement stmt) throws SQLException{
+		
+		Map<String, Integer> res = new HashMap<>();
+				
+		ResultSet rs = stmt.executeQuery("SELECT idgene, gene.locusTag, (Select count(*)"
+				+ " FROM reaction WHERE reaction.boolean_rule REGEXP CONCAT('^', gene.idgene, ' ')"
+				+ " OR reaction.boolean_rule REGEXP CONCAT(' ', gene.idgene, ' ')"
+				+ " OR reaction.boolean_rule REGEXP CONCAT(' ', gene.idgene, '$')) FROM gene;");
+		
+		while(rs.next())
+			res.put(rs.getString(2), rs.getInt(3));
+		
+		rs.close();
+		return res;
+	}
+	
+	
+	/**
+	 * delete all data from Gene and Sequence tables
+	 * 
+	 * @param stmt
+	 * @throws SQLException 
+	 */
+	public static void deleteGeneAndSequenceTables(Statement stmt) throws SQLException{
+		
+		stmt.execute("DELETE FROM sequence");
+		stmt.execute("DELETE FROM gene;");
+		
+	}
+	
+	
+	/**
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 * @throws IOException 
+	 */
+	public static boolean checkManualyInsertedCompartments(Statement stmt) throws SQLException, IOException{
+
+
+		ResultSet rs = stmt.executeQuery("SELECT DISTINCT(compartment_idcompartment), compartment.abbreviation FROM stoichiometry "
+				+ "INNER JOIN compartment ON compartment.idcompartment = stoichiometry.compartment_idcompartment;");
+
+		while(rs.next()){
+
+			if(!rs.getString(2).equals("in") && !rs.getString(2).equals("out"))
+				return false;
+		}
+		
+		return true;
+	}
+
+	/**
+	 * @param stmt
+	 * @param text
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String getCompartmentAbbreviation(Statement stmt, String compartmentName) throws SQLException {
+		
+		String abb = null;
+		
+		ResultSet rs = stmt.executeQuery("SELECT abbreviation FROM compartments where name = '"+  compartmentName  + "';");
+		
+		if(rs.next())
+			abb = rs.getString(1);
+		
+		return abb;
+	}
+	
+//	/**
+//	 * @param stmt
+//	 * @return
+//	 * @throws SQLException
+//	 * @throws IOException 
+//	 */
+//	public static List<String> checkManualyInsertedCompartments(Statement stmt) throws SQLException, IOException{
+//		
+//		Map<Integer,String> manualCompartments = new HashMap<>();
+//		
+//		ResultSet rs = stmt.executeQuery("SELECT DISTINCT(compartment_idcompartment), compartment.abbreviation, compartment.name FROM stoichiometry "
+//				+ "INNER JOIN compartment ON compartment.idcompartment = stoichiometry.compartment_idcompartment;");
+//		
+//		while(rs.next()){
+//			
+//			if(!rs.getString(2).equals("in") && !rs.getString(2).equals("out"))
+//				manualCompartments.put(rs.getInt(1),rs.getString(3));
+//			
+//		}
+//		
+//		String getReactionsQuery = "SELECT DISTINCT(reaction_idreaction), stoichiometry.compartment_idcompartment, reaction.name FROM stoichiometry "
+//				+ "INNER JOIN reaction ON stoichiometry.reaction_idreaction=reaction.idreaction WHERE stoichiometry.compartment_idcompartment = ";
+//		
+//		String deleteReactionsQuery = "DELETE FROM stoichiometry WHERE compartment_idcompartment = ";
+//		
+//		if(!manualCompartments.isEmpty()){
+//			
+//			for(Integer compartmentID : manualCompartments.keySet()){
+//				
+//				getReactionsQuery.concat(Integer.toString(compartmentID)).concat(" OR compartment_idcompartment = ");
+//				
+//				deleteReactionsQuery.concat(Integer.toString(compartmentID)).concat(" OR compartment_idcompartment = ");
+//			}
+//		}
+//		getReactionsQuery = getReactionsQuery.substring(0, getReactionsQuery.lastIndexOf(" OR ")).trim().concat(";");
+//		deleteReactionsQuery = getReactionsQuery.substring(0, getReactionsQuery.lastIndexOf(" OR ")).trim().concat(";");
+//
+//		
+//		List<String> reactionsInfo = new ArrayList<>();
+//		
+//		rs = stmt.executeQuery(getReactionsQuery);
+//		while(rs.next()){
+//			reactionsInfo.add(rs.getString(3).concat("\t").concat(manualCompartments.get(rs.getInt(2))));
+//		}
+//		
+//		rs = stmt.executeQuery(deleteReactionsQuery);
+//		
+////		FileWriter writer = new FileWriter("output.txt"); 
+////		for(String info: reactionsInfo) {
+////		  writer.write(str);
+////		}
+////		writer.close();
+//		
+//		return reactionsInfo;
+//		
+//	}
+	
 
 }	

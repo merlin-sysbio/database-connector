@@ -1,5 +1,6 @@
 package pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -2511,5 +2512,91 @@ public class HomologyAPI {
 
 		return false;
 	}
+	
+	/**
+     * Get all entries for automatic annotation for a given blast database (with ecNumber only).
+     * 
+     * @param blastDatabase
+     * @param statement
+     * @return
+     * @throws SQLException
+     */
+    public static Set<Integer> getSKeyForAutomaticAnnotation(String blastDatabase, Statement statement) throws SQLException{
+         
+        List<Integer> homologySKey = new ArrayList<>();
+         
+        Set<Integer> queries = new HashSet<>();
+         
+        ResultSet rs;
+         
+        if(blastDatabase.isEmpty())
+            rs = statement.executeQuery("SELECT s_key FROM homologySetup;");
+        else
+            rs = statement.executeQuery("SELECT s_key FROM homologySetup WHERE databaseID ='" + blastDatabase + "';");
+         
+        while(rs.next())
+            homologySKey.add(rs.getInt(1));
+         
+        for(Integer key : homologySKey) {
+             
+            ResultSet rs2 = statement.executeQuery("SELECT DISTINCT(geneHomology.s_key) FROM geneHomology\n" + 
+                    "INNER JOIN geneHomology_has_homologues ON geneHomology.s_key = geneHomology_has_homologues.geneHomology_s_key\n" + 
+                    "INNER JOIN homologues ON geneHomology_has_homologues.homologues_s_key = homologues.s_key\n" + 
+                    "INNER JOIN homologues_has_ecNumber ON homologues_has_ecNumber.homologues_s_key = homologues.s_key\n" + 
+                    "WHERE homologySetup_s_key = " + key + ";");
+         
+            while(rs2.next())
+                queries.add(rs2.getInt(1));
+             
+            rs2.close();
+        }
+         
+        rs.close();
+         
+         
+        return queries;
+    }
+ 
+    
+    /**
+     * @param connection
+     * @param locusTag
+     * @param geneName
+     * @param ecMap
+     * @param confLevelMap
+     * @throws SQLException
+     */
+    public static void insertAutomaticEnzymeAnnotation(Connection connection, Map<Integer, String> locusTag, Map<Integer, String> geneName, 
+    		Map<Integer, String> ecMap, Map<Integer, String> confLevelMap) throws SQLException {
+
+    	String query = "INSERT INTO homologyData (geneHomology_s_key, locusTag, geneName, product, ecNumber, selected, chromosome, notes)"
+    			+ "VALUES( ?, ?, ?, ?, ?, ?, ?, ?);";
+
+    	PreparedStatement statement = connection.prepareStatement(query);
+
+    	int i = 0;
+
+    	for (int sKey : ecMap.keySet()) {
+
+    		statement.setInt(1, sKey);
+    		statement.setString(2, locusTag.get(sKey));
+    		statement.setString(3, geneName.get(sKey));
+    		statement.setString(4, "null");
+    		statement.setString(5, ecMap.get(sKey));
+    		statement.setBoolean(6, true);
+    		statement.setString(7, null);
+    		statement.setString(8, confLevelMap.get(sKey));
+
+    		statement.addBatch();
+
+    		if ((i + 1) % 500 == 0) {
+
+    			statement.executeBatch();
+    		}
+    		i++;
+    	}
+    	statement.executeBatch();
+    }
+             
 
 }
