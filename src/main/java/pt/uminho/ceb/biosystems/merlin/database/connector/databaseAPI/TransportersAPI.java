@@ -2960,11 +2960,6 @@ public class TransportersAPI {
 		
 		ArrayList<String[]> result = new ArrayList<>();
 		
-		System.out.println("SELECT gene_id, transport_type, metabolite_id, metabolite_name, direction, reversible, sum(similarity) as sum_s, kegg_miriam "
-				+ " FROM gene_to_metabolite_direction "
-				+ " WHERE locus_tag = '"+ id +"' "
-				+ " GROUP BY metabolite_id, transport_type, reversible, direction;");
-		
 		ResultSet rs = stmt.executeQuery( "SELECT gene_id, transport_type, metabolite_id, metabolite_name, direction, reversible, sum(similarity) as sum_s, kegg_miriam "
 				+ " FROM gene_to_metabolite_direction "
 				+ " WHERE locus_tag = '"+ id +"' "

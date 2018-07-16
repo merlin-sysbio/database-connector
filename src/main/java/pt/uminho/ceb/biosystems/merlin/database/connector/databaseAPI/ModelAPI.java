@@ -397,7 +397,7 @@ public class ModelAPI {
 		resultSet = statement.executeQuery("SELECT * FROM subunit WHERE gene_idgene = "+idGene);
 
 		for(String enzyme : ecNumber) {
-
+			
 			List<String> reactions_ids = new ArrayList<String>();
 
 			if(((enzyme.contains(".-") && integratePartial) || (!enzyme.contains(".-") && integrateFull)) && !enzyme.isEmpty()) {
@@ -409,9 +409,11 @@ public class ModelAPI {
 				if(resultSet.next()) {
 
 					idProtein = resultSet.getString(1);
+					
 					resultSet= statement.executeQuery("SELECT inModel FROM enzyme WHERE protein_idprotein="+idProtein+" AND ecnumber='"+enzyme+"'");
 					resultSet.next();
 					go = !resultSet.getBoolean(1);
+					
 				}
 				else {
 
@@ -428,13 +430,13 @@ public class ModelAPI {
 					}
 					idProtein = rSet.getString(1);
 					rSet.close();
-
+					
 					statement.execute("INSERT INTO enzyme (protein_idprotein, ecnumber, inModel, source) VALUES("+idProtein+",'"+enzyme+"',true,'HOMOLOGY')");
 					go = true;
-				}					
-
+				}	
+				
 				if(go) {
-
+					
 					statement.execute("UPDATE enzyme SET inModel = true, source = 'HOMOLOGY' WHERE protein_idprotein="+idProtein+" AND ecnumber='"+enzyme+"'");
 
 					if(!enzyme.contains(".-")) {
