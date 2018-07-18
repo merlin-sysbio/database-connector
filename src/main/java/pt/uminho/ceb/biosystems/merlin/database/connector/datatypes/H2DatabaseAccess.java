@@ -148,33 +148,6 @@ import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 			return preparedStatement;
 		}
 
-//		/**
-//		 * @return
-//		 * @throws SQLException
-//		 */
-//		public Statement createStatement() throws SQLException {
-//			
-//			Statement statement = null;
-//			try {
-//				
-//				if(this.connection==null || this.connection.isClosed()) {
-//					
-//					this.openConnection();
-//				}
-//					statement = this.connection.createStatement();
-//					statement.isClosed();
-//					statement.isPoolable();
-//					statement.execute("SHOW TABLES;");
-//			}
-//			catch (CommunicationsException e) {
-//			
-//				System.err.println("CommunicationsException\t"+e.getMessage());
-//				this.openConnection();
-//				statement = this.connection.createStatement();
-//			}
-//			
-//			return statement;
-//		}
 
 		/**
 		 * @param statement

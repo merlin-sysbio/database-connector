@@ -1,12 +1,6 @@
 package pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -26,12 +20,9 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import javax.print.attribute.standard.OutputDeviceAssigned;
-
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
-import pt.uminho.ceb.biosystems.merlin.utilities.containers.capsules.DatabaseReactionContainer;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.capsules.ReactionsCapsule;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.GeneAssociation;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ModuleCI;
@@ -39,7 +30,6 @@ import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ProteinsGPR_CI;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ReactionProteinGeneAssociation;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ReactionsGPR_CI;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.model.MetaboliteContainer;
-import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
 
 
