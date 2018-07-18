@@ -398,7 +398,7 @@ public class ModelAPI {
 		resultSet = statement.executeQuery("SELECT * FROM subunit WHERE gene_idgene = "+idGene);
 
 		for(String enzyme : ecNumber) {
-
+			
 			List<String> reactions_ids = new ArrayList<String>();
 
 			if(((enzyme.contains(".-") && integratePartial) || (!enzyme.contains(".-") && integrateFull)) && !enzyme.isEmpty()) {
@@ -410,9 +410,11 @@ public class ModelAPI {
 				if(resultSet.next()) {
 
 					idProtein = resultSet.getString(1);
+					
 					resultSet= statement.executeQuery("SELECT inModel FROM enzyme WHERE protein_idprotein="+idProtein+" AND ecnumber='"+enzyme+"'");
 					resultSet.next();
 					go = !resultSet.getBoolean(1);
+					
 				}
 				else {
 
@@ -429,13 +431,13 @@ public class ModelAPI {
 					}
 					idProtein = rSet.getString(1);
 					rSet.close();
-
+					
 					statement.execute("INSERT INTO enzyme (protein_idprotein, ecnumber, inModel, source) VALUES("+idProtein+",'"+enzyme+"',true,'HOMOLOGY')");
 					go = true;
-				}					
-
+				}	
+				
 				if(go) {
-
+					
 					statement.execute("UPDATE enzyme SET inModel = true, source = 'HOMOLOGY' WHERE protein_idprotein="+idProtein+" AND ecnumber='"+enzyme+"'");
 
 					if(!enzyme.contains(".-")) {
@@ -1420,7 +1422,7 @@ public class ModelAPI {
 
 		Statement stmt = connection.createStatement();
 
-		ResultSet rs = stmt.executeQuery("SELECT locusTag, enzyme.ecnumber FROM subunit "
+		ResultSet rs = stmt.executeQuery("SELECT locusTag, enzyme.ecnumber, sequence_id FROM subunit "
 				+ " INNER JOIN gene ON (gene.idgene = gene_idgene) "
 				+ " INNER JOIN enzyme ON (subunit.enzyme_protein_idprotein = enzyme.protein_idprotein  AND subunit.enzyme_ecnumber  = enzyme.ecnumber)"
 				+ " INNER JOIN reaction_has_enzyme ON ecnumber = reaction_has_enzyme.enzyme_ecnumber AND enzyme.protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein "
@@ -1434,11 +1436,17 @@ public class ModelAPI {
 
 			String gene = rs.getString(1);
 			String enzyme = rs.getString(2);
+			
+			String seqID = rs.getString(3);
 
 			if(ec_numbers.containsKey(enzyme))
 				genes = ec_numbers.get(enzyme);
+			
+			if(seqID!=null && !seqID.isEmpty())
+				genes.add(seqID);
 
-			genes.add(gene);
+			else
+				genes.add(gene);
 
 			ec_numbers.put(enzyme, genes);
 

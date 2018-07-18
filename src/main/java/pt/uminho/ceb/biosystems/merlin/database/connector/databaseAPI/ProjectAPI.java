@@ -152,12 +152,12 @@ public class ProjectAPI {
 		boolean ret = false;
 
 		String query = "SELECT * FROM reaction WHERE NOT originalReaction;";
-
 		ResultSet rs = statement.executeQuery(query);
 
 		if(rs.next())
 			ret=true;
-
+		
+		rs.close();
 		return ret;
 	}
 
@@ -841,6 +841,7 @@ public class ProjectAPI {
 		if(ProjectAPI.isCompartmentalisedModel(stmt))
 			aux = " NOT originalReaction ";
 		
+		
 		ResultSet rs = stmt.executeQuery("SELECT pathway_idpathway, count(reaction_idreaction) " +
 				" FROM pathway " +
 				" INNER JOIN pathway_has_reaction ON pathway_idpathway=pathway.idpathway " +
@@ -850,9 +851,8 @@ public class ProjectAPI {
 
 		while(rs.next()) {
 			
-			if(qls.containsKey(rs.getString(1)))
+			if(qls.containsKey(rs.getString(1))) 
 				qls.get(rs.getString(1))[2] = rs.getString(2);
-			
 		}
 
 		rs.close();
@@ -2701,7 +2701,7 @@ public class ProjectAPI {
 	public static String countTableEntries(String table, Statement stmt) throws SQLException{
 
 		String result = "";
-
+		
 		ResultSet rs = stmt.executeQuery("SELECT count(*) FROM "+table+";");
 		if(rs.next())
 			result = rs.getString(1);
