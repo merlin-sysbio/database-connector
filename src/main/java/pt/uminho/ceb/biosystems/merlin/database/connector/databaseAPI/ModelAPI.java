@@ -1,12 +1,6 @@
 package pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -15,6 +9,7 @@ import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -26,12 +21,9 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import javax.print.attribute.standard.OutputDeviceAssigned;
-
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
-import pt.uminho.ceb.biosystems.merlin.utilities.containers.capsules.DatabaseReactionContainer;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.capsules.ReactionsCapsule;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.GeneAssociation;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ModuleCI;
@@ -39,7 +31,6 @@ import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ProteinsGPR_CI;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ReactionProteinGeneAssociation;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ReactionsGPR_CI;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.model.MetaboliteContainer;
-import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
 
 
@@ -6043,5 +6034,142 @@ public class ModelAPI {
 //		
 //	}
 	
+	
+/////////////////Create model from exisiting models/////////////////////
+	
+	/**
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static boolean isModelEmpty(Statement stmt) throws SQLException{
+		
+		ResultSet rs = stmt.executeQuery("Select * from compound;");
+		
+		if(rs.next())
+			return false;
+		else
+			return true;
+	}
+	
+	/**
+	 * @param stmt
+	 * @throws SQLException
+	 */
+	public static void setAllReactionsInModel(Statement stmt, boolean reactionsInModel) throws SQLException{
+		
+		if(reactionsInModel)
+			stmt.execute("UPDATE reaction SET inModel = true");
+		else
+			stmt.execute("UPDATE reaction SET inModel = false");
+		
+	}
+	
+	/**
+	 * @param pStmt
+	 * @param reactionsToAdd
+	 * @throws SQLException 
+	 */
+	public static void addReactionsInModel(PreparedStatement pStmt, Set<String> reactionsToAdd, String addedByNote) throws SQLException{
 
+		int i = 0;
+		for (String reaction : reactionsToAdd) {
+
+			pStmt.setString(1, "true");
+			pStmt.setString(2, addedByNote);
+			pStmt.setString(3, reaction);
+
+			pStmt.addBatch();
+
+			if ((i + 1) % 1000 == 0) {
+
+				pStmt.executeBatch(); // Execute every 1000 items.
+			}
+			i++;
+		}
+		pStmt.executeBatch();
+	}
+	
+	/**
+	 * @param stmt
+	 * @param genesSet
+	 * @return
+	 * @throws SQLException 
+	 */
+	public static Map<String,Map<String,List<String>>> getGenesReactionsByBooleanRule(Statement stmt) throws SQLException{
+		
+		Map<String, Map<String,List<String>>> genesReactions = new HashMap<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT gene.locusTag, gene.sequence_id,"
+				+ " (Select GROUP_CONCAT(CONCAT(reaction.idreaction, '|', reaction.name, '|',reaction.boolean_rule))"
+				+ " FROM reaction WHERE reaction.boolean_rule REGEXP CONCAT('^', gene.idgene, ' ')"
+				+ " OR reaction.boolean_rule REGEXP CONCAT(' ', gene.idgene, ' ')"
+				+ " OR reaction.boolean_rule REGEXP CONCAT(' ', gene.idgene, '$')) FROM gene;");
+		
+		while(rs.next()){
+			
+			Map<String, List<String>> reactions = new HashMap<>();
+			String gene = rs.getString(2);
+				
+			if(rs.getString(3)!=null){
+				
+				String[] splitedReactions = rs.getString(3).split(",");
+				
+				for(String info : splitedReactions){
+					
+					String[] splitedInfo = info.split("\\|");
+					List<String> reactionInfo = new ArrayList<>();
+					
+					reactionInfo.add(splitedInfo[0]); //reaction ID
+					reactionInfo.add(splitedInfo[2]); //reaction boolean_rule
+					
+					reactions.put(splitedInfo[1], reactionInfo);
+				}
+				
+//				reactions = Arrays.asList(rs.getString(3).split(","));
+			}
+			
+			genesReactions.put(gene, reactions);
+		}
+		
+		rs.close();
+		
+		return genesReactions;
+	}
+	
+	
+	/**
+	 * retrieve the reactions associated with each gene using subunit and reaction_has_enzyme tables
+	 * 
+	 * @param stmt
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String,List<String>> getGenesReactionsBySubunit(Statement stmt) throws SQLException{
+		
+		Map<String, List<String>> genesReactions = new HashMap<>();
+
+		ResultSet rs = stmt.executeQuery("SELECT gene.sequence_id, gene.locusTag, GROUP_CONCAT(DISTINCT(reaction.name))"
+				+" FROM subunit INNER JOIN reaction_has_enzyme ON (subunit.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein"
+				+" AND subunit.enzyme_ecnumber = reaction_has_enzyme.enzyme_ecnumber)"
+				+" INNER JOIN gene ON gene.idgene = subunit.gene_idgene"
+				+" INNER JOIN reaction ON reaction.idreaction = reaction_has_enzyme.reaction_idreaction"
+				+" GROUP BY gene.sequence_id"
+				+" ORDER BY gene.locusTag;");
+
+		while(rs.next()){
+			
+			List<String> reactions = new ArrayList<>();
+
+			if(rs.getString(3)!=null)
+				reactions = Arrays.asList(rs.getString(3).split(","));
+
+			genesReactions.put(rs.getString(1), reactions);
+		}
+		
+		rs.close();
+		return genesReactions;
+	
+	}
+	
 }	

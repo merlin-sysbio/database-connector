@@ -4,6 +4,7 @@
 package pt.uminho.ceb.biosystems.merlin.database.connector.datatypes;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -15,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.swing.UIManager;
 
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
@@ -192,5 +195,57 @@ public class DatabaseUtilities {
 
 	}
 
-
+	
+	/**
+	 * @param tablesList
+	 * @param originDb
+	 * @param destinyDb
+	 */
+	public static void dumpSelectedTablesToDatabase(List<String> tablesList, String originDb, String destinyDb, DatabaseAccess dba){
+		
+		String user = dba.get_database_user();
+		String password = dba.get_database_password();
+		String host = dba.get_database_host();
+		
+		String tables = "";
+		
+		for(String table : tablesList)
+			tables.concat(table).concat(" ");
+		
+//		String command = "mysqldump --no-create-info --no-create-db --user=" + user + " --host=" + host + " --password=" + password 
+//				+ " " +  originDb + " " + tables.trim() + " | mysql --user=" + user + " --host=" + host + " --password=" + password + " " + destinyDb;
+		
+//		String command = "mysqldump --no-create-info --no-create-db --user=" + user + " --host=" + host + " -p " + originDb + " gene compound "
+//				+ "| mysql --user=merlindev --host=193.137.11.210 -p " + destinyDb;
+		
+		String command = "mysqldump --no-create-info --no-create-db -u" + user + " -h" + host + " -p" + password + " " 
+				+ originDb + " " + tables + " | mysql -u" + user + " -h" + host + " -p" + password + " " + destinyDb;
+		
+		String os_name = System.getProperty("os.name");
+		
+		if(os_name.contains("Windows"))
+			command = "cmd /c \"".concat(command).concat("\"");
+			
+		
+		try {
+			Process process = Runtime.getRuntime().exec(command);
+			
+			int exitValue = process.waitFor();
+			if (exitValue != 0) {
+			    System.out.println("Abnormal process termination");
+			}
+			else{
+				System.out.println("Dumped completed with success!");
+			}
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	
 }
