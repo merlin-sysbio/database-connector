@@ -245,4 +245,8 @@ public class Connection implements Externalizable{
 	public DatabaseType getDatabaseType() {
 		return this.database_type;
 	}
+	
+	public String getDatabaseName(){
+		return this.database_name;
+	}
 }

@@ -5798,9 +5798,9 @@ public class ModelAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static int getLastInsertedIdH2(Statement stmt, String tableName, String sKey) throws SQLException{
+	public static int getLastInsertedIdH2(Statement stmt, String tableName, String pKey) throws SQLException{
 		
-		ResultSet rs = stmt.executeQuery("SELECT MAX(" + sKey +") FROM " + tableName + ";");
+		ResultSet rs = stmt.executeQuery("SELECT MAX(" + pKey +") FROM " + tableName + ";");
 		
 		int id = -1;
 		
@@ -6090,6 +6090,42 @@ public class ModelAPI {
 		pStmt.executeBatch();
 	}
 	
+	
+	
+	/**
+	 * @param pStmt
+	 * @param reactionsToAdd
+	 * @param addedByNote
+	 * @throws SQLException
+	 */
+	public static void addAndUpdateReactionsInModel(PreparedStatement pStmt, Map<String,String> reactionsToAdd, String addedByNote) throws SQLException{
+
+		//PreparedStatement: "UPDATE reaction SET inModel=?, notes=?, boolean_rule=? WHERE reaction.name=?"
+		
+		int i = 0;
+		for (String reaction : reactionsToAdd.keySet()) {
+			
+			String booleanRule = reactionsToAdd.get(reaction);
+
+			pStmt.setString(1, "true");
+			pStmt.setString(2, addedByNote);
+			if(booleanRule.equals(""))
+				pStmt.setString(3,null);
+			else
+				pStmt.setString(3,booleanRule);
+			pStmt.setString(4, reaction);
+
+			pStmt.addBatch();
+
+			if ((i + 1) % 1000 == 0) {
+
+				pStmt.executeBatch(); // Execute every 1000 items.
+			}
+			i++;
+		}
+		pStmt.executeBatch();
+	}
+	
 	/**
 	 * @param stmt
 	 * @param genesSet
@@ -6126,7 +6162,6 @@ public class ModelAPI {
 					reactions.put(splitedInfo[1], reactionInfo);
 				}
 				
-//				reactions = Arrays.asList(rs.getString(3).split(","));
 			}
 			
 			genesReactions.put(gene, reactions);
@@ -6172,4 +6207,80 @@ public class ModelAPI {
 	
 	}
 	
+	
+	/**
+	 * @param stmt
+	 * @param geneIdsToKeep
+	 * @throws SQLException 
+	 */
+	public static void deleteGenesIDsSkeysFromTables(Statement stmt, String[] tables, Set<Integer> geneIdsToKeep) throws SQLException{
+		
+		String query = "DELETE FROM ";
+		
+		for(String table : tables){
+			
+			query = query.concat(table).concat(" WHERE ");
+		
+			for(Integer geneId : geneIdsToKeep){
+
+				query = query.concat("gene_idgene not like ").concat(Integer.toString(geneId).concat(" AND "));
+			}
+
+			query = query.substring(0, query.lastIndexOf(" AND "));
+			query = query.concat(";");
+
+			stmt.execute(query);
+		}
+	}
+	
+	
+	/**
+	 * @param stmt
+	 * @param tablesNames
+	 * @param key
+	 * @param incrementValue
+	 * @throws SQLException
+	 */
+	public static void incrementTablesIds(Statement stmt, String[] tables, String key, Integer incrementValue) throws SQLException{
+		
+		String query;
+		
+		for(String table : tables){
+		
+			query = "UPDATE " + table + " SET " + key + " = " + key + "+" + incrementValue + ";";
+			stmt.executeUpdate(query);
+		}
+		
+	}
+	
+	
+	/**
+	 * @param pStmt
+	 * @param oldNewGeneIdsMap
+	 * @throws SQLException
+	 */
+	public static void updateGenesIds(PreparedStatement pStmt, String[] tables, Map<Integer,Integer> oldNewGeneIdsMap) throws SQLException{
+
+		//PreparedStatement: "UPDATE ? SET gene_idgene=? WHERE gene_idgene=?"
+		int i = 0;
+		
+		for(String table : tables){
+		
+			for (Integer oldID : oldNewGeneIdsMap.keySet()) {
+				
+				pStmt.setString(1, table);
+				pStmt.setInt(2, oldID);
+				pStmt.setInt(3, oldNewGeneIdsMap.get(oldID));
+
+				pStmt.addBatch();
+
+				if ((i + 1) % 1000 == 0) {
+
+					pStmt.executeBatch(); // Execute every 1000 items.
+				}
+				i++;
+			}
+		}
+		pStmt.executeBatch();
+	}
 }	
