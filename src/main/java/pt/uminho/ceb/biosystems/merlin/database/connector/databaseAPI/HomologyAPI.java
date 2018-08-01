@@ -1571,8 +1571,7 @@ public class HomologyAPI {
 
 		ArrayList<String[]> result = new ArrayList<>();
 
-		ResultSet rs = stmt.executeQuery("SELECT geneHomology_s_key, otherECnumbers FROM homologyData " +
-				"RIGHT JOIN ecNumberList ON (homologyData.s_key = homologyData_s_key);");
+		ResultSet rs = stmt.executeQuery("SELECT geneHomology_s_key, otherECnumbers FROM homologyData RIGHT JOIN ecNumberList ON (homologyData.s_key = homologyData_s_key);");
 
 		while(rs.next()){
 			String[] list = new String[2];
