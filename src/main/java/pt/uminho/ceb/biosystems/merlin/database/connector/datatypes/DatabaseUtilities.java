@@ -210,7 +210,7 @@ public class DatabaseUtilities {
 		String tables = "";
 		
 		for(String table : tablesList)
-			tables.concat(table).concat(" ");
+			tables = tables.concat(table).concat(" ");
 		
 //		String command = "mysqldump --no-create-info --no-create-db --user=" + user + " --host=" + host + " --password=" + password 
 //				+ " " +  originDb + " " + tables.trim() + " | mysql --user=" + user + " --host=" + host + " --password=" + password + " " + destinyDb;
@@ -219,13 +219,12 @@ public class DatabaseUtilities {
 //				+ "| mysql --user=merlindev --host=193.137.11.210 -p " + destinyDb;
 		
 		String command = "mysqldump --no-create-info --no-create-db -u" + user + " -h" + host + " -p" + password + " " 
-				+ originDb + " " + tables + " | mysql -u" + user + " -h" + host + " -p" + password + " " + destinyDb;
+				+ originDb + " " + tables + "| mysql -u" + user + " -h" + host + " -p" + password + " " + destinyDb;
 		
 		String os_name = System.getProperty("os.name");
 		
 		if(os_name.contains("Windows"))
 			command = "cmd /c \"".concat(command).concat("\"");
-			
 		
 		try {
 			Process process = Runtime.getRuntime().exec(command);
