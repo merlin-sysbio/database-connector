@@ -6061,9 +6061,9 @@ public class ModelAPI {
 	public static void setAllReactionsInModel(Statement stmt, boolean reactionsInModel) throws SQLException{
 		
 		if(reactionsInModel)
-			stmt.executeLargeUpdate("UPDATE reaction SET inModel = true");
+			stmt.executeUpdate("UPDATE reaction SET inModel = true");
 		else
-			stmt.executeLargeUpdate("UPDATE reaction SET inModel = false");
+			stmt.executeUpdate("UPDATE reaction SET inModel = false");
 		
 	}
 	
@@ -6210,30 +6210,30 @@ public class ModelAPI {
 	}
 	
 	
-	/**
-	 * @param stmt
-	 * @param geneIdsToKeep
-	 * @throws SQLException 
-	 */
-	public static void deleteGenesIDsSkeysFromTables(Statement stmt, String[] tables, Set<Integer> geneIdsToKeep) throws SQLException{
-		
-		for(String table : tables){
-
-			String query = "DELETE FROM ";
-
-			query = query.concat(table).concat(" WHERE ");
-
-			for(Integer geneId : geneIdsToKeep){
-
-				query = query.concat("gene_idgene not like ").concat(Integer.toString(geneId).concat(" AND "));
-			}
-
-			query = query.substring(0, query.lastIndexOf(" AND "));
-			query = query.concat(";");
-
-			stmt.execute(query);
-		}
-	}
+//	/**
+//	 * @param stmt
+//	 * @param geneIdsToKeep
+//	 * @throws SQLException 
+//	 */
+//	public static void deleteGenesIDsSkeysFromTables(Statement stmt, Set<String> tables, Set<Integer> geneIdsToKeep) throws SQLException{
+//		
+//		for(String table : tables){
+//
+//			String query = "DELETE FROM ";
+//
+//			query = query.concat(table).concat(" WHERE ");
+//
+//			for(Integer geneId : geneIdsToKeep){
+//
+//				query = query.concat("gene_idgene not like ").concat(Integer.toString(geneId).concat(" AND "));
+//			}
+//
+//			query = query.substring(0, query.lastIndexOf(" AND "));
+//			query = query.concat(";");
+//
+//			stmt.execute(query);
+//		}
+//	}
 	
 	
 	/**
@@ -6243,7 +6243,7 @@ public class ModelAPI {
 	 * @param incrementValue
 	 * @throws SQLException
 	 */
-	public static void incrementTablesIds(Statement stmt, String[] tables, String key, Integer incrementValue) throws SQLException{
+	public static void incrementTablesIds(Statement stmt, Set<String> tables, String key, Integer incrementValue) throws SQLException{
 		
 		String query;
 		
@@ -6287,29 +6287,89 @@ public class ModelAPI {
 //		pStmt.executeBatch();
 //	}
 	
+//	/**
+//	 * @param pStmt
+//	 * @param oldNewGeneIdsMap
+//	 * @throws SQLException
+//	 */
+//	public static void updateGenesIds(PreparedStatement pStmt, Map<Integer,Integer> oldNewGeneIdsMap) throws SQLException{
+//
+//		//PreparedStatement: "UPDATE <table> SET gene_idgene=? WHERE gene_idgene=?"
+//		int i = 0;
+//
+//		for (Integer oldID : oldNewGeneIdsMap.keySet()) {
+//			
+//			pStmt.setInt(1, oldNewGeneIdsMap.get(oldID));
+//			pStmt.setInt(2, oldID);
+//
+//			pStmt.addBatch();
+//
+//			if ((i + 1) % 1000 == 0) {
+//
+//				pStmt.executeBatch(); // Execute every 1000 items.
+//			}
+//			i++;
+//		}
+//		pStmt.executeBatch();
+//	}
+	
 	/**
 	 * @param pStmt
 	 * @param oldNewGeneIdsMap
 	 * @throws SQLException
 	 */
-	public static void updateGenesIds(PreparedStatement pStmt, Map<Integer,Integer> oldNewGeneIdsMap) throws SQLException{
+	public static void updateGenesIds(PreparedStatement pStmt, Map<Integer,List<Integer>> oldNewGeneIdsMap) throws SQLException{
 
-		//PreparedStatement: "UPDATE <table> SET gene_idgene=? WHERE gene_idgene=?"
+		//PreparedStatement: "INSERT INTO <table> (gene_idgene, <otherColumns>) SELECT ?, <otherColumns> FROM <table> WHERE gene_idgene = ?;"
 		int i = 0;
 
 		for (Integer oldID : oldNewGeneIdsMap.keySet()) {
+			
+			for(Integer newID : oldNewGeneIdsMap.get(oldID)){
 
-			pStmt.setInt(1, oldNewGeneIdsMap.get(oldID));
-			pStmt.setInt(2, oldID);
+				pStmt.setInt(1, newID);
+				pStmt.setInt(2, oldID);
 
-			pStmt.addBatch();
+				pStmt.addBatch();
 
-			if ((i + 1) % 1000 == 0) {
+				if ((i + 1) % 1000 == 0) {
 
-				pStmt.executeBatch(); // Execute every 1000 items.
+					pStmt.executeBatch(); // Execute every 1000 items.
+				}
+				i++;
 			}
-			i++;
 		}
 		pStmt.executeBatch();
+	}
+	
+	
+	/**
+	 * @param stmt
+	 * @param table
+	 * @param condition
+	 * @throws SQLException
+	 */
+	public static void deleteEntriesFromTable(Statement stmt, String table, String condition) throws SQLException{
+		
+		String query = "DELETE FROM ".concat(table).concat(" WHERE ").concat(condition).concat(";");
+		
+		stmt.execute(query);
+	}
+	
+	
+	/**
+	 * @param stmt
+	 * @param tables
+	 * @param condition
+	 * @throws SQLException
+	 */
+	public static void deleteEntriesFromTables(Statement stmt, Set<String> tables, String condition) throws SQLException{
+		
+		for(String table : tables){
+			
+			String query = "DELETE FROM ".concat(table).concat(" WHERE ").concat(condition).concat(";");
+			
+			stmt.execute(query);
+		}
 	}
 }	
