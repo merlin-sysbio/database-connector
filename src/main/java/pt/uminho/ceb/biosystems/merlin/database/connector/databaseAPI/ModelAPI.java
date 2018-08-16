@@ -606,7 +606,7 @@ public class ModelAPI {
 	 * @param chains
 	 * @throws SQLException
 	 */
-	public static void loadReaction(int idCompartment, boolean inModel, String ecNumber, Statement statement, boolean isTransport, DatabaseType databaseType, String name, String equation, boolean reversible, boolean generic, boolean spontaneous, 
+	public static void loadReaction(int idCompartment, String boolean_rule, boolean inModel, String ecNumber, Statement statement, boolean isTransport, DatabaseType databaseType, String name, String equation, boolean reversible, boolean generic, boolean spontaneous, 
 			boolean nonEnzymatic, String reactionSource, String notes, List<String> proteins, List<String> enzymes, Map<String, List<String>> ecNumbers, List<String> pathways, List<Integer> compounds, List<Integer> compartments, List<String> stoichiometry, 
 			List<String> chains) throws SQLException {
 
@@ -632,7 +632,7 @@ public class ModelAPI {
 				" AND source = '"+reactionSource+"'" +
 				" AND NOT originalReaction ;");
 
-		boolean addCompounds = false;
+		boolean addCompounds = true;
 
 		if(rs.next()) {
 
@@ -644,9 +644,9 @@ public class ModelAPI {
 			if(!inModel && !isTransport)
 				source = "KEGG";
 
-			statement.execute("INSERT INTO reaction (name, equation, reversible, inModel, isGeneric, isSpontaneous, isNonEnzymatic, source, originalReaction,compartment_idcompartment, notes) " +
+			statement.execute("INSERT INTO reaction (name, equation, reversible, boolean_rule, inModel, isGeneric, isSpontaneous, isNonEnzymatic, source, originalReaction,compartment_idcompartment, notes) " +
 					"VALUES('"+DatabaseUtilities.databaseStrConverter(name+"_C"+idCompartment, databaseType)+"','"+DatabaseUtilities.databaseStrConverter(equation, databaseType)+"',"
-					+reversible+","+inModel+","+generic+","+spontaneous+","+nonEnzymatic+",'"+source+"',false,"+idCompartment+", '"+saveNote+"');");
+					+reversible+","+boolean_rule+","+inModel+","+generic+","+spontaneous+","+nonEnzymatic+",'"+source+"',false,"+idCompartment+", '"+saveNote+"');");
 
 			rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
 			rs.next();
@@ -656,16 +656,20 @@ public class ModelAPI {
 
 		String newReactionID = rs.getString(1);
 
-		if(ecNumber==null)
+		if(ecNumber==null && !proteins.isEmpty() && !enzymes.isEmpty() && proteins!=null && enzymes!=null){
 			for(int j = 0; j< proteins.size(); j++)
 				ModelAPI.addReaction_has_Enzyme(proteins.get(j), enzymes.get(j), newReactionID, statement);
-		else
+		}
+		else if(ecNumber!=null && ecNumber!=null && !ecNumbers.isEmpty()){
 			for(String protein_id : ecNumbers.get(ecNumber))
 				ModelAPI.addReaction_has_Enzyme(protein_id, ecNumber, newReactionID, statement);
-
-		for(String idPathway : pathways)
-			ModelAPI.addPathway_has_Reaction(idPathway, newReactionID, statement);
-
+		}
+		
+		if(pathways!=null && !pathways.isEmpty()){
+			for(String idPathway : pathways)
+				ModelAPI.addPathway_has_Reaction(idPathway, newReactionID, statement);
+		}
+		
 		if(addCompounds) {
 
 			for(int j = 0 ; j < compounds.size(); j++ ) {
@@ -6372,5 +6376,111 @@ public class ModelAPI {
 			
 			stmt.execute(query);
 		}
+	}
+	
+	/**
+	 * for a given set of reactions retriev a set of reactions not present in database
+	 * 
+	 * @param stmt
+	 * @param reactions
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Set<String> filterReactionsNotInDatabase(Statement stmt, Set<String> reactions) throws SQLException{
+		
+		Set<String> reactionsNotInDb = new HashSet<>();
+		
+		ResultSet rs = null;
+		
+		for(String reactionName :  reactions){
+			
+			rs = stmt.executeQuery("SELECT * FROM reaction WHERE name='"+reactionName+"';");
+			
+			if(!rs.next()){
+				reactionsNotInDb.add(reactionName);
+			}
+		}
+		rs.close();
+		
+		return reactionsNotInDb;
+	}
+	
+	
+	/**
+	 * retrieve a list of reactions Ids for a given set of reactions names
+	 * 
+	 * @param stmt
+	 * @param reactionsNames
+	 * @return
+	 * @throws SQLException 
+	 */
+	public static List<Integer> getReactionsIDsByName(Statement stmt, Set<String> reactionsNames) throws SQLException{
+		
+		List<Integer> ids =  new ArrayList<>();
+		ResultSet rs = null;
+		
+		for(String reactionName :  reactionsNames){
+			
+			rs = stmt.executeQuery("SELECT idreaction FROM reaction WHERE name='"+reactionName+"';");
+			
+			while(rs.next()){
+				ids.add(rs.getInt(1));
+			}
+		}
+		
+		rs.close();
+		
+		return ids;
+	}
+	
+	
+	/**
+	 * @param newDbstmt
+	 * @param oldDbStmt
+	 * @param oldMetId
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Integer checkAndInsertMetaboliteIfNeeded(Statement newDbstmt, Statement oldDbStmt, String oldMetId) throws SQLException{
+		
+		ResultSet rs = oldDbStmt.executeQuery("SELECT * FROM compound WHERE idcompound="+oldMetId+";");
+		
+		String sourceDbId = rs.getString(4);
+		String metaboliteName = rs.getString(2);
+		String formula = rs.getString(6);
+		
+		Integer newMetaboliteId = -1;
+		
+		ResultSet rs2 = newDbstmt.executeQuery("SELECT idcompound FROM compound WHERE kegg_id='"+sourceDbId+"';");
+		
+		if(rs2.next()){
+			newMetaboliteId = rs2.getInt(1);
+		}
+		
+		if(newMetaboliteId==-1){
+			rs2 = newDbstmt.executeQuery("SELECT idcompound FROM compound WHERE name='"+metaboliteName+"';");
+			
+			if(rs2.next())
+				newMetaboliteId = rs2.getInt(1);
+		}
+
+		if(newMetaboliteId==-1){
+			rs2 = newDbstmt.executeQuery("SELECT idcompound FROM compound WHERE formula='"+formula+"';");
+			
+			if(rs2.next())
+				newMetaboliteId = rs2.getInt(1);
+		}
+		
+		if(newMetaboliteId==-1){
+			
+			newDbstmt.execute("INSERT INTO compound (name,kegg_id,formula,molecular_weight,charge)"
+					+ " VALUES('" + metaboliteName + "','" + sourceDbId + "','" + formula + "'," + rs.getInt(7) + "," + rs.getInt(9) +");");
+			
+			rs2 = newDbstmt.executeQuery("SELECT LAST_INSERT_ID()");
+			rs.next();
+			newMetaboliteId = rs2.getInt(1);
+		}
+		
+		return newMetaboliteId;
 	}
 }	
