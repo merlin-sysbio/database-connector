@@ -908,12 +908,12 @@ public class ModelAPI {
 
 		ResultSet rs = statement.executeQuery("SELECT name, equation, reversible, inModel, isGeneric, isSpontaneous, isNonEnzymatic, source, idreaction, lowerBound, upperBound, notes " +
 				" FROM reaction " 
-				+ " WHERE idReaction = "+idReaction+";");
+				+ " WHERE idreaction = "+idReaction+";");
 
-		Map<String, Object> drc = new HashMap<>();
+		Map<String, Object> subMap = new HashMap<>();
 
 		if (rs.next()) {
-
+			
 			String name = rs.getString(1);
 			String equation = rs.getString(2);
 			boolean reversible = rs.getBoolean(3);
@@ -929,7 +929,7 @@ public class ModelAPI {
 			if(rs.getString(12)!= null)
 				notes = rs.getString(12);
 
-			Map<String, Object> subMap = new HashMap<>();
+//			Map<String, Object> subMap = new HashMap<>();
 
 			subMap.put("name", name);
 
@@ -957,7 +957,7 @@ public class ModelAPI {
 
 			List<Pair<String, String>> proteinsPairs = new ArrayList<>();
 			rs = statement.executeQuery("SELECT reaction_idreaction, enzyme_protein_idprotein, enzyme_ecnumber  " +
-					"FROM reaction_has_enzyme WHERE idReaction = "+idReaction+";");
+					"FROM reaction_has_enzyme WHERE reaction_idreaction = "+idReaction+";");
 			while (rs.next())
 				proteinsPairs.add(new  Pair<>(rs.getString(2), rs.getString(3)));
 
@@ -965,7 +965,7 @@ public class ModelAPI {
 
 			List<String> pathways = new ArrayList<>();
 			rs = statement.executeQuery("SELECT reaction_idreaction, pathway_idpathway FROM pathway_has_reaction "
-					+ " WHERE idReaction = "+idReaction+";");
+					+ " WHERE reaction_idreaction = "+idReaction+";");
 			while (rs.next())
 				pathways.add(rs.getString(2));
 
@@ -974,7 +974,7 @@ public class ModelAPI {
 			List<String[]> entry = new ArrayList<>();
 			rs = statement.executeQuery("SELECT * FROM stoichiometry "
 					+ "INNER JOIN reaction ON stoichiometry.reaction_idreaction = reaction.idreaction " +
-					" WHERE idReaction = "+idReaction+";");
+					" WHERE idreaction = "+idReaction+";");
 			while (rs.next()) {
 
 				String[] ent = new String[4];
@@ -990,7 +990,7 @@ public class ModelAPI {
 
 		rs.close();
 
-		return drc;
+		return subMap;
 	}
 
 	/**
@@ -1061,10 +1061,11 @@ public class ModelAPI {
 	public static List<Integer> getEnzymeCompartments(String ecNumber, Statement statement) throws SQLException {
 
 		List<Integer> compartments = new ArrayList<>();
-		ResultSet rs = statement.executeQuery("SELECT DISTINCT compartment_idcompartment, enzyme_ecnumber, enzyme_protein_idprotein " +
-				" FROM subunit " +
-				" INNER JOIN gene_has_compartment ON subunit.gene_idgene = gene_has_compartment.gene_idgene " +
-				" WHERE BY enzyme_ecnumber = '"+ecNumber+"';");
+		
+		ResultSet rs = statement.executeQuery("SELECT DISTINCT compartment_idcompartment, enzyme_ecnumber, enzyme_protein_idprotein" +
+				" FROM subunit" +
+				" INNER JOIN gene_has_compartment ON subunit.gene_idgene = gene_has_compartment.gene_idgene" +
+				" WHERE enzyme_ecnumber = '"+ecNumber+"';");
 
 		while(rs.next())
 			compartments.add(rs.getInt(1));
