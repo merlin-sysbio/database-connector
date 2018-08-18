@@ -6481,6 +6481,240 @@ public class ModelAPI {
 			newMetaboliteId = rs2.getInt(1);
 		}
 		
+		rs.close();
+		rs2.close();
+		
 		return newMetaboliteId;
+	}
+	
+	
+	/**
+	 * @param newDbstmt
+	 * @param oldDbStmt
+	 * @param oldPathwayId
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Integer checkAndInsertPathwayIfNeeded(Statement newDbstmt, Statement oldDbStmt, String oldPathwayId) throws SQLException{
+		
+		ResultSet rs = oldDbStmt.executeQuery("SELECT * FROM pathway WHERE idpathway="+oldPathwayId+";");
+		
+		String pathwayName = rs.getString(3);
+		String pathwayCode = rs.getString(2);
+		
+		Integer newPathwayId = -1;
+		
+		ResultSet rs2 = newDbstmt.executeQuery("SELECT idpathway FROM pathway WHERE code='"+pathwayCode+"';");
+		
+		if(rs2.next()){
+			newPathwayId = rs2.getInt(1);
+		}
+		
+		if(newPathwayId==-1){
+			rs2 = newDbstmt.executeQuery("SELECT idpathway FROM pathway WHERE name='"+pathwayName+"';");
+			
+			if(rs2.next())
+				newPathwayId = rs2.getInt(1);
+		}
+		
+		if(newPathwayId==-1){
+			
+			newDbstmt.execute("INSERT INTO pathway (code,name) VALUES('" + pathwayCode + "','" + pathwayName + "');");
+			
+			rs2 = newDbstmt.executeQuery("SELECT LAST_INSERT_ID()");
+			rs.next();
+			newPathwayId = rs2.getInt(1);
+		}
+		
+		rs.close();
+		rs2.close();
+		
+		return newPathwayId;
+	}
+	
+	
+	/**
+	 * @param newDbstmt
+	 * @param refDbStmt
+	 * @param oldProteinEnzymePair
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Pair<String,String> checkAndInsertProteinEnzymePairIfNeeded(Statement newDbstmt, Statement refDbStmt, 
+			Pair<String,String> oldProteinEnzymePair) throws SQLException{
+		
+		ResultSet rs = refDbStmt.executeQuery("SELECT * FROM protein WHERE idprotein="+ oldProteinEnzymePair.getA() +";");
+		
+		String proteinName = rs.getString(2);
+		String proteinClass = rs.getString(3);
+		String inchi = rs.getString(4);
+		Integer molecularWeight = rs.getInt(5);
+		
+		String newProteinId = "";
+		
+		ResultSet rs2 = newDbstmt.executeQuery("SELECT idprotein FROM protein WHERE name='"+proteinName+"';");
+		
+		if(rs2.next()){
+			newProteinId = Integer.toString(rs2.getInt(1));
+		}
+		
+		if(newProteinId.equals("")){
+			
+			if(inchi!=null && !inchi.isEmpty()){
+				rs2 = newDbstmt.executeQuery("SELECT idprotein FROM protein WHERE inchi='"+inchi+"';");
+
+				if(rs2.next())
+					newProteinId = Integer.toString(rs2.getInt(1));
+			}
+		}
+		
+		if(newProteinId.equals("")){
+			
+			if(molecularWeight!=null){
+				rs2 = newDbstmt.executeQuery("SELECT idprotein FROM protein WHERE molecular_weight="+molecularWeight+";");
+
+				if(rs2.next())
+					newProteinId = Integer.toString(rs2.getInt(1));
+			}
+		}
+		
+		if(newProteinId.equals("")){
+			
+			newDbstmt.execute("INSERT INTO protein (name,class,inchi,molecular_weight) VALUES('" + proteinName + "','" + proteinClass 
+					+ "','" + inchi + "'," + molecularWeight + ");");
+			
+			rs2 = newDbstmt.executeQuery("SELECT LAST_INSERT_ID()");
+			rs.next();
+			newProteinId = Integer.toString(rs2.getInt(1));
+		}
+		
+		String ecNumber = oldProteinEnzymePair.getB();
+		
+		rs = refDbStmt.executeQuery("SELECT * FROM enzyme WHERE ecnumber='"+ ecNumber +"';");
+		
+		rs2 = newDbstmt.executeQuery("SELECT * FROM enzyme WHERE ecnumber='"+ ecNumber +"' AND protein_idprotein="+ newProteinId +";");
+		
+		if(!rs2.next()){
+			newDbstmt.execute("INSERT INTO enzyme (ecnumber,protein_idprotein,inModel,source,gpr_status) VALUES('" + ecNumber + "'," 
+					+ newProteinId + "," + true + ",'Models_merge','" + rs.getString(5) + "');");
+		}
+		
+		Pair<String,String> newProteinEnzymePair = new Pair<String, String>(newProteinId, ecNumber);
+		
+		rs.close();
+		rs2.close();
+		
+		return newProteinEnzymePair;
+	}
+	
+	
+	/**
+	 * @param newDbStmt
+	 * @param refDbStmt
+	 * @throws SQLException
+	 */
+	public static void mergeCompartmentTables(Statement newDbStmt, Statement refDbStmt) throws SQLException{
+		
+		ResultSet rs = refDbStmt.executeQuery("SELECT * FROM compartment;");
+		
+		while(rs.next()){
+			
+			String name = rs.getString(2);
+			String abb = rs.getString(3);
+			
+			boolean hasCompartment = newDbStmt.execute("SELECT * FROM compartment WHERE name='" + name + "';");
+			
+			if(!hasCompartment)
+				newDbStmt.execute("INSERT INTO compartment (name,abbreviation) VALUES('"+ name +"','"+ abb +"');");
+			
+		}
+		
+		rs.close();
+	}
+	
+	
+	/**
+	 * @param stmt
+	 * @param reaction
+	 * @return
+	 * @throws SQLException
+	 */
+	public static List<String> getReactionEcNumbers(Statement stmt, String reaction) throws SQLException{
+		
+		List<String> ecNumbers = new ArrayList<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT enzyme_ecnumber FROM reaction_has_enzyme"
+				+ " INNER JOIN reaction ON reaction.idreaction=reaction_has_enzyme.reaction_idreaction"
+				+ " WHERE reaction.name='"+ reaction + "';");
+		
+		while(rs.next())
+			ecNumbers.add(rs.getString(1));
+			
+		rs.close();
+			
+		return ecNumbers;
+	}
+
+	/**
+	 * @param newModelStmt
+	 * @param refModelStmt
+	 * @param enzymeCompartments
+	 * @return
+	 * @throws SQLException
+	 */
+	public static List<Integer> convertOldCompartmentIds(Statement newModelStmt, Statement refModelStmt,
+			List<Integer> enzymeCompartments) throws SQLException {
+		
+		List<Integer> compartmentIdsUpdated = new ArrayList<>();
+		
+		ResultSet rs =null ,rs2 = null;
+		
+		for(Integer compartmentId : enzymeCompartments){
+			
+			rs = refModelStmt.executeQuery("SELECT name FROM compartment WHERE idcompartment="+compartmentId+";");
+			rs2 = newModelStmt.executeQuery("SELECT idcompartment FROM compartment WHERE name='"+rs.getString(1)+"';");
+			
+			compartmentIdsUpdated.add(rs2.getInt(1));
+		}
+		
+		rs.close();
+		rs2.close();
+		
+		return compartmentIdsUpdated;
+	}
+
+	/**
+	 * @param stmt
+	 * @param reactionName
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String getCompartmentFromReactionTable(Statement stmt, String reactionName) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT compartment.name FROM reaction INNER JOIN compartment"
+				+ " ON compartment.idcompartment=reaction.compartment_idcompartment WHERE reaction.name='"+reactionName+"';");
+		
+		String compartmentName = rs.getString(1);
+		
+		rs.close();
+		
+		return compartmentName;
+	}
+
+	/**
+	 * @param stmt
+	 * @param compartmentName
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Integer getCompartmentId(Statement stmt, String compartmentName) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT idcompartment FROM compartment WHERE name='"+compartmentName+"';");
+		
+		Integer compartmentId = rs.getInt(1);
+		
+		rs.close();
+		
+		return compartmentId;	
 	}
 }	
