@@ -6105,7 +6105,7 @@ public class ModelAPI {
 	 * @param addedByNote
 	 * @throws SQLException
 	 */
-	public static void addAndUpdateReactionsInModel(PreparedStatement pStmt, Map<String,String> reactionsToAdd, String addedByNote) throws SQLException{
+	public static void updateReactionsInModel(PreparedStatement pStmt, Map<String,String> reactionsToAdd, String addedByNote) throws SQLException{
 
 		//PreparedStatement: "UPDATE reaction SET inModel=?, notes=?, boolean_rule=? WHERE reaction.name=?"
 		
@@ -6622,11 +6622,13 @@ public class ModelAPI {
 			String name = rs.getString(2);
 			String abb = rs.getString(3);
 			
-			boolean hasCompartment = newDbStmt.execute("SELECT * FROM compartment WHERE name='" + name + "';");
+			ResultSet rs2 = newDbStmt.executeQuery("SELECT * FROM compartment WHERE name='" + name + "';");
 			
-			if(!hasCompartment)
+			if(!rs2.next())
+				rs2 = newDbStmt.executeQuery("SELECT * FROM compartment WHERE abbreviation='" + abb + "';");	
+			
+			if(!rs2.next())
 				newDbStmt.execute("INSERT INTO compartment (name,abbreviation) VALUES('"+ name +"','"+ abb +"');");
-			
 		}
 		
 		rs.close();
@@ -6717,4 +6719,89 @@ public class ModelAPI {
 		
 		return compartmentId;	
 	}
+	
+	
+	/**
+	 * @param newDbStmt
+	 * @param refDbStmt
+	 * @param oldGeneID
+	 * @param newGeneID
+	 * @throws SQLException
+	 */
+	public static void trasnferEntryIfAbsentToSubunit(Statement newDbStmt, Statement refDbStmt, String oldGeneID, String newGeneID) throws SQLException{
+		
+		ResultSet rs = refDbStmt.executeQuery("SELECT enzyme_ecnumber FROM subunit WHERE gene_idgene="+oldGeneID+";");
+
+		ResultSet rs2 = null;
+		ResultSet rs3 = null;
+		
+		while(rs.next()){
+
+			String ecNumber = rs.getString(1);
+
+			rs2 = newDbStmt.executeQuery("SELECT protein_idprotein FROM enzyme WHERE ecnumber='"+ecNumber+"';");
+
+			while(rs2.next()){
+
+				String proteinID =  rs2.getString(1);
+
+				rs3 = newDbStmt.executeQuery("SELECT * FROM subunit WHERE gene_idgene="+newGeneID+" AND enzyme_protein_idprotein="+proteinID
+						+" AND enzyme_ecnumber='"+ecNumber+"';");
+
+				if(!rs3.next()){
+
+					newDbStmt.executeQuery("INSERT INTO subunit (gene_idgene,enzyme_protein_idprotein,enzyme_ecnumber)"
+							+ " VALUES("+ newGeneID +","+ proteinID +",'"+ ecNumber +"');");
+				}
+			}
+		}
+		
+		rs.close();
+		rs2.close();
+		rs3.close();
+		
+	}
+
+	/**
+	 * @param targetDbStmt
+	 * @param refDbStmt
+	 * @param targetGenes
+	 * @param orthologsGenesIDsMap
+	 * @throws SQLException
+	 */
+	public static void transferGenesHasCompartments(Statement targetDbStmt, Statement refDbStmt, Set<Integer> targetGenes, Map<Integer, List<Integer>> orthologsGenesIDsMap) throws SQLException {
+		
+		for(Integer geneId : targetGenes){
+			
+			ResultSet rs = refDbStmt.executeQuery("SELECT * FROM gene_has_compartment WHERE gene_idgene="+geneId+";");
+			
+			while(rs.next()){
+				
+				Integer oldCompartmentId = rs.getInt(2);
+				boolean primaryLocation = rs.getBoolean(3);
+				Integer score = rs.getInt(4);
+				
+				ResultSet rs2 = refDbStmt.executeQuery("SELECT * FROM compartment WHERE idcompartment=" + oldCompartmentId + ";");
+				rs2.next();
+				
+				String compartmentName = rs2.getString(2);
+				String compartmentAbb = rs2.getString(3);
+				
+				rs2 = targetDbStmt.executeQuery("SELECT idcompartment FROM compartment WHERE name='" + compartmentName + "';");	
+				
+				if(!rs2.next())
+					rs2 = targetDbStmt.executeQuery("SELECT idcompartment FROM compartment WHERE abbreviation='" + compartmentAbb + "';");	
+				
+				Integer newCompartmentId = rs2.getInt(1);
+				
+				for(Integer newGeneId : orthologsGenesIDsMap.get(geneId)){
+					
+					targetDbStmt.executeQuery("INSERT INTO gene_has_compartment (gene_idgene,compartment_idcompartment,primaryLocation,score)"
+							+ " VALUES("+ newGeneId +","+ newCompartmentId +","+ primaryLocation +","+ score +");");
+				}
+			}
+		}
+	}
+	
+	
 }	
