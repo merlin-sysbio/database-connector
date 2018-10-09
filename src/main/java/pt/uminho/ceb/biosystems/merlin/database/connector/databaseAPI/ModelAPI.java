@@ -3797,8 +3797,6 @@ public class ModelAPI {
 
 				List<Pair<String, String>> pairList= new ArrayList<>();
 
-				
-				
 				for(String idString : ids) {
 
 					if(!idString.isEmpty()) {

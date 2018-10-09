@@ -3219,7 +3219,7 @@ public class TransportersAPI {
 
 		if(!rs.next()) {
 
-			stmt.execute("INSERT INTO sw_similarities (sw_report_id,sw_hit_id,similarity) VALUES("+geneID+","+idHIT+","+alignmentContainer.getScore()+")");
+			stmt.execute("INSERT INTO sw_similarities (sw_report_id,sw_hit_id,similarity) VALUES("+geneID+","+idHIT+","+alignmentContainer.getAlignmentScore()+")");
 		}
 
 		rs.close();

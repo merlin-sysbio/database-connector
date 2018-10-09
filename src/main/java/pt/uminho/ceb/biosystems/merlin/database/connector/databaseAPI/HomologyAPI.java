@@ -2334,7 +2334,7 @@ public class HomologyAPI {
 
 		String orthologLocus = capsule.getQuery().split(":")[1];
 
-		double score = capsule.getScore();
+		double score = capsule.getAlignmentScore();
 
 		String ecnumber = capsule.getEcNumber();
 
