@@ -21,6 +21,10 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import javax.sound.sampled.Port;
+
+import com.mysql.jdbc.util.ResultSetUtil;
+
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
@@ -655,17 +659,23 @@ public class ModelAPI {
 		}
 
 		String newReactionID = rs.getString(1);
+		
 
 		if(ecNumber==null && !proteins.isEmpty() && !enzymes.isEmpty() && proteins!=null && enzymes!=null){
+//			System.out.println("Insert into reaction_has_enzyme, 1st option");
 			for(int j = 0; j< proteins.size(); j++)
 				ModelAPI.addReaction_has_Enzyme(proteins.get(j), enzymes.get(j), newReactionID, statement);
 		}
 		else if(ecNumber!=null && ecNumber!=null && !ecNumbers.isEmpty()){
+//			System.out.println("Insert into reaction_has_enzyme, 2nd option");
 			for(String protein_id : ecNumbers.get(ecNumber))
 				ModelAPI.addReaction_has_Enzyme(protein_id, ecNumber, newReactionID, statement);
 		}
 		
 		if(pathways!=null && !pathways.isEmpty()){
+			
+//			System.out.println("Insert into pathway_has_reaction");
+
 			for(String idPathway : pathways)
 				ModelAPI.addPathway_has_Reaction(idPathway, newReactionID, statement);
 		}
@@ -686,9 +696,12 @@ public class ModelAPI {
 						" AND stoichiometric_coefficient = '"+stoichiometry.get(j)+ "' "+
 						" AND numberofchains = '"+chains.get(j)+ "' ;");
 
-				if(!rs.next())
+				if(!rs.next()){
+//					System.out.println("Insert into stoichiometry");
+
 					statement.execute("INSERT INTO stoichiometry (reaction_idreaction, compound_idcompound, compartment_idcompartment, stoichiometric_coefficient, numberofchains) " +
 							"VALUES("+newReactionID+","+compounds.get(j)+","+newCOmpartmentID+",'"+stoichiometry.get(j)+ "','"+chains.get(j)+ "');");
+				}
 			}
 		}
 
@@ -913,10 +926,12 @@ public class ModelAPI {
 		ResultSet rs = statement.executeQuery("SELECT name, equation, reversible, inModel, isGeneric, isSpontaneous, isNonEnzymatic, source, idreaction, lowerBound, upperBound, notes " +
 				" FROM reaction " 
 				+ " WHERE idreaction = "+idReaction+";");
-
+		
 		Map<String, Object> subMap = new HashMap<>();
 
 		if (rs.next()) {
+			
+			System.out.println("Getting reactionContainer for: "+rs.getString(1));
 			
 			String name = rs.getString(1);
 			String equation = rs.getString(2);
@@ -964,7 +979,7 @@ public class ModelAPI {
 					"FROM reaction_has_enzyme WHERE reaction_idreaction = "+idReaction+";");
 			while (rs.next())
 				proteinsPairs.add(new  Pair<>(rs.getString(2), rs.getString(3)));
-
+			
 			subMap.put("proteins", proteinsPairs);
 
 			List<String> pathways = new ArrayList<>();
@@ -972,7 +987,7 @@ public class ModelAPI {
 					+ " WHERE reaction_idreaction = "+idReaction+";");
 			while (rs.next())
 				pathways.add(rs.getString(2));
-
+			
 			subMap.put("pathways", pathways);
 
 			List<String[]> entry = new ArrayList<>();
@@ -988,7 +1003,7 @@ public class ModelAPI {
 				ent[3] = rs.getString(4);
 				entry.add(ent);
 			}
-
+			
 			subMap.put("entry", entry);
 		}
 
@@ -1773,7 +1788,7 @@ public class ModelAPI {
 	 * @return the pair compound identifier to molecular weight
 	 */
 	public static Map<String, Pair<String, Double>> getModelInformationForBiomass(List<String> metaboliteIDs, Statement statment) {
-
+		
 		Map<String, Pair<String, Double>> map = new HashMap<>();
 
 		ResultSet rs;
@@ -1838,6 +1853,8 @@ public class ModelAPI {
 		ResultSet rs = statement.executeQuery("SELECT * FROM compound WHERE name = '"+name+"'");
 
 		if(!rs.next()) {
+			
+			System.out.println("INSERIR COFACTOR: "+name);
 
 			statement.execute("INSERT INTO compound (name, kegg_id, entry_type, molecular_weight, hasBiologicalRoles) "
 					+ "VALUES ('"+name+"','"+name+"','BIOMASS','"+molecularWeight+"',TRUE);");
@@ -1845,6 +1862,9 @@ public class ModelAPI {
 			rs.next();
 		}
 		String ret = rs.getString(1);
+		
+		System.out.println("Cofactor ID: "+ret);
+		
 		rs.close();
 
 		return ret;
@@ -2008,31 +2028,34 @@ public class ModelAPI {
 					biomass_id = rs.getInt("idcompound");
 
 				for(String m :metabolitesStoichiometry.keySet()) {
+					
+					if(m!=null && !m.equalsIgnoreCase("null")){
 
-					rs = statement.executeQuery("SELECT idcompartment FROM compartment WHERE name = '" + metabolitesCompartments.get(m) + "'");
-					rs.next();
+						rs = statement.executeQuery("SELECT idcompartment FROM compartment WHERE name = '" + metabolitesCompartments.get(m) + "'");
+						rs.next();
 
-					idCompartment = rs.getString(1);
+						idCompartment = rs.getString(1);
+						
+						statement.execute("INSERT INTO stoichiometry (stoichiometric_coefficient, compartment_idcompartment, compound_idcompound, reaction_idreaction,numberofchains) " +
+								"VALUES('" + metabolitesStoichiometry.get(m) + "', '" + idCompartment +	"', '" + m.replace("-", "") + "', '" + idNewReaction + "', '" + metabolitesChains.get(m) + "')");
 
-					statement.execute("INSERT INTO stoichiometry (stoichiometric_coefficient, compartment_idcompartment, compound_idcompound, reaction_idreaction,numberofchains) " +
-							"VALUES('" + metabolitesStoichiometry.get(m) + "', '" + idCompartment +	"', '" + m.replace("-", "") + "', '" + idNewReaction + "', '" + metabolitesChains.get(m) + "')");
 
+						if(m.replace("-", "").equalsIgnoreCase(biomass_id+"")) {
 
-					if(m.replace("-", "").equalsIgnoreCase(biomass_id+"")) {
+							rs = statement.executeQuery("SELECT * FROM pathway WHERE name = 'Biomass Pathway'");
+							if(!rs.next()) {						
 
-						rs = statement.executeQuery("SELECT * FROM pathway WHERE name = 'Biomass Pathway'");
-						if(!rs.next()) {						
+								statement.execute("INSERT INTO pathway (name, code) VALUES('Biomass Pathway', 'B0001' );");
+								rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
+								rs.next();
+							}
+							String idBiomassPath= rs.getString(1);
+							rs = statement.executeQuery("SELECT * FROM pathway_has_reaction WHERE pathway_idpathway = "+idBiomassPath+ " AND reaction_idreaction = "+idNewReaction);
 
-							statement.execute("INSERT INTO pathway (name, code) VALUES('Biomass Pathway', 'B0001' );");
-							rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
-							rs.next();
-						}
-						String idBiomassPath= rs.getString(1);
-						rs = statement.executeQuery("SELECT * FROM pathway_has_reaction WHERE pathway_idpathway = "+idBiomassPath+ " AND reaction_idreaction = "+idNewReaction);
-
-						if(!rs.next()) {
-							statement.execute("INSERT INTO pathway_has_reaction (pathway_idpathway, reaction_idreaction) " +
-									"VALUES ("+idBiomassPath+","+idNewReaction+")");
+							if(!rs.next()) {
+								statement.execute("INSERT INTO pathway_has_reaction (pathway_idpathway, reaction_idreaction) " +
+										"VALUES ("+idBiomassPath+","+idNewReaction+")");
+							}
 						}
 					}
 				}
@@ -3116,7 +3139,7 @@ public class ModelAPI {
 	 * @throws SQLException
 	 */
 	public static void loadMetabolites(ConcurrentLinkedQueue<MetaboliteContainer> metabolites, ConcurrentHashMap<String,Integer> metabolites_id, 
-			ConcurrentLinkedQueue<String> concurrentLinkedQueue, PreparedStatement statement, DatabaseType databaseType) throws SQLException {
+			ConcurrentLinkedQueue<String> concurrentLinkedQueue, PreparedStatement statement, DatabaseType databaseType, boolean importedFromSBML) throws SQLException {
 
 		//		"INSERT INTO compound(name, formula, molecular_weight, hasBiologicalRoles, entry_type, kegg_id) VALUES(?,?,?,?,?,?);"
 
@@ -3126,14 +3149,20 @@ public class ModelAPI {
 			if(!metabolites_id.containsKey(metaboliteContainer.getEntryID())){
 
 				String entry_type = null;
-				if(metaboliteContainer.getEntryID().startsWith("C"))
-				{entry_type="COMPOUND";}
-				if(metaboliteContainer.getEntryID().startsWith("G"))
-				{entry_type="GLYCAN";}
-				if(metaboliteContainer.getEntryID().startsWith("D"))
-				{entry_type="DRUGS";}
-				if(metaboliteContainer.getEntryID().startsWith("B"))
-				{entry_type="BIOMASS";}
+				
+				if(importedFromSBML){
+					entry_type="COMPOUND";
+				}
+				else{
+					if(metaboliteContainer.getEntryID().startsWith("C"))
+					{entry_type="COMPOUND";}
+					if(metaboliteContainer.getEntryID().startsWith("G"))
+					{entry_type="GLYCAN";}
+					if(metaboliteContainer.getEntryID().startsWith("D"))
+					{entry_type="DRUGS";}
+					if(metaboliteContainer.getEntryID().startsWith("B"))
+					{entry_type="BIOMASS";}
+				}
 
 				String name = null;
 				String formula = null;
@@ -5831,7 +5860,7 @@ public class ModelAPI {
 		int i = 0;
 		for (String query : locusTagsByQueries.keySet()) {
 			
-			String locusTag = locusTagsByQueries.get(query).toUpperCase().trim();
+			String locusTag = locusTagsByQueries.get(query).trim();//.toUpperCase().trim();
 
 			statement.setString(1, locusTag);
 			statement.setString(2, query);
@@ -5919,7 +5948,8 @@ public class ModelAPI {
 		ResultSet rs = stmt.executeQuery("SELECT idgene, gene.locusTag, (Select count(*)"
 				+ " FROM reaction WHERE reaction.boolean_rule REGEXP CONCAT('^', gene.idgene, ' ')"
 				+ " OR reaction.boolean_rule REGEXP CONCAT(' ', gene.idgene, ' ')"
-				+ " OR reaction.boolean_rule REGEXP CONCAT(' ', gene.idgene, '$')) FROM gene;");
+				+ " OR reaction.boolean_rule REGEXP CONCAT(' ', gene.idgene, '$')"
+				+ " OR reaction.boolean_rule LIKE gene.idgene) FROM gene;");
 		
 		while(rs.next())
 			res.put(rs.getString(2), rs.getInt(3));
@@ -6063,12 +6093,18 @@ public class ModelAPI {
 	 * @param reactionsInModel
 	 * @throws SQLException
 	 */
-	public static void setAllReactionsInModel(Statement stmt, boolean reactionsInModel) throws SQLException{
+	public static void setAllReactionsInModel(Statement stmt, boolean setInModel, boolean keepSpontaneousReactions) throws SQLException{
 		
-		if(reactionsInModel)
-			stmt.executeUpdate("UPDATE reaction SET inModel = true");
-		else
-			stmt.executeUpdate("UPDATE reaction SET inModel = false");
+		if(setInModel){
+			stmt.execute("UPDATE reaction SET inModel=true;");
+		}
+		else if(keepSpontaneousReactions){
+			stmt.execute("UPDATE reaction SET boolean_rule=null;");
+			stmt.execute("UPDATE reaction SET inModel=false WHERE not isSpontaneous;");
+		}
+		else{
+			stmt.execute("UPDATE reaction SET inModel=false,boolean_rule=null;");
+		}
 		
 	}
 	
@@ -6143,17 +6179,20 @@ public class ModelAPI {
 		
 		Map<String, Map<String,List<String>>> genesReactions = new HashMap<>();
 		
+		stmt.execute("SET GLOBAL group_concat_max_len=20000");
+		
 		ResultSet rs = stmt.executeQuery("SELECT gene.locusTag, gene.sequence_id,"
 				+ " (Select GROUP_CONCAT(CONCAT(reaction.idreaction, '|', reaction.name, '|',reaction.boolean_rule))"
 				+ " FROM reaction WHERE reaction.boolean_rule REGEXP CONCAT('^', gene.idgene, ' ')"
 				+ " OR reaction.boolean_rule REGEXP CONCAT(' ', gene.idgene, ' ')"
-				+ " OR reaction.boolean_rule REGEXP CONCAT(' ', gene.idgene, '$')) FROM gene;");
+				+ " OR reaction.boolean_rule REGEXP CONCAT(' ', gene.idgene, '$')"
+				+ " OR reaction.boolean_rule LIKE gene.idgene) FROM gene;");
 		
 		while(rs.next()){
 			
 			Map<String, List<String>> reactions = new HashMap<>();
 			String gene = rs.getString(2);
-				
+			
 			if(rs.getString(3)!=null){
 				
 				String[] splitedReactions = rs.getString(3).split(",");
@@ -6248,11 +6287,14 @@ public class ModelAPI {
 	 * @param incrementValue
 	 * @throws SQLException
 	 */
-	public static void incrementTablesIds(Statement stmt, Set<String> tables, String key, Integer incrementValue) throws SQLException{
+	public static void incrementTablesIds(Statement stmt, Set<String> tables, String key, Integer incrementValue, String dbName) throws SQLException{
 		
 		String query;
 		
 		for(String table : tables){
+			
+			if(table.equals("gene_has_compartment"))
+				stmt.execute("ALTER TABLE `"+ dbName +"`.`gene_has_compartment` DROP PRIMARY KEY;");
 		
 			query = "UPDATE " + table + " SET " + key + " = " + key + "+" + incrementValue + ";";
 			
@@ -6392,12 +6434,20 @@ public class ModelAPI {
 		
 		ResultSet rs = null;
 		
+		System.out.println("-----------filterReactionsNotInDatabase---------");
+		
 		for(String reactionName :  reactions){
+			
+			System.out.println(reactionName);
 			
 			rs = stmt.executeQuery("SELECT * FROM reaction WHERE name='"+reactionName+"';");
 			
 			if(!rs.next()){
+				System.out.println("Reaction not present in database!");
 				reactionsNotInDb.add(reactionName);
+			}
+			else{
+				System.out.println("Reaction present in database!");
 			}
 		}
 		rs.close();
@@ -6441,44 +6491,100 @@ public class ModelAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static Integer checkAndInsertMetaboliteIfNeeded(Statement newDbstmt, Statement oldDbStmt, String oldMetId) throws SQLException{
+	public static Integer checkAndInsertMetaboliteIfNeeded(Statement newDbstmt, Statement oldDbStmt, String oldMetId, DatabaseType dbType) throws SQLException{
 		
 		ResultSet rs = oldDbStmt.executeQuery("SELECT * FROM compound WHERE idcompound="+oldMetId+";");
+		rs.next();
 		
-		String sourceDbId = rs.getString(4);
-		String metaboliteName = rs.getString(2);
-		String formula = rs.getString(6);
+		String metaboliteName = DatabaseUtilities.databaseStrConverter(rs.getString(2),dbType);
+
+		String sourceDbId = null;
+		if(rs.getString(4)!=null && !rs.getString(4).isEmpty())
+			sourceDbId = rs.getString(4);
+		
+		String formula = null;
+		if(rs.getString(6)!=null && !rs.getString(6).isEmpty())
+			formula = rs.getString(6);
+		
+		Double molecularWeight = null;
+		if(rs.getDouble(7)!=0)
+			molecularWeight = rs.getDouble(7);
 		
 		Integer newMetaboliteId = -1;
 		
-		ResultSet rs2 = newDbstmt.executeQuery("SELECT idcompound FROM compound WHERE kegg_id='"+sourceDbId+"';");
+		ResultSet rs2 = null; 
 		
-		if(rs2.next()){
-			newMetaboliteId = rs2.getInt(1);
+		System.out.println("Searching for source id "+ sourceDbId+"...");
+		
+		if(sourceDbId!=null){
+			rs2 = newDbstmt.executeQuery("SELECT idcompound FROM compound WHERE kegg_id='"+sourceDbId+"';");
+			
+			if(rs2.next()){
+				newMetaboliteId = rs2.getInt(1);
+				
+				System.out.println("Source id matched! New metabolite id = "+newMetaboliteId);
+			}
 		}
 		
-		if(newMetaboliteId==-1){
+		if(newMetaboliteId==-1 && metaboliteName!=null && !metaboliteName.isEmpty()){
+			System.out.println("Searching for metabolite name "+ metaboliteName+"...");
+			
 			rs2 = newDbstmt.executeQuery("SELECT idcompound FROM compound WHERE name='"+metaboliteName+"';");
 			
-			if(rs2.next())
+			if(rs2.next()){
 				newMetaboliteId = rs2.getInt(1);
+				
+				System.out.println("metabolite name matched! New metabolite id = "+newMetaboliteId);
+			}
 		}
 
-		if(newMetaboliteId==-1){
+		if(newMetaboliteId==-1 && formula!=null){
+			System.out.println("Searching for formula "+ formula+"...");
+
 			rs2 = newDbstmt.executeQuery("SELECT idcompound FROM compound WHERE formula='"+formula+"';");
 			
-			if(rs2.next())
+			if(rs2.next()){
 				newMetaboliteId = rs2.getInt(1);
+				
+				System.out.println("Formula matched! New metabolite id = "+newMetaboliteId);
+
+			}
+		}
+		
+		if(newMetaboliteId==-1 && molecularWeight!=null){
+			System.out.println("Searching for molecular weight "+ molecularWeight +"...");
+
+			rs2 = newDbstmt.executeQuery("SELECT idcompound FROM compound WHERE molecular_weight="+molecularWeight+";");
+			
+			if(rs2.next()){
+				newMetaboliteId = rs2.getInt(1);
+				
+				System.out.println("Molecular weight matched! New metabolite id = "+newMetaboliteId);
+
+			}
 		}
 		
 		if(newMetaboliteId==-1){
 			
+			System.out.println("Inserting new compound...");
+			
+			Integer charge = null;
+			if(rs.getInt(9)!=0)
+				charge = rs.getInt(9);
+			
+			System.out.println("Molecular weight: "+molecularWeight+"\t charge: "+charge);
+			
+			System.out.println("Query: INSERT INTO compound (name,kegg_id,formula,molecular_weight,charge)"
+					+ " VALUES('" + metaboliteName + "','" + sourceDbId + "','" + formula + "'," + molecularWeight + "," + charge +");");
+			
 			newDbstmt.execute("INSERT INTO compound (name,kegg_id,formula,molecular_weight,charge)"
-					+ " VALUES('" + metaboliteName + "','" + sourceDbId + "','" + formula + "'," + rs.getInt(7) + "," + rs.getInt(9) +");");
+					+ " VALUES('" + metaboliteName + "','" + sourceDbId + "','" + formula + "'," + molecularWeight + "," + charge +");");
 			
 			rs2 = newDbstmt.executeQuery("SELECT LAST_INSERT_ID()");
-			rs.next();
+			rs2.next();
 			newMetaboliteId = rs2.getInt(1);
+			
+			System.out.println("New compound inserted with idcompound="+newMetaboliteId);
 		}
 		
 		rs.close();
@@ -6495,35 +6601,61 @@ public class ModelAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static Integer checkAndInsertPathwayIfNeeded(Statement newDbstmt, Statement oldDbStmt, String oldPathwayId) throws SQLException{
+	public static Integer checkAndInsertPathwayIfNeeded(Statement newDbstmt, Statement refDbStmt, String oldPathwayId, DatabaseType dbType) throws SQLException{
 		
-		ResultSet rs = oldDbStmt.executeQuery("SELECT * FROM pathway WHERE idpathway="+oldPathwayId+";");
+		ResultSet rs = refDbStmt.executeQuery("SELECT * FROM pathway WHERE idpathway="+oldPathwayId+";");
 		
-		String pathwayName = rs.getString(3);
-		String pathwayCode = rs.getString(2);
+		String pathwayName = "";
+		String pathwayCode = "";
+		
+		if(rs.next()){
+			pathwayName = DatabaseUtilities.databaseStrConverter(rs.getString(3), dbType) ;
+			pathwayCode = rs.getString(2);
+		}
 		
 		Integer newPathwayId = -1;
 		
-		ResultSet rs2 = newDbstmt.executeQuery("SELECT idpathway FROM pathway WHERE code='"+pathwayCode+"';");
+		ResultSet rs2 = null;
 		
-		if(rs2.next()){
-			newPathwayId = rs2.getInt(1);
+		System.out.println("Pathway code: "+pathwayCode+"\t pathwayName: "+pathwayName);
+		
+		if(pathwayCode!=null & !pathwayCode.isEmpty()){
+			rs2 = newDbstmt.executeQuery("SELECT idpathway FROM pathway WHERE code='"+pathwayCode+"';");
+			
+			System.out.println("Search for pathwayCode...");
+			
+			if(rs2.next()){
+				newPathwayId = rs2.getInt(1);
+				
+				System.out.println("Pathway code matched! New Pathway id: "+newPathwayId);
+			}
 		}
 		
-		if(newPathwayId==-1){
+		if(newPathwayId==-1 && pathwayName!=null && !pathwayName.isEmpty()){
+			
+			System.out.println("Search for pathway name...");
+			
 			rs2 = newDbstmt.executeQuery("SELECT idpathway FROM pathway WHERE name='"+pathwayName+"';");
 			
-			if(rs2.next())
+			if(rs2.next()){
 				newPathwayId = rs2.getInt(1);
+				
+				System.out.println("Pathway name matched! New Pathway id: "+newPathwayId);
+			}
 		}
 		
 		if(newPathwayId==-1){
+			
+			System.out.println("Inserting pathway...");
+			System.out.println("Query: INSERT INTO pathway (code,name) VALUES('" + pathwayCode + "','" + pathwayName + "');");
 			
 			newDbstmt.execute("INSERT INTO pathway (code,name) VALUES('" + pathwayCode + "','" + pathwayName + "');");
 			
 			rs2 = newDbstmt.executeQuery("SELECT LAST_INSERT_ID()");
-			rs.next();
+			rs2.next();
 			newPathwayId = rs2.getInt(1);
+			
+			System.out.println("Pathway inserted with idpathway = "+newPathwayId);
 		}
 		
 		rs.close();
@@ -6541,65 +6673,120 @@ public class ModelAPI {
 	 * @throws SQLException
 	 */
 	public static Pair<String,String> checkAndInsertProteinEnzymePairIfNeeded(Statement newDbstmt, Statement refDbStmt, 
-			Pair<String,String> oldProteinEnzymePair) throws SQLException{
+			Pair<String,String> oldProteinEnzymePair, DatabaseType dbType) throws SQLException{
+		
+		System.out.println("SELECT * FROM protein WHERE idprotein="+ oldProteinEnzymePair.getA() +";");
 		
 		ResultSet rs = refDbStmt.executeQuery("SELECT * FROM protein WHERE idprotein="+ oldProteinEnzymePair.getA() +";");
+		rs.next();
 		
-		String proteinName = rs.getString(2);
+		String proteinName = DatabaseUtilities.databaseStrConverter(rs.getString(2),dbType);
 		String proteinClass = rs.getString(3);
-		String inchi = rs.getString(4);
+		String inchi = null;
+		if(rs.getString(4)!=null && !rs.getString(4).isEmpty())
+			inchi = rs.getString(4);
 		Integer molecularWeight = rs.getInt(5);
+		if(molecularWeight==0)
+			molecularWeight=null;
+		
+		
+		System.out.println("oldName: "+rs.getString(2));
+		
+		System.out.println("Protein name: "+proteinName+"\t proteinClass: "+proteinClass+"\t inchi: "+inchi+"\t molecularWeight: "+molecularWeight);
+		System.out.println((inchi==null)+"\t"+(molecularWeight==null));
 		
 		String newProteinId = "";
 		
+		System.out.println("Query: SELECT idprotein FROM protein WHERE name='"+proteinName+"';");
+		
 		ResultSet rs2 = newDbstmt.executeQuery("SELECT idprotein FROM protein WHERE name='"+proteinName+"';");
 		
+		System.out.println("Trying protein name...");
+		
 		if(rs2.next()){
+			
 			newProteinId = Integer.toString(rs2.getInt(1));
+			
+			System.out.println("Protein name matched! New id: "+newProteinId);
 		}
 		
-		if(newProteinId.equals("")){
+		if(newProteinId.equals("") && inchi!=null && !inchi.isEmpty()){
 			
-			if(inchi!=null && !inchi.isEmpty()){
-				rs2 = newDbstmt.executeQuery("SELECT idprotein FROM protein WHERE inchi='"+inchi+"';");
+			System.out.println("Trying inchi...");
+			
+			rs2 = newDbstmt.executeQuery("SELECT idprotein FROM protein WHERE inchi='"+inchi+"';");
 
-				if(rs2.next())
-					newProteinId = Integer.toString(rs2.getInt(1));
+			if(rs2.next()){
+
+				newProteinId = Integer.toString(rs2.getInt(1));
+				
+				System.out.println("Inchi matched! New id: "+newProteinId);
+
+			}
+		}
+		
+		if(newProteinId.equals("") && molecularWeight!=null){
+			
+			System.out.println("Trying molecular weight...");
+			
+			rs2 = newDbstmt.executeQuery("SELECT idprotein FROM protein WHERE molecular_weight="+molecularWeight+";");
+
+			if(rs2.next()){
+				
+				newProteinId = Integer.toString(rs2.getInt(1));
+
+				System.out.println("Molecular weight matched! New id: "+newProteinId);
+
 			}
 		}
 		
 		if(newProteinId.equals("")){
 			
-			if(molecularWeight!=null){
-				rs2 = newDbstmt.executeQuery("SELECT idprotein FROM protein WHERE molecular_weight="+molecularWeight+";");
-
-				if(rs2.next())
-					newProteinId = Integer.toString(rs2.getInt(1));
-			}
-		}
-		
-		if(newProteinId.equals("")){
+			System.out.println("Inserting protein "+ proteinName+"...");
+			System.out.println("Query: INSERT INTO protein (name,class,inchi,molecular_weight) VALUES('" + proteinName + "','" + proteinClass 
+					+ "','" + inchi + "'," + molecularWeight + ");");
 			
 			newDbstmt.execute("INSERT INTO protein (name,class,inchi,molecular_weight) VALUES('" + proteinName + "','" + proteinClass 
 					+ "','" + inchi + "'," + molecularWeight + ");");
 			
 			rs2 = newDbstmt.executeQuery("SELECT LAST_INSERT_ID()");
-			rs.next();
+			rs2.next();
 			newProteinId = Integer.toString(rs2.getInt(1));
+			
+			System.out.println("Protein inserted! New id: "+newProteinId);
 		}
 		
 		String ecNumber = oldProteinEnzymePair.getB();
 		
 		rs = refDbStmt.executeQuery("SELECT * FROM enzyme WHERE ecnumber='"+ ecNumber +"';");
+		rs.next();
+		
+		String gprStatus = null;
+		if(rs.getString(5)!=null && !rs.getString(5).isEmpty())
+			gprStatus = "'".concat(rs.getString(5)).concat("'");
 		
 		rs2 = newDbstmt.executeQuery("SELECT * FROM enzyme WHERE ecnumber='"+ ecNumber +"' AND protein_idprotein="+ newProteinId +";");
 		
 		if(!rs2.next()){
+			
+			System.out.println("Inserting enzyme "+ecNumber+"...");
+			System.out.println("Query: INSERT INTO enzyme (ecnumber,protein_idprotein,inModel,source,gpr_status) VALUES('" + ecNumber + "'," 
+					+ newProteinId + "," + true + ",'Models_merge'," + gprStatus + ");");
+			
 			newDbstmt.execute("INSERT INTO enzyme (ecnumber,protein_idprotein,inModel,source,gpr_status) VALUES('" + ecNumber + "'," 
-					+ newProteinId + "," + true + ",'Models_merge','" + rs.getString(5) + "');");
+					+ newProteinId + "," + true + ",'Models_merge'," + gprStatus + ");");
+		}
+		else{
+			
+			System.out.println("Updating enzyme "+ecNumber+"...");
+			System.out.println("Query: UPDATE enzyme SET inModel=true, source='Models_merge', gpr_status="+ gprStatus +");");
+			
+			newDbstmt.execute("UPDATE enzyme SET inModel=true, source='Models_merge', gpr_status="+ gprStatus +" WHERE ecnumber='"+ ecNumber +"' AND protein_idprotein="+ newProteinId +";");
 		}
 		
 		Pair<String,String> newProteinEnzymePair = new Pair<String, String>(newProteinId, ecNumber);
+		
+		System.out.println("New Pair: "+newProteinEnzymePair);
 		
 		rs.close();
 		rs2.close();
@@ -6624,11 +6811,14 @@ public class ModelAPI {
 			
 			ResultSet rs2 = newDbStmt.executeQuery("SELECT * FROM compartment WHERE name='" + name + "';");
 			
-			if(!rs2.next())
-				rs2 = newDbStmt.executeQuery("SELECT * FROM compartment WHERE abbreviation='" + abb + "';");	
-			
-			if(!rs2.next())
-				newDbStmt.execute("INSERT INTO compartment (name,abbreviation) VALUES('"+ name +"','"+ abb +"');");
+			if(!rs2.next()){
+				
+				rs2 = newDbStmt.executeQuery("SELECT * FROM compartment WHERE abbreviation='" + abb + "';");
+				
+				if(!rs2.next()){
+					newDbStmt.execute("INSERT INTO compartment (name,abbreviation) VALUES('"+ name +"','"+ abb +"');");
+				}
+			}
 		}
 		
 		rs.close();
@@ -6674,9 +6864,13 @@ public class ModelAPI {
 		for(Integer compartmentId : enzymeCompartments){
 			
 			rs = refModelStmt.executeQuery("SELECT name FROM compartment WHERE idcompartment="+compartmentId+";");
-			rs2 = newModelStmt.executeQuery("SELECT idcompartment FROM compartment WHERE name='"+rs.getString(1)+"';");
 			
-			compartmentIdsUpdated.add(rs2.getInt(1));
+			if(rs.next()){
+				rs2 = newModelStmt.executeQuery("SELECT idcompartment FROM compartment WHERE name='"+rs.getString(1)+"';");
+				
+				if(rs2.next())
+					compartmentIdsUpdated.add(rs2.getInt(1));
+			}
 		}
 		
 		rs.close();
@@ -6691,16 +6885,24 @@ public class ModelAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static String getCompartmentFromReactionTable(Statement stmt, String reactionName) throws SQLException {
+	public static Pair<String,String> getCompartmentFromReactionTable(Statement stmt, String reactionName) throws SQLException {
 		
-		ResultSet rs = stmt.executeQuery("SELECT compartment.name FROM reaction INNER JOIN compartment"
+		ResultSet rs = stmt.executeQuery("SELECT compartment.name, compartment.abbreviation FROM reaction INNER JOIN compartment"
 				+ " ON compartment.idcompartment=reaction.compartment_idcompartment WHERE reaction.name='"+reactionName+"';");
 		
-		String compartmentName = rs.getString(1);
+		String compartmentName = "inside";
+		String abb =  "in";
+				
+		if(rs.next()){
+			compartmentName = rs.getString(1);
+			abb = rs.getString(2);
+		}
+		
+		Pair<String,String> compartment = new Pair<String, String>(compartmentName, abb);
 		
 		rs.close();
 		
-		return compartmentName;
+		return compartment;
 	}
 
 	/**
@@ -6709,11 +6911,25 @@ public class ModelAPI {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static Integer getCompartmentId(Statement stmt, String compartmentName) throws SQLException {
+	public static Integer getCompartmentId(Statement stmt, Pair<String,String> compartment) throws SQLException {
+		
+		String compartmentName = compartment.getA();
+		String abb = compartment.getB();
+		
+		Integer compartmentId = -1;
 		
 		ResultSet rs = stmt.executeQuery("SELECT idcompartment FROM compartment WHERE name='"+compartmentName+"';");
 		
-		Integer compartmentId = rs.getInt(1);
+		if(!rs.next()){
+			
+			rs = stmt.executeQuery("SELECT idcompartment FROM compartment WHERE abbreviation='"+abb+"';");
+			
+			if(rs.next())
+				compartmentId = rs.getInt(1);
+		}
+		else{
+			compartmentId = rs.getInt(1);
+		}
 		
 		rs.close();
 		
@@ -6730,36 +6946,58 @@ public class ModelAPI {
 	 */
 	public static void trasnferEntryIfAbsentToSubunit(Statement newDbStmt, Statement refDbStmt, String oldGeneID, String newGeneID) throws SQLException{
 		
+		System.out.println("---------------------------------------------");
+		System.out.println("oldGeneID: "+oldGeneID+"\t newGeneID: "+newGeneID);
+		
+		System.out.println("Query: SELECT enzyme_ecnumber FROM subunit WHERE gene_idgene="+oldGeneID+";");
+		
 		ResultSet rs = refDbStmt.executeQuery("SELECT enzyme_ecnumber FROM subunit WHERE gene_idgene="+oldGeneID+";");
 
-		ResultSet rs2 = null;
-		ResultSet rs3 = null;
-		
 		while(rs.next()){
 
 			String ecNumber = rs.getString(1);
+			
+			System.out.println("ecNumber: "+ecNumber);
+			
+			System.out.println("Query: SELECT protein_idprotein FROM enzyme WHERE ecnumber='"+ecNumber+"';");
 
-			rs2 = newDbStmt.executeQuery("SELECT protein_idprotein FROM enzyme WHERE ecnumber='"+ecNumber+"';");
-
-			while(rs2.next()){
-
-				String proteinID =  rs2.getString(1);
-
-				rs3 = newDbStmt.executeQuery("SELECT * FROM subunit WHERE gene_idgene="+newGeneID+" AND enzyme_protein_idprotein="+proteinID
+			ResultSet rs2 = newDbStmt.executeQuery("SELECT protein_idprotein FROM enzyme WHERE ecnumber='"+ecNumber+"';");
+			
+			ConcurrentLinkedQueue<String> proteinIds = new ConcurrentLinkedQueue<>();
+			
+			while(rs2.next())
+				proteinIds.add(rs2.getString(1));
+			
+			System.out.println("proteinIds: "+proteinIds);
+			
+			while(!proteinIds.isEmpty()){
+				
+				String proteinID =  proteinIds.poll();
+				
+				System.out.println("Protein id: "+proteinID);
+				
+				System.out.println("proteinIds: "+proteinIds);
+				
+				System.out.println("Query: SELECT * FROM subunit WHERE gene_idgene="+newGeneID+" AND enzyme_protein_idprotein="+proteinID
 						+" AND enzyme_ecnumber='"+ecNumber+"';");
 
-				if(!rs3.next()){
+				rs2 = newDbStmt.executeQuery("SELECT * FROM subunit WHERE gene_idgene="+newGeneID+" AND enzyme_protein_idprotein="+proteinID
+						+" AND enzyme_ecnumber='"+ecNumber+"';");
 
-					newDbStmt.executeQuery("INSERT INTO subunit (gene_idgene,enzyme_protein_idprotein,enzyme_ecnumber)"
+				if(!rs2.next()){
+					
+					System.out.println("Query: INSERT INTO subunit (gene_idgene,enzyme_protein_idprotein,enzyme_ecnumber)"
+							+ " VALUES("+ newGeneID +","+ proteinID +",'"+ ecNumber +"');");
+
+					newDbStmt.execute("INSERT INTO subunit (gene_idgene,enzyme_protein_idprotein,enzyme_ecnumber)"
 							+ " VALUES("+ newGeneID +","+ proteinID +",'"+ ecNumber +"');");
 				}
 			}
+			
+			rs2.close();
 		}
 		
 		rs.close();
-		rs2.close();
-		rs3.close();
-		
 	}
 
 	/**
@@ -6771,37 +7009,267 @@ public class ModelAPI {
 	 */
 	public static void transferGenesHasCompartments(Statement targetDbStmt, Statement refDbStmt, Set<Integer> targetGenes, Map<Integer, List<Integer>> orthologsGenesIDsMap) throws SQLException {
 		
-		for(Integer geneId : targetGenes){
+		for(Integer orthologId : targetGenes){
 			
-			ResultSet rs = refDbStmt.executeQuery("SELECT * FROM gene_has_compartment WHERE gene_idgene="+geneId+";");
+			List<Map<String,Object>> orthologHasCompartmentInfo = new ArrayList<>();
+			
+			ResultSet rs = refDbStmt.executeQuery("SELECT * FROM gene_has_compartment WHERE gene_idgene="+orthologId+";");
 			
 			while(rs.next()){
 				
-				Integer oldCompartmentId = rs.getInt(2);
-				boolean primaryLocation = rs.getBoolean(3);
-				Integer score = rs.getInt(4);
+				Map<String,Object> rowInfo = new HashMap<>();
 				
-				ResultSet rs2 = refDbStmt.executeQuery("SELECT * FROM compartment WHERE idcompartment=" + oldCompartmentId + ";");
-				rs2.next();
+				rowInfo.put("idcompartment", rs.getInt(2));
+				rowInfo.put("primaryLocation", rs.getBoolean(3));
+				rowInfo.put("score", rs.getInt(4));
 				
-				String compartmentName = rs2.getString(2);
-				String compartmentAbb = rs2.getString(3);
+				orthologHasCompartmentInfo.add(rowInfo);
+			}
+			
+			for(Map<String,Object> rowData : orthologHasCompartmentInfo){
 				
-				rs2 = targetDbStmt.executeQuery("SELECT idcompartment FROM compartment WHERE name='" + compartmentName + "';");	
+				Integer oldCompartmentId = (Integer) rowData.get("idcompartment");
+				boolean primaryLocation = (boolean) rowData.get("primaryLocation");
+				Integer score = (Integer) rowData.get("score");
 				
-				if(!rs2.next())
-					rs2 = targetDbStmt.executeQuery("SELECT idcompartment FROM compartment WHERE abbreviation='" + compartmentAbb + "';");	
+				rs = refDbStmt.executeQuery("SELECT * FROM compartment WHERE idcompartment=" + oldCompartmentId + ";");
+				rs.next();
+				
+				String compartmentName = rs.getString(2);
+				String compartmentAbb = rs.getString(3);
+				
+				ResultSet rs2 = targetDbStmt.executeQuery("SELECT idcompartment FROM compartment WHERE name='" + compartmentName + "';");	
+				
+				if(!rs2.next()){
+					rs2 = targetDbStmt.executeQuery("SELECT idcompartment FROM compartment WHERE abbreviation='" + compartmentAbb + "';");
+					
+					if(!rs2.next()){
+						targetDbStmt.execute("INSERT INTO compartment (name,abbreviation) VALUES('"+ compartmentName +"','"+ compartmentAbb +"');");
+						rs2 = targetDbStmt.executeQuery("SELECT LAST_INSERT_ID()");
+						rs2.next();
+					}
+				}
 				
 				Integer newCompartmentId = rs2.getInt(1);
 				
-				for(Integer newGeneId : orthologsGenesIDsMap.get(geneId)){
+				for(Integer newGeneId : orthologsGenesIDsMap.get(orthologId)){
 					
-					targetDbStmt.executeQuery("INSERT INTO gene_has_compartment (gene_idgene,compartment_idcompartment,primaryLocation,score)"
+					System.out.println("gene_has_compartent new entry: "+newGeneId+"\t"+newCompartmentId+"\t"+primaryLocation+"\t"+score);
+					
+					targetDbStmt.execute("INSERT INTO gene_has_compartment (gene_idgene,compartment_idcompartment,primaryLocation,score)"
 							+ " VALUES("+ newGeneId +","+ newCompartmentId +","+ primaryLocation +","+ score +");");
 				}
+				
+				rs2.close();
 			}
+			
+			rs.close();
 		}
 	}
 	
+	/**
+	 * @param stmt
+	 * @param genesIds
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<Integer,String> getGenesNames(Statement stmt, Set<Integer>genesIds) throws SQLException{
+		
+		Map<Integer,String> genesNames = new HashMap<>();
+		
+		ResultSet rs = stmt.executeQuery("SELECT idgene,name,locusTag,sequence_id FROM gene;");
+		
+		while(rs.next()){
+			
+			Integer geneId =  rs.getInt(1);
+			
+			if(genesIds.contains(geneId))
+				genesNames.put(geneId, rs.getString(2));
+			
+		}
+		
+		return genesNames;
+	}
+	
+	/**
+	 * @param pStmt
+	 * @param genesIdsNamesMap
+	 * @throws SQLException
+	 */
+	public static void insertGenesNames(PreparedStatement pStmt, Map<Integer,String> genesIdsNamesMap) throws SQLException{
+		
+		//PreparedStatement: INSERT INTO gene (name) VALUES(?) WHERE idgene=?;
+		
+		int i = 0;
+
+		for (Integer geneId : genesIdsNamesMap.keySet()) {
+			
+			String geneName = genesIdsNamesMap.get(geneId);
+			
+			pStmt.setString(1, geneName);
+			pStmt.setInt(2, geneId);
+
+			pStmt.addBatch();
+
+			if ((i + 1) % 1000 == 0) {
+
+				pStmt.executeBatch(); // Execute every 1000 items.
+			}
+			i++;
+		}
+		pStmt.executeBatch();
+	}
+
+	/**
+	 * @param stmt
+	 * @param reactionName
+	 * @param booleanRule
+	 * @throws SQLException
+	 */
+	public static void addRuleToReactionBooleanRule(Statement stmt, String reactionName, String booleanRule) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT boolean_rule FROM reaction WHERE name='"+reactionName+"';");
+		
+		if(rs.next()){
+			
+			String newBooleanRule = rs.getString(1);
+			
+			if(newBooleanRule!=null && !newBooleanRule.isEmpty())
+				newBooleanRule = newBooleanRule.concat(" OR ").concat(booleanRule);
+			else
+				newBooleanRule = booleanRule;
+			
+			stmt.execute("UPDATE reaction SET boolean_rule='"+newBooleanRule+"' WHERE name='"+reactionName+"';");
+		}
+		
+		rs.close();
+		
+	}
+
+	/**
+	 * @param stmt
+	 * @param reactionName
+	 * @param geneIds
+	 * @throws SQLException 
+	 */
+	public static void addEntriesToReactionHasEnzyme(Statement stmt, String reactionName, Set<Integer> geneIds) throws SQLException {
+		
+		for(Integer idgene : geneIds){
+			
+			ResultSet rs = stmt.executeQuery("SELECT * FROM subunit INNER JOIN reaction_has_enzyme"
+				+" ON (subunit.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein"
+				+" AND subunit.enzyme_ecnumber = reaction_has_enzyme.enzyme_ecnumber)"
+				+" INNER JOIN reaction ON reaction_has_enzyme.reaction_idreaction = reaction.idreaction"
+				+" WHERE subunit.gene_idgene="+ idgene +" AND reaction.name='"+ reactionName +"';");
+			
+			
+			if(!rs.next()){
+				
+				rs = stmt.executeQuery("SELECT idreaction FROM reaction WHERE name='"+ reactionName +"';");
+				
+				if(rs.next()){
+					
+					Integer idReaction = rs.getInt(1);
+					
+					rs = stmt.executeQuery("SELECT DISTINCT enzyme_protein_idprotein,enzyme_ecnumber FROM subunit WHERE gene_idgene="+ idgene +";");
+					
+					while(rs.next()){
+						
+						Integer proteinId = rs.getInt(1);
+						String ecNumber = rs.getString(2);
+						
+						stmt.execute("INSERT INTO reaction_has_enzyme (reaction_idreaction,enzyme_ecnumber,enzyme_protein_idprotein)"
+								+ " VALUES("+ idReaction +",'"+ ecNumber +"',"+ proteinId +");");
+						
+					}
+					
+				}
+			}
+			
+			rs.close();
+		}
+	}
+	
+	
+	/**
+	 * @param stmt
+	 * @param compartment
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Integer insertCompartment(Statement stmt, Pair<String,String> compartment) throws SQLException{
+		
+		String compartmentName = compartment.getA();
+		String compartmentAbb = compartment.getB();
+		
+		stmt.executeQuery("INSERT INTO compartment (name,abbreviation) VALUES('"+ compartmentName +"','"+ compartmentAbb +"');");	
+		
+		ResultSet rs = stmt.executeQuery("SELECT LAST_INSERT_ID()");
+		rs.next();
+		
+		Integer compartmentID = rs.getInt(1);
+		
+		rs.close();
+		
+		return compartmentID;
+	}
+	///////////////////////////////////////////////////
+	
+	
+
+	/**
+	 * Method to clean Gene table if it isn't empty already
+	 * 
+	 * @param stmt
+	 * @throws SQLException
+	 */
+	public static void cleanGeneTable(Statement stmt) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM gene;");
+		
+		if(!rs.next())
+			stmt.execute("DROP FROM gene;");
+		
+		rs.close();
+	}
+
+	
+	/**
+	 * Method to clean Sequence table if it isn't empty already
+	 * 
+	 * @param stmt
+	 * @throws SQLException
+	 */
+	public static void cleanSequenceTable(Statement stmt) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM sequence;");
+		
+		if(!rs.next())
+			stmt.execute("DROP FROM sequence;");
+		
+		rs.close();			
+	}
+	
+	
+	/**
+	 * Retrieve a mapa where the keys are the genes sequenceIds and the values its locusTags
+	 * 
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<String, String> getGenesLocusTagSeqIdMap(Statement statement) throws SQLException {
+		
+		ResultSet rs = statement.executeQuery("SELECT distinct(sequence_id), locusTag FROM gene;");
+		
+		Map<String,String> locusTagSeqIdMap = new HashMap<>();
+		
+		while(rs.next())
+			locusTagSeqIdMap.put(rs.getString(1), rs.getString(2));
+		
+		rs.close();
+		
+		return locusTagSeqIdMap;
+	}
 	
 }	
