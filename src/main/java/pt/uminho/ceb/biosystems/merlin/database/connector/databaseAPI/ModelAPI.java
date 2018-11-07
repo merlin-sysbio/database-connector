@@ -3180,7 +3180,7 @@ public class ModelAPI {
 
 				if(concurrentLinkedQueue.contains(metaboliteContainer.getEntryID()))
 					chbr = true;
-
+				
 				statement.setString(1, name);
 				statement.setString(2, formula);
 				statement.setString(3, mw);
@@ -6430,7 +6430,7 @@ public class ModelAPI {
 		
 		Set<String> reactionsNotInDb = new HashSet<>();
 		
-		ResultSet rs = null;
+		ResultSet rs;
 		
 		System.out.println("-----------filterReactionsNotInDatabase---------");
 		
@@ -6447,8 +6447,9 @@ public class ModelAPI {
 			else{
 				System.out.println("Reaction present in database!");
 			}
+			
+			rs.close();
 		}
-		rs.close();
 		
 		return reactionsNotInDb;
 	}
@@ -6549,18 +6550,18 @@ public class ModelAPI {
 			}
 		}
 		
-		if(newMetaboliteId==-1 && molecularWeight!=null){
-			System.out.println("Searching for molecular weight "+ molecularWeight +"...");
-
-			rs2 = newDbstmt.executeQuery("SELECT idcompound FROM compound WHERE molecular_weight="+molecularWeight+";");
-			
-			if(rs2.next()){
-				newMetaboliteId = rs2.getInt(1);
-				
-				System.out.println("Molecular weight matched! New metabolite id = "+newMetaboliteId);
-
-			}
-		}
+//		if(newMetaboliteId==-1 && molecularWeight!=null){
+//			System.out.println("Searching for molecular weight "+ molecularWeight +"...");
+//
+//			rs2 = newDbstmt.executeQuery("SELECT idcompound FROM compound WHERE molecular_weight="+molecularWeight+";");
+//			
+//			if(rs2.next()){
+//				newMetaboliteId = rs2.getInt(1);
+//				
+//				System.out.println("Molecular weight matched! New metabolite id = "+newMetaboliteId);
+//
+//			}
+//		}
 		
 		if(newMetaboliteId==-1){
 			
