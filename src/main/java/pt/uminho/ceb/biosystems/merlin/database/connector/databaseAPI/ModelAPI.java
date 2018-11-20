@@ -20,6 +20,8 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import javax.sound.midi.Synthesizer;
+
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
@@ -406,7 +408,7 @@ public class ModelAPI {
 				resultSet = statement.executeQuery("SELECT protein_idprotein FROM enzyme WHERE ecnumber = '"+enzyme+"'");
 
 				boolean go = false;
-
+				
 				if(resultSet.next()) {
 
 					idProtein = resultSet.getString(1);
@@ -449,7 +451,7 @@ public class ModelAPI {
 								" WHERE pathway_has_reaction.reaction_idreaction = idreaction " + aux  +
 								" AND reaction_has_enzyme.enzyme_protein_idprotein = '"+idProtein+"' " +
 								" AND reaction_has_enzyme.enzyme_ecnumber = '"+enzyme+"'");
-
+						
 						while(resultSet.next())
 							reactions_ids.add(resultSet.getString(1));
 
@@ -907,9 +909,9 @@ public class ModelAPI {
 
 		ResultSet rs = statement.executeQuery("SELECT name, equation, reversible, inModel, isGeneric, isSpontaneous, isNonEnzymatic, source, idreaction, lowerBound, upperBound, notes " +
 				" FROM reaction " 
-				+ " WHERE idReaction = "+idReaction+";");
+				+ " WHERE idreaction = "+idReaction+";");
 
-		Map<String, Object> drc = new HashMap<>();
+		Map<String, Object> subMap = new HashMap<>();
 
 		if (rs.next()) {
 
@@ -928,7 +930,7 @@ public class ModelAPI {
 			if(rs.getString(12)!= null)
 				notes = rs.getString(12);
 
-			Map<String, Object> subMap = new HashMap<>();
+//			Map<String, Object> subMap = new HashMap<>();
 
 			subMap.put("name", name);
 
@@ -956,7 +958,7 @@ public class ModelAPI {
 
 			List<Pair<String, String>> proteinsPairs = new ArrayList<>();
 			rs = statement.executeQuery("SELECT reaction_idreaction, enzyme_protein_idprotein, enzyme_ecnumber  " +
-					"FROM reaction_has_enzyme WHERE idReaction = "+idReaction+";");
+					"FROM reaction_has_enzyme WHERE idreaction = "+idReaction+";");
 			while (rs.next())
 				proteinsPairs.add(new  Pair<>(rs.getString(2), rs.getString(3)));
 
@@ -964,7 +966,7 @@ public class ModelAPI {
 
 			List<String> pathways = new ArrayList<>();
 			rs = statement.executeQuery("SELECT reaction_idreaction, pathway_idpathway FROM pathway_has_reaction "
-					+ " WHERE idReaction = "+idReaction+";");
+					+ " WHERE idreaction = "+idReaction+";");
 			while (rs.next())
 				pathways.add(rs.getString(2));
 
@@ -973,7 +975,7 @@ public class ModelAPI {
 			List<String[]> entry = new ArrayList<>();
 			rs = statement.executeQuery("SELECT * FROM stoichiometry "
 					+ "INNER JOIN reaction ON stoichiometry.reaction_idreaction = reaction.idreaction " +
-					" WHERE idReaction = "+idReaction+";");
+					" WHERE idreaction = "+idReaction+";");
 			while (rs.next()) {
 
 				String[] ent = new String[4];
@@ -989,7 +991,8 @@ public class ModelAPI {
 
 		rs.close();
 
-		return drc;
+		return subMap
+				;
 	}
 
 	/**
@@ -1060,10 +1063,10 @@ public class ModelAPI {
 	public static List<Integer> getEnzymeCompartments(String ecNumber, Statement statement) throws SQLException {
 
 		List<Integer> compartments = new ArrayList<>();
-		ResultSet rs = statement.executeQuery("SELECT DISTINCT compartment_idcompartment, enzyme_ecnumber, enzyme_protein_idprotein " +
-				" FROM subunit " +
-				" INNER JOIN gene_has_compartment ON subunit.gene_idgene = gene_has_compartment.gene_idgene " +
-				" WHERE BY enzyme_ecnumber = '"+ecNumber+"';");
+		ResultSet rs = statement.executeQuery("SELECT DISTINCT compartment_idcompartment, enzyme_ecnumber, enzyme_protein_idprotein" +
+				" FROM subunit" +
+				" INNER JOIN gene_has_compartment ON subunit.gene_idgene = gene_has_compartment.gene_idgene" +
+				" WHERE enzyme_ecnumber = '"+ecNumber+"';");
 
 		while(rs.next())
 			compartments.add(rs.getInt(1));
@@ -2002,31 +2005,34 @@ public class ModelAPI {
 					biomass_id = rs.getInt("idcompound");
 
 				for(String m :metabolitesStoichiometry.keySet()) {
+					
+					if(m!=null && !m.equalsIgnoreCase("null")){
 
-					rs = statement.executeQuery("SELECT idcompartment FROM compartment WHERE name = '" + metabolitesCompartments.get(m) + "'");
-					rs.next();
+						rs = statement.executeQuery("SELECT idcompartment FROM compartment WHERE name = '" + metabolitesCompartments.get(m) + "'");
+						rs.next();
 
-					idCompartment = rs.getString(1);
+						idCompartment = rs.getString(1);
 
-					statement.execute("INSERT INTO stoichiometry (stoichiometric_coefficient, compartment_idcompartment, compound_idcompound, reaction_idreaction,numberofchains) " +
-							"VALUES('" + metabolitesStoichiometry.get(m) + "', '" + idCompartment +	"', '" + m.replace("-", "") + "', '" + idNewReaction + "', '" + metabolitesChains.get(m) + "')");
+						statement.execute("INSERT INTO stoichiometry (stoichiometric_coefficient, compartment_idcompartment, compound_idcompound, reaction_idreaction,numberofchains) " +
+								"VALUES('" + metabolitesStoichiometry.get(m) + "', '" + idCompartment +	"', '" + m.replace("-", "") + "', '" + idNewReaction + "', '" + metabolitesChains.get(m) + "')");
 
 
-					if(m.replace("-", "").equalsIgnoreCase(biomass_id+"")) {
+						if(m.replace("-", "").equalsIgnoreCase(biomass_id+"")) {
 
-						rs = statement.executeQuery("SELECT * FROM pathway WHERE name = 'Biomass Pathway'");
-						if(!rs.next()) {						
+							rs = statement.executeQuery("SELECT * FROM pathway WHERE name = 'Biomass Pathway'");
+							if(!rs.next()) {						
 
-							statement.execute("INSERT INTO pathway (name, code) VALUES('Biomass Pathway', 'B0001' );");
-							rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
-							rs.next();
-						}
-						String idBiomassPath= rs.getString(1);
-						rs = statement.executeQuery("SELECT * FROM pathway_has_reaction WHERE pathway_idpathway = "+idBiomassPath+ " AND reaction_idreaction = "+idNewReaction);
+								statement.execute("INSERT INTO pathway (name, code) VALUES('Biomass Pathway', 'B0001' );");
+								rs = statement.executeQuery("SELECT LAST_INSERT_ID()");
+								rs.next();
+							}
+							String idBiomassPath= rs.getString(1);
+							rs = statement.executeQuery("SELECT * FROM pathway_has_reaction WHERE pathway_idpathway = "+idBiomassPath+ " AND reaction_idreaction = "+idNewReaction);
 
-						if(!rs.next()) {
-							statement.execute("INSERT INTO pathway_has_reaction (pathway_idpathway, reaction_idreaction) " +
-									"VALUES ("+idBiomassPath+","+idNewReaction+")");
+							if(!rs.next()) {
+								statement.execute("INSERT INTO pathway_has_reaction (pathway_idpathway, reaction_idreaction) " +
+										"VALUES ("+idBiomassPath+","+idNewReaction+")");
+							}
 						}
 					}
 				}
@@ -2804,7 +2810,7 @@ public class ModelAPI {
 	public static ArrayList<String[]> countNotTransport(String aux, String aux2, String aux3, Statement stmt) throws SQLException{
 
 		ArrayList<String[]> result = new ArrayList<>();
-
+		
 		ResultSet rs = stmt.executeQuery("SELECT compound.idcompound, stoichiometry.compartment_idcompartment, " +
 				" COUNT(DISTINCT(idreaction)) AS sum_not_transport "+
 				" FROM compound " +
@@ -2901,9 +2907,9 @@ public class ModelAPI {
 	public static ArrayList<String[]> getMetabolitesWithBothProperties(String aux, String aux2, String aux3, Statement stmt) throws SQLException{
 
 		ArrayList<String[]> result = new ArrayList<>();
-
-		ResultSet rs = stmt.executeQuery("SELECT compound.name, formula, COUNT(DISTINCT SIGN(stoichiometric_coefficient)) as counter, compound.idcompound, kegg_id , COUNT(DISTINCT(idreaction)), " +
-				" compartment.name, stoichiometry.compartment_idcompartment " +
+		
+		ResultSet rs = stmt.executeQuery("SELECT compound.name, formula, COUNT(DISTINCT SIGN(stoichiometric_coefficient)) as counter,"
+				+ " compound.idcompound, kegg_id , COUNT(DISTINCT(idreaction)), compartment.name, stoichiometry.compartment_idcompartment " +
 				" FROM compound " +
 				" LEFT JOIN stoichiometry ON compound_idcompound=idcompound " +
 				" INNER JOIN compartment ON stoichiometry.compartment_idcompartment=compartment.idcompartment " +

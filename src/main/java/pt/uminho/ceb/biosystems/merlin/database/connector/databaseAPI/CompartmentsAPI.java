@@ -200,12 +200,12 @@ public class CompartmentsAPI {
 		while(rs.next()) {
 
 
-			if( rs.getString(2).equalsIgnoreCase("cyto")) {
+			if(rs.getString(2).equalsIgnoreCase("cyto")) {
 
 				interior = "cyto";
 			}
 
-			if( rs.getString(2).equalsIgnoreCase("cytop")) {
+			if(rs.getString(2).equalsIgnoreCase("cytop")) {
 
 				interior = "cytop";
 			}

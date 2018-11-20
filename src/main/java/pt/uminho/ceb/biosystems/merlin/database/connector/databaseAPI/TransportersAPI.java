@@ -82,7 +82,8 @@ public class TransportersAPI {
 
 		Statement statement = conn.createStatement();
 
-		ResultSet rs = statement.executeQuery("SELECT * FROM sw_reports WHERE project_id = "+projectID);
+		//CHECH THIS QUERY!!!!
+		ResultSet rs = statement.executeQuery("SELECT * FROM sw_reports WHERE project_id = "+projectID+ " AND status='PROCESSED';");
 
 		while(rs.next())
 			ret.put(rs.getString(3), rs.getInt(6));
@@ -703,6 +704,8 @@ public class TransportersAPI {
 				rs.next();
 			}
 			idcompartment = rs.getString(1);
+			
+			compartments_ids.put(compartment, idcompartment);
 
 		}
 		return idcompartment;
