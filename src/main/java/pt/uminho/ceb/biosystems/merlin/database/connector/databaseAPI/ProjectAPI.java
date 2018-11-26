@@ -905,12 +905,6 @@ public class ProjectAPI {
 				"WHERE pathway_idpathway = " + id + aux +
 				"ORDER BY name;");
 
-		System.out.println("SELECT distinct(reaction.idreaction), name, equation " +
-				"FROM pathway_has_reaction " +
-				"INNER JOIN reaction ON idreaction = reaction_idreaction " +
-				"WHERE pathway_idpathway = " + id + aux +
-				"ORDER BY name;");
-		
 		while(rs.next()){
 			String[] list = new String[3];
 			list[0]=rs.getString(1);
@@ -1055,6 +1049,7 @@ public class ProjectAPI {
 		else if(count == 1){
 			
 			rs = stmt.executeQuery("SELECT kegg_id FROM compound WHERE compound.name ='" + name + "';");
+			rs.next();
 			
 			return rs.getString(1);
 		}
@@ -1231,10 +1226,22 @@ public class ProjectAPI {
 
 		int res = -1;
 
+//		ResultSet rs = stmt.executeQuery("SELECT idreaction FROM reaction WHERE name = '"+name+"'");
+		
 		ResultSet rs = stmt.executeQuery("SELECT idreaction FROM reaction WHERE name = '"+name+"' AND inModel");
 		
-		if(rs.next())
-			res = rs.getInt(1);
+//		ResultSet rs = stmt.executeQuery("SELECT idreaction, compartment.name from reaction "
+//				+ "INNER JOIN compartment ON compartment.idcompartment=reaction.compartment_idcompartment "
+//				+ "WHERE reaction.name='" + name +"';");
+
+		if(rs.next()){
+//			if(rs.getString(2).equalsIgnoreCase("inside") && !isCompartimentalized){
+				res = rs.getInt(1);
+//			}
+//			else if(!rs.getString(2).equalsIgnoreCase("inside") && isCompartimentalized){
+//				res = rs.getInt(1);
+//			}
+		}
 		
 		rs.close();
 		return res;
@@ -3732,12 +3739,8 @@ public class ProjectAPI {
 		
 		if(dependentTables != null){
 			
-			System.out.println("Entrou para: "+ tableName);
-			
 			for(String dependTable : dependentTables){
 				
-				System.out.println("Tabela dependente--->"+dependTable);
-
 //				ResultSet rs3 = queryStatement.executeQuery("SELECT " + tableName + "_s_key FROM " + dependTable + " ORDER BY " + tableName + "_s_key DESC;"); 
 				
 //				while(rs3.next()){

@@ -25,15 +25,8 @@ import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import org.biojava.nbio.core.sequence.DNASequence;
 import org.biojava.nbio.core.sequence.ProteinSequence;
 import org.biojava.nbio.core.sequence.RNASequence;
-import org.biojava.nbio.core.sequence.compound.NucleotideCompound;
-import org.biojava.nbio.core.sequence.storage.ArrayListSequenceReader;
-import org.biojava.nbio.core.sequence.template.AbstractCompoundSet;
 import org.biojava.nbio.core.sequence.template.AbstractSequence;
-import org.biojava.nbio.core.sequence.template.Compound;
-import org.biojava.nbio.core.sequence.template.CompoundSet;
-import org.biojava.nbio.core.sequence.template.SequenceReader;
 
-import com.mysql.fabric.xmlrpc.base.Data;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException;
 
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
@@ -423,7 +416,7 @@ public class ModelAPI {
 				resultSet = statement.executeQuery("SELECT protein_idprotein FROM enzyme WHERE ecnumber = '"+enzyme+"'");
 
 				boolean go = false;
-
+				
 				if(resultSet.next()) {
 
 					idProtein = resultSet.getString(1);
@@ -466,7 +459,7 @@ public class ModelAPI {
 								" WHERE pathway_has_reaction.reaction_idreaction = idreaction " + aux  +
 								" AND reaction_has_enzyme.enzyme_protein_idprotein = '"+idProtein+"' " +
 								" AND reaction_has_enzyme.enzyme_ecnumber = '"+enzyme+"'");
-
+						
 						while(resultSet.next())
 							reactions_ids.add(resultSet.getString(1));
 
@@ -989,6 +982,7 @@ public class ModelAPI {
 			List<Pair<String, String>> proteinsPairs = new ArrayList<>();
 			rs = statement.executeQuery("SELECT reaction_idreaction, enzyme_protein_idprotein, enzyme_ecnumber  " +
 					"FROM reaction_has_enzyme WHERE reaction_idreaction = "+idReaction+";");
+			
 			while (rs.next())
 				proteinsPairs.add(new  Pair<>(rs.getString(2), rs.getString(3)));
 			
@@ -997,6 +991,7 @@ public class ModelAPI {
 			List<String> pathways = new ArrayList<>();
 			rs = statement.executeQuery("SELECT reaction_idreaction, pathway_idpathway FROM pathway_has_reaction "
 					+ " WHERE reaction_idreaction = "+idReaction+";");
+			
 			while (rs.next())
 				pathways.add(rs.getString(2));
 			
@@ -2045,7 +2040,6 @@ public class ModelAPI {
 
 						rs = statement.executeQuery("SELECT idcompartment FROM compartment WHERE name = '" + metabolitesCompartments.get(m) + "'");
 						rs.next();
-
 						idCompartment = rs.getString(1);
 						
 						statement.execute("INSERT INTO stoichiometry (stoichiometric_coefficient, compartment_idcompartment, compound_idcompound, reaction_idreaction,numberofchains) " +
@@ -2845,7 +2839,7 @@ public class ModelAPI {
 	public static ArrayList<String[]> countNotTransport(String aux, String aux2, String aux3, Statement stmt) throws SQLException{
 
 		ArrayList<String[]> result = new ArrayList<>();
-
+		
 		ResultSet rs = stmt.executeQuery("SELECT compound.idcompound, stoichiometry.compartment_idcompartment, " +
 				" COUNT(DISTINCT(idreaction)) AS sum_not_transport "+
 				" FROM compound " +
@@ -2942,9 +2936,9 @@ public class ModelAPI {
 	public static ArrayList<String[]> getMetabolitesWithBothProperties(String aux, String aux2, String aux3, Statement stmt) throws SQLException{
 
 		ArrayList<String[]> result = new ArrayList<>();
-
-		ResultSet rs = stmt.executeQuery("SELECT compound.name, formula, COUNT(DISTINCT SIGN(stoichiometric_coefficient)) as counter, compound.idcompound, kegg_id , COUNT(DISTINCT(idreaction)), " +
-				" compartment.name, stoichiometry.compartment_idcompartment " +
+		
+		ResultSet rs = stmt.executeQuery("SELECT compound.name, formula, COUNT(DISTINCT SIGN(stoichiometric_coefficient)) as counter,"
+				+ " compound.idcompound, kegg_id , COUNT(DISTINCT(idreaction)), compartment.name, stoichiometry.compartment_idcompartment " +
 				" FROM compound " +
 				" LEFT JOIN stoichiometry ON compound_idcompound=idcompound " +
 				" INNER JOIN compartment ON stoichiometry.compartment_idcompartment=compartment.idcompartment " +
