@@ -3,7 +3,12 @@
  */
 package pt.uminho.ceb.biosystems.merlin.database.connector.datatypes;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -11,13 +16,18 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.UIManager;
+
+import org.h2.tools.RunScript;
 
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
@@ -28,6 +38,7 @@ import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
  */
 public class DatabaseUtilities {
 
+	private static final String TEMP_DIRECTORY = FileUtils.getCurrentTempDirectory();
 	private static Map<String, String> sqlTokens;
 	private static Pattern sqlTokenPattern;
 
@@ -201,11 +212,14 @@ public class DatabaseUtilities {
 	 * @param originDb
 	 * @param destinyDb
 	 */
-	public static void dumpSelectedTablesToDatabase(List<String> tablesList, String originDb, String destinyDb, DatabaseAccess dba){
+	public static void dumpMySQLTablesToDatabase(List<String> tablesList, DatabaseAccess originDbA, DatabaseAccess destinationDbA){
 		
-		String user = dba.get_database_user();
-		String password = dba.get_database_password();
-		String host = dba.get_database_host();
+		String user = originDbA.get_database_user();
+		String password = originDbA.get_database_password();
+		String host = originDbA.get_database_host();
+		
+		String originDb = originDbA.get_database_name(), 
+				destinationDb = destinationDbA.get_database_name();
 		
 		String tables = "";
 		
@@ -219,7 +233,7 @@ public class DatabaseUtilities {
 //				+ "| mysql --user=merlindev --host=193.137.11.210 -p " + destinyDb;
 		
 		String command = "mysqldump --no-create-info --no-create-db -u" + user + " -h" + host + " -p" + password + " " 
-				+ originDb + " " + tables + "| mysql -u" + user + " -h" + host + " -p" + password + " " + destinyDb;
+				+ originDb + " " + tables + "| mysql -u" + user + " -h" + host + " -p" + password + " " + destinationDb;
 		
 		String os_name = System.getProperty("os.name");
 		
@@ -246,5 +260,97 @@ public class DatabaseUtilities {
 		}
 	}
 	
+	/**
+	 * @param tablesList
+	 * @param originDbA
+	 * @param destinationDbA
+	 */
+	public static void dumpH2TablesToDatabase(List<String> tablesList, DatabaseAccess originDbA, DatabaseAccess destinationDbA){
+		
+		try {
+
+			Connection oConn = originDbA.openConnection(), dConn = destinationDbA.openConnection();
+			Statement oStmt = oConn.createStatement();
+
+			File dumpFile = new File(TEMP_DIRECTORY.concat(originDbA.get_database_name()).concat("_H2Dump.sql"));
+			
+			Set<String> tablesSet = new HashSet<>(tablesList);
+			tablesSet.addAll(Arrays.asList(new String[]{"reactions_view_noPath_or_noEC","reactions_view"}));
+			
+			//Tables to dump
+			String tables = "";
+			for(String table : tablesSet)
+				tables = tables.concat(table).concat(",");
+			tables = tables.replaceAll(",$", "");
+
+			//Create the dump file
+			oStmt.executeQuery(String.format("SCRIPT DROP TO '%s' TABLE "+ tables , dumpFile.getAbsolutePath()));
+			
+			oStmt.close();
+			oConn.close();
+			
+			File processedFile = processH2DumpFile(dumpFile);
+
+			//Import dumpedTables
+			RunScript.execute(dConn, new FileReader(processedFile));	
+			
+			dumpFile.delete();
+			processedFile.delete();
+			dConn.close();
+			
+			System.out.println("Tables dumped successfuly!");
+			
+		} catch (SQLException | FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	
+	/**
+	 * @param dumpFile
+	 * @return
+	 */
+	public static File processH2DumpFile(File dumpFile){
+
+		try {
+			
+			File newDumpFile = new File(dumpFile.getParent().concat("/new_").concat(dumpFile.getName()));
+			newDumpFile.createNewFile();
+
+			String text = "CREATE SEQUENCE PUBLIC";
+			String newText = "CREATE SEQUENCE IF NOT EXISTS PUBLIC";
+
+			BufferedReader br = new BufferedReader(new FileReader(dumpFile));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(newDumpFile));
+
+			String line;
+			String putData;
+
+			while ((line = br.readLine()) != null) {
+
+				if(line.contains(text)){
+					putData = line.replaceAll(text, newText).concat(System.lineSeparator());
+					bw.write(putData);
+				}
+				else{
+					putData=line.concat(System.lineSeparator());
+					bw.write(putData);
+				}
+			}
+
+			br.close();
+			bw.close();
+			
+			return newDumpFile;
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
 	
 }

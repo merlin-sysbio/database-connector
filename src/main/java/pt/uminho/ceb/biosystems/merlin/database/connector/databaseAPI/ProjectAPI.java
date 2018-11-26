@@ -1231,11 +1231,11 @@ public class ProjectAPI {
 
 		int res = -1;
 
-		ResultSet rs = stmt.executeQuery("SELECT idreaction FROM reaction WHERE name = '"+name+"'");
-
+		ResultSet rs = stmt.executeQuery("SELECT idreaction FROM reaction WHERE name = '"+name+"' AND inModel");
+		
 		if(rs.next())
 			res = rs.getInt(1);
-
+		
 		rs.close();
 		return res;
 	}

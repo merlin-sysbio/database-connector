@@ -21,13 +21,25 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import javax.sound.sampled.Port;
+import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
+import org.biojava.nbio.core.sequence.DNASequence;
+import org.biojava.nbio.core.sequence.ProteinSequence;
+import org.biojava.nbio.core.sequence.RNASequence;
+import org.biojava.nbio.core.sequence.compound.NucleotideCompound;
+import org.biojava.nbio.core.sequence.storage.ArrayListSequenceReader;
+import org.biojava.nbio.core.sequence.template.AbstractCompoundSet;
+import org.biojava.nbio.core.sequence.template.AbstractSequence;
+import org.biojava.nbio.core.sequence.template.Compound;
+import org.biojava.nbio.core.sequence.template.CompoundSet;
+import org.biojava.nbio.core.sequence.template.SequenceReader;
 
-import com.mysql.jdbc.util.ResultSetUtil;
+import com.mysql.fabric.xmlrpc.base.Data;
+import com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException;
 
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
+import pt.uminho.ceb.biosystems.merlin.utilities.Enumerators.SequenceType;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.capsules.ReactionsCapsule;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.GeneAssociation;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.gpr.ModuleCI;
@@ -1919,7 +1931,7 @@ public class ModelAPI {
 			if(name.toLowerCase().equals("biomass"))
 				name = "R_"+name;
 
-			rs = statement.executeQuery("SELECT idreaction FROM reaction WHERE name = '" + DatabaseUtilities.databaseStrConverter(name, databaseType)+ "'");
+			rs = statement.executeQuery("SELECT idreaction FROM reaction WHERE name = '" + DatabaseUtilities.databaseStrConverter(name, databaseType)+ "';");// AND inModel");
 			if(rs.next()) {
 
 				throw new  Exception("Reaction with the same name ("+name+") already exists. Aborting operation!");
@@ -5700,6 +5712,25 @@ public class ModelAPI {
 	}
 
 	/**
+	 * Get locus_tag for a given sequenceID.
+	 * 
+	 * @param sequenceID
+	 * @param statement
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String getGeneLocusTag(String sequenceID, Statement statement) throws SQLException{
+
+		ResultSet rs = statement.executeQuery("SELECT locusTag FROM gene WHERE  sequence_id = '" + sequenceID + "';");
+
+		if(rs.next())
+			return rs.getString(1);
+
+		return null;
+	}
+	
+	
+	/**
 	 * Get geneID for a given sequenceID.
 	 * 
 	 * @param sequenceID
@@ -5709,7 +5740,7 @@ public class ModelAPI {
 	 */
 	public static String getGeneId(String sequenceID, Statement statement) throws SQLException{
 
-		ResultSet rs = statement.executeQuery("SELECT locusTag FROM gene WHERE  sequence_id = '" + sequenceID + "';");
+		ResultSet rs = statement.executeQuery("SELECT idgene FROM gene WHERE  sequence_id = '" + sequenceID + "';");
 
 		if(rs.next())
 			return rs.getString(1);
@@ -5717,6 +5748,7 @@ public class ModelAPI {
 		return null;
 
 	}
+	
 
 	/**
 	 * Get genes and locus from database
@@ -5879,28 +5911,57 @@ public class ModelAPI {
 	 * @param pStmt
 	 * @throws SQLException
 	 */
-	public static void loadFastaSequences(Map<Integer, List<String>> sequences, String seqType, java.sql.Connection conn) throws SQLException{
+	public static void loadFastaSequences(Map<Integer, String[]> sequences, SequenceType seqType, java.sql.Connection conn) throws SQLException{
 		
-		PreparedStatement pStmt = conn.prepareStatement("INSERT INTO sequence (gene_idgene,sequence_type,sequence,sequence_length) VALUES(?,?,?,?);");
+		PreparedStatement pStmt;
+		int i;
+		
+		if(seqType.equals(SequenceType.RNA) || seqType.equals(SequenceType.RRNA) || seqType.equals(SequenceType.TRNA)){
+			
+			pStmt = conn.prepareStatement("INSERT INTO sequence (sequence_type,sequence,sequence_length) VALUES(?,?,?);");
+			
+			i = 0;
+			for (Integer geneID : sequences.keySet()) {
 				
-		int i = 0;
-		for (Integer geneID : sequences.keySet()) {
-			
-			List<String> seqInfo = sequences.get(geneID);
-			
-			pStmt.setInt(1, geneID);
-			pStmt.setString(2, seqType);
-			pStmt.setString(3, seqInfo.get(0));
-			pStmt.setInt(4, Integer.parseInt(seqInfo.get(1)));
-			pStmt.addBatch();
+				String[] seqInfo = sequences.get(geneID);
+				
+				pStmt.setString(1, seqType.toString());
+				pStmt.setString(2, seqInfo[0]);
+				pStmt.setInt(3, Integer.parseInt(seqInfo[1]));
+				pStmt.addBatch();
 
-			if ((i + 1) % BATCH_SIZE == 0) {
+				if ((i + 1) % BATCH_SIZE == 0) {
 
-				pStmt.executeBatch(); // Execute every 500 items.
+					pStmt.executeBatch(); // Execute every 500 items.
+				}
+				i++;
 			}
-			i++;
+			
+			pStmt.executeBatch();
 		}
-		pStmt.executeBatch();
+		else{
+			pStmt = conn.prepareStatement("INSERT INTO sequence (gene_idgene,sequence_type,sequence,sequence_length) VALUES(?,?,?,?);");
+				
+			i = 0;
+			for (Integer geneID : sequences.keySet()) {
+
+				String[] seqInfo = sequences.get(geneID);
+
+				pStmt.setInt(1, geneID);
+				pStmt.setString(2, seqType.toString());
+				pStmt.setString(3, seqInfo[0]);
+				pStmt.setInt(4, Integer.parseInt(seqInfo[1]));
+				pStmt.addBatch();
+
+				if ((i + 1) % BATCH_SIZE == 0) {
+
+					pStmt.executeBatch(); // Execute every 500 items.
+				}
+				i++;
+			}
+			
+			pStmt.executeBatch();
+		}
 		
 	}
 	
@@ -5954,20 +6015,6 @@ public class ModelAPI {
 		
 		rs.close();
 		return res;
-	}
-	
-	
-	/**
-	 * delete all data from Gene and Sequence tables
-	 * 
-	 * @param stmt
-	 * @throws SQLException 
-	 */
-	public static void deleteGeneAndSequenceTables(Statement stmt) throws SQLException{
-		
-		stmt.execute("DELETE FROM sequence");
-		stmt.execute("DELETE FROM gene;");
-		
 	}
 	
 	
@@ -6081,8 +6128,13 @@ public class ModelAPI {
 		
 		if(rs.next())
 			return false;
-		else
-			return true;
+		
+		rs = stmt.executeQuery("Select * from reaction;");
+		
+		if(rs.next())
+			return false;
+		
+		return true;
 	}
 	
 	
@@ -6173,11 +6225,12 @@ public class ModelAPI {
 	 * @return
 	 * @throws SQLException 
 	 */
-	public static Map<String,Map<String,List<String>>> getGenesReactionsByBooleanRule(Statement stmt) throws SQLException{
+	public static Map<String,Map<String,List<String>>> getGenesReactionsByBooleanRule(Statement stmt, DatabaseType dbType) throws SQLException{
 		
 		Map<String, Map<String,List<String>>> genesReactions = new HashMap<>();
 		
-		stmt.execute("SET GLOBAL group_concat_max_len=20000");
+		if(dbType.equals(DatabaseType.MYSQL))
+			stmt.execute("SET GLOBAL group_concat_max_len=20000");
 		
 		ResultSet rs = stmt.executeQuery("SELECT gene.locusTag, gene.sequence_id,"
 				+ " (Select GROUP_CONCAT(CONCAT(reaction.idreaction, '|', reaction.name, '|',reaction.boolean_rule))"
@@ -6285,13 +6338,13 @@ public class ModelAPI {
 	 * @param incrementValue
 	 * @throws SQLException
 	 */
-	public static void incrementTablesIds(Statement stmt, Set<String> tables, String key, Integer incrementValue, String dbName) throws SQLException{
+	public static void incrementTablesIds(Statement stmt, Set<String> tables, String key, Integer incrementValue, String dbName, DatabaseType dbType) throws SQLException{
 		
 		String query;
 		
 		for(String table : tables){
 			
-			if(table.equals("gene_has_compartment"))
+			if(table.equals("gene_has_compartment") && dbType.equals(DatabaseType.MYSQL))
 				stmt.execute("ALTER TABLE `"+ dbName +"`.`gene_has_compartment` DROP PRIMARY KEY;");
 		
 			query = "UPDATE " + table + " SET " + key + " = " + key + "+" + incrementValue + ";";
@@ -7212,42 +7265,6 @@ public class ModelAPI {
 		
 		return compartmentID;
 	}
-	///////////////////////////////////////////////////
-	
-	
-
-	/**
-	 * Method to clean Gene table if it isn't empty already
-	 * 
-	 * @param stmt
-	 * @throws SQLException
-	 */
-	public static void cleanGeneTable(Statement stmt) throws SQLException {
-		
-		ResultSet rs = stmt.executeQuery("SELECT * FROM gene;");
-		
-		if(!rs.next())
-			stmt.execute("DROP FROM gene;");
-		
-		rs.close();
-	}
-
-	
-	/**
-	 * Method to clean Sequence table if it isn't empty already
-	 * 
-	 * @param stmt
-	 * @throws SQLException
-	 */
-	public static void cleanSequenceTable(Statement stmt) throws SQLException {
-		
-		ResultSet rs = stmt.executeQuery("SELECT * FROM sequence;");
-		
-		if(!rs.next())
-			stmt.execute("DROP FROM sequence;");
-		
-		rs.close();			
-	}
 	
 	
 	/**
@@ -7271,4 +7288,242 @@ public class ModelAPI {
 		return locusTagSeqIdMap;
 	}
 	
+	///////////////////////////////////////////////////
+	/**
+	 * Method to clean Gene table if it isn't empty already
+	 * 
+	 * @param stmt
+	 * @throws SQLException
+	 */
+	public static void cleanGeneTable(Statement stmt) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM gene;");
+		
+		if(rs.next()){
+			stmt.execute("DELETE sequence FROM sequence INNER JOIN gene ON gene.idgene=sequence.gene_idgene;");
+			stmt.execute("DELETE FROM gene;");
+			
+			resetAutoIncrementValue(stmt, "gene");
+		}
+		
+		rs.close();
+	}
+
+	
+	/**
+	 * @param stmt
+	 * @param table
+	 * @throws SQLException
+	 */
+	public static void resetAutoIncrementValue(Statement stmt, String table) throws SQLException{
+		
+		try {
+			stmt.execute("ALTER TABLE gene ALTER COLUMN idgene RESTART WITH 1;");
+			
+		} catch (MySQLSyntaxErrorException e){
+			
+			stmt.execute("ALTER TABLE gene AUTO_INCREMENT = 1;");
+		}			
+	}
+	
+	/**
+	 * Method to clean Sequence table if it isn't empty already
+	 * 
+	 * @param stmt
+	 * @throws SQLException
+	 */
+	public static void cleanSequenceTable(Statement stmt) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM sequence;");
+		
+		if(!rs.next())
+			stmt.execute("DROP FROM sequence;");
+		
+		rs.close();			
+	}
+	
+	/**
+	 * delete all data from Gene and Sequence tables
+	 * 
+	 * @param stmt
+	 * @throws SQLException 
+	 */
+	public static void cleanGeneAndSequenceTables(Statement stmt) throws SQLException{
+		
+		stmt.execute("DELETE FROM sequence");
+		resetAutoIncrementValue(stmt, "sequence");
+		
+		stmt.execute("DELETE FROM gene;");
+		resetAutoIncrementValue(stmt, "gene");
+	}
+	
+	/**
+	 * delete specific type of sequences (specified in aux String) on sequence table
+	 * 
+	 * @param stmt
+	 * @param sequenceType
+	 * @throws SQLException
+	 */
+	public static void deleteSequencesFromSequenceTable(Statement stmt, SequenceType sequenceType) throws SQLException{
+
+		if(sequenceType.equals(SequenceType.RNA)){
+			
+			stmt.execute("DELETE FROM sequence WHERE sequence_type='"+ SequenceType.RRNA.toString() +"'"
+					+ " OR sequence_type='"+ SequenceType.TRNA.toString() +"';");
+		}
+		else{
+			stmt.execute("DELETE FROM sequence WHERE sequence_type='"+ sequenceType.toString() +"';");
+		}
+
+	}
+	
+	
+//	/**
+//	 * @param stmt
+//	 * @param seqType
+//	 * @throws SQLException
+//	 */
+//	public static void deleteGeneEntriesBySequenceType(Statement stmt, SequenceType seqType) throws SQLException{
+//		
+//		if(seqType.equals(SequenceType.RNA)){
+//			
+//			stmt.execute("DELETE gene FROM gene INNER JOIN sequence ON sequence.gene_idgene=gene.idgene "
+//					+ "WHERE sequence.sequence_type='"+ SequenceType.RRNA.toString() +"'"
+//					+ " OR sequence.sequence_type='"+ SequenceType.TRNA.toString() +"';");
+//			
+//		}
+//		else{
+//			stmt.execute("DELETE gene FROM gene INNER JOIN sequence ON sequence.gene_idgene=gene.idgene "
+//					+ "WHERE sequence.sequence_type='"+ seqType.toString() +"';");
+//		}
+//	}
+	
+	/**
+	 * @param stmt
+	 * @param seqType
+	 * @throws SQLException
+	 */
+	public static void deleteGenesAndSequencesByType(Statement stmt, SequenceType seqType) throws SQLException{
+		
+		if(seqType.equals(SequenceType.RNA)){
+			
+			stmt.execute("DELETE gene FROM gene INNER JOIN sequence ON sequence.gene_idgene=gene.idgene "
+					+ "WHERE sequence.sequence_type='"+ SequenceType.RRNA.toString() +"'"
+					+ " OR sequence.sequence_type='"+ SequenceType.TRNA.toString() +"';");
+			
+		}
+		else{
+			stmt.execute("DELETE gene FROM gene INNER JOIN sequence ON sequence.gene_idgene=gene.idgene "
+					+ "WHERE sequence.sequence_type='"+ seqType.toString() +"';");
+			
+		}
+		
+		deleteSequencesFromSequenceTable(stmt, seqType);
+	}
+	
+	
+	/**
+	 * @param stmt
+	 * @param seqType
+	 * @return
+	 * @throws SQLException
+	 * @throws CompoundNotFoundException
+	 */
+	public static Map<String, AbstractSequence<?>> getGenomeFromDatabase(Statement stmt, SequenceType seqType) throws SQLException, CompoundNotFoundException{
+		
+		Map<String, AbstractSequence<?>> genomeSequences = new HashMap<>();
+		ResultSet rs;
+		
+		//protein.faa
+		if(seqType.equals(SequenceType.PROTEIN)){
+		
+			rs = stmt.executeQuery("SELECT gene.sequence_id, sequence.sequence FROM sequence"
+					+ " INNER JOIN gene ON gene.idgene=sequence.gene_idgene"
+					+ " WHERE sequence.sequence_type='"+ seqType.toString() +"';");
+			
+			AbstractSequence<?> sequence;
+			
+			while(rs.next()){
+				
+				sequence = new ProteinSequence(rs.getString(2));
+				sequence.setOriginalHeader(rs.getString(1));
+				
+				genomeSequences.put(rs.getString(1), sequence);
+			}
+		}
+		
+		//cds_from_genomic.faa
+		else if(seqType.equals(SequenceType.CDS_DNA)){
+			
+			rs = stmt.executeQuery("SELECT gene.sequence_id, sequence.sequence FROM sequence"
+					+ " INNER JOIN gene ON gene.idgene=sequence.gene_idgene"
+					+ " WHERE sequence.sequence_type='"+ seqType.toString() +"';");
+			
+			AbstractSequence<?> sequence;
+			
+			while(rs.next()){
+				
+				sequence = new DNASequence(rs.getString(2));
+				sequence.setOriginalHeader(rs.getString(1));
+				
+				genomeSequences.put(rs.getString(1), sequence);
+			}
+		}
+		
+		//rna_from_genomic.fna and genomic.fna
+		else{
+			
+			rs = stmt.executeQuery("SELECT idsequence, sequence FROM sequence"
+					+ " WHERE sequence.sequence_type='"+ seqType.toString() +"';");
+			
+			AbstractSequence<?> sequence;
+
+			if(seqType.equals(SequenceType.GENOMIC_DNA)){
+
+				while(rs.next()){
+
+					String key = seqType.toString().concat("_").concat(rs.getString(1));
+
+					sequence = new DNASequence(rs.getString(2));
+
+					genomeSequences.put(key, sequence);
+				}
+			} 
+			
+			else {
+				
+				while(rs.next()){
+
+					String key = seqType.toString().concat("_").concat(rs.getString(1));
+
+					sequence = new RNASequence(rs.getString(2));
+
+					genomeSequences.put(key, sequence);
+				}
+			}
+		}
+		
+		rs.close();
+
+		return genomeSequences;
+	}
+
+	/**
+	 * @param stmt
+	 * @return
+	 * @throws SQLException 
+	 */
+	public static boolean checkGenomeSequences(Statement stmt, SequenceType seqType) throws SQLException {
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM sequence WHERE sequence.sequence_type='"+ seqType.toString() +"';");
+		
+		if(rs.next()){
+			rs.close();
+			return true;
+		}
+		else{
+			rs.close();
+			return false;
+		}
+	}
 }	
