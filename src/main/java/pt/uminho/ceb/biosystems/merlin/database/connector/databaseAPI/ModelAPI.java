@@ -1926,7 +1926,8 @@ public class ModelAPI {
 			if(name.toLowerCase().equals("biomass"))
 				name = "R_"+name;
 
-			rs = statement.executeQuery("SELECT idreaction FROM reaction WHERE name = '" + DatabaseUtilities.databaseStrConverter(name, databaseType)+ "';");// AND inModel");
+			rs = statement.executeQuery("SELECT idreaction FROM reaction WHERE name = '" + DatabaseUtilities.databaseStrConverter(name, databaseType)
+				+ "' AND originalReaction="+ ProjectAPI.isCompartmentalisedModel(statement) +";");
 			if(rs.next()) {
 
 				throw new  Exception("Reaction with the same name ("+name+") already exists. Aborting operation!");
@@ -6147,7 +6148,7 @@ public class ModelAPI {
 			stmt.execute("UPDATE reaction SET inModel=false WHERE not isSpontaneous;");
 		}
 		else{
-			stmt.execute("UPDATE reaction SET inModel=false,boolean_rule=null;");
+			stmt.execute("UPDATE reaction SET inModel=false, boolean_rule=null;");
 		}
 		
 	}
@@ -6560,7 +6561,7 @@ public class ModelAPI {
 		
 		ResultSet rs2 = null; 
 		
-		System.out.println("Searching for source id "+ sourceDbId+"...");
+//		System.out.println("Searching for source id "+ sourceDbId+"...");
 		
 		if(sourceDbId!=null){
 			rs2 = newDbstmt.executeQuery("SELECT idcompound FROM compound WHERE kegg_id='"+sourceDbId+"';");
@@ -6568,31 +6569,31 @@ public class ModelAPI {
 			if(rs2.next()){
 				newMetaboliteId = rs2.getInt(1);
 				
-				System.out.println("Source id matched! New metabolite id = "+newMetaboliteId);
+//				System.out.println("Source id matched! New metabolite id = "+newMetaboliteId);
 			}
 		}
 		
 		if(newMetaboliteId==-1 && metaboliteName!=null && !metaboliteName.isEmpty()){
-			System.out.println("Searching for metabolite name "+ metaboliteName+"...");
+//			System.out.println("Searching for metabolite name "+ metaboliteName+"...");
 			
 			rs2 = newDbstmt.executeQuery("SELECT idcompound FROM compound WHERE name='"+metaboliteName+"';");
 			
 			if(rs2.next()){
 				newMetaboliteId = rs2.getInt(1);
 				
-				System.out.println("metabolite name matched! New metabolite id = "+newMetaboliteId);
+//				System.out.println("metabolite name matched! New metabolite id = "+newMetaboliteId);
 			}
 		}
 
 		if(newMetaboliteId==-1 && formula!=null){
-			System.out.println("Searching for formula "+ formula+"...");
+//			System.out.println("Searching for formula "+ formula+"...");
 
 			rs2 = newDbstmt.executeQuery("SELECT idcompound FROM compound WHERE formula='"+formula+"';");
 			
 			if(rs2.next()){
 				newMetaboliteId = rs2.getInt(1);
 				
-				System.out.println("Formula matched! New metabolite id = "+newMetaboliteId);
+//				System.out.println("Formula matched! New metabolite id = "+newMetaboliteId);
 
 			}
 		}
@@ -6612,16 +6613,16 @@ public class ModelAPI {
 		
 		if(newMetaboliteId==-1){
 			
-			System.out.println("Inserting new compound...");
+//			System.out.println("Inserting new compound...");
 			
 			Integer charge = null;
 			if(rs.getInt(9)!=0)
 				charge = rs.getInt(9);
 			
-			System.out.println("Molecular weight: "+molecularWeight+"\t charge: "+charge);
-			
-			System.out.println("Query: INSERT INTO compound (name,kegg_id,formula,molecular_weight,charge)"
-					+ " VALUES('" + metaboliteName + "','" + sourceDbId + "','" + formula + "'," + molecularWeight + "," + charge +");");
+//			System.out.println("Molecular weight: "+molecularWeight+"\t charge: "+charge);
+//			
+//			System.out.println("Query: INSERT INTO compound (name,kegg_id,formula,molecular_weight,charge)"
+//					+ " VALUES('" + metaboliteName + "','" + sourceDbId + "','" + formula + "'," + molecularWeight + "," + charge +");");
 			
 			newDbstmt.execute("INSERT INTO compound (name,kegg_id,formula,molecular_weight,charge)"
 					+ " VALUES('" + metaboliteName + "','" + sourceDbId + "','" + formula + "'," + molecularWeight + "," + charge +");");
@@ -6630,7 +6631,7 @@ public class ModelAPI {
 			rs2.next();
 			newMetaboliteId = rs2.getInt(1);
 			
-			System.out.println("New compound inserted with idcompound="+newMetaboliteId);
+//			System.out.println("New compound inserted with idcompound="+newMetaboliteId);
 		}
 		
 		rs.close();

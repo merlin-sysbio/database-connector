@@ -82,8 +82,8 @@ public class TransportersAPI {
 
 		Statement statement = conn.createStatement();
 
-		//CHECH THIS QUERY!!!!
-		ResultSet rs = statement.executeQuery("SELECT * FROM sw_reports WHERE project_id = "+projectID+ " AND status='PROCESSED';");
+		//CHECK THIS QUERY!!!!
+		ResultSet rs = statement.executeQuery("SELECT * FROM sw_reports WHERE project_id = "+projectID+";");
 
 		while(rs.next())
 			ret.put(rs.getString(3), rs.getInt(6));

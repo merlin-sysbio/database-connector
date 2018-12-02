@@ -1225,10 +1225,12 @@ public class ProjectAPI {
 	public static int getReactionIdByName(String name, Statement stmt) throws SQLException{
 
 		int res = -1;
-
+		
 //		ResultSet rs = stmt.executeQuery("SELECT idreaction FROM reaction WHERE name = '"+name+"'");
 		
-		ResultSet rs = stmt.executeQuery("SELECT idreaction FROM reaction WHERE name = '"+name+"' AND inModel");
+		ResultSet rs = stmt.executeQuery("SELECT idreaction FROM reaction WHERE name = '"+name+"' AND originalReaction="+ ProjectAPI.isCompartmentalisedModel(stmt) +";");
+		
+//		ResultSet rs = stmt.executeQuery("SELECT idreaction FROM reaction WHERE name = '"+name+"' AND inModel");
 		
 //		ResultSet rs = stmt.executeQuery("SELECT idreaction, compartment.name from reaction "
 //				+ "INNER JOIN compartment ON compartment.idcompartment=reaction.compartment_idcompartment "
