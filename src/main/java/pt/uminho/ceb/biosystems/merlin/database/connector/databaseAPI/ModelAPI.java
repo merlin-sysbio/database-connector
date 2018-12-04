@@ -936,7 +936,7 @@ public class ModelAPI {
 
 		if (rs.next()) {
 			
-			System.out.println("Getting reactionContainer for: "+rs.getString(1));
+//			System.out.println("Getting reactionContainer for: "+rs.getString(1));
 			
 			String name = rs.getString(1);
 			String equation = rs.getString(2);
@@ -6480,21 +6480,21 @@ public class ModelAPI {
 		
 		ResultSet rs;
 		
-		System.out.println("-----------filterReactionsNotInDatabase---------");
+//		System.out.println("-----------filterReactionsNotInDatabase---------");
 		
 		for(String reactionName :  reactions){
 			
-			System.out.println(reactionName);
+//			System.out.println(reactionName);
 			
 			rs = stmt.executeQuery("SELECT * FROM reaction WHERE name='"+reactionName+"';");
 			
 			if(!rs.next()){
-				System.out.println("Reaction not present in database!");
+//				System.out.println("Reaction not present in database!");
 				reactionsNotInDb.add(reactionName);
 			}
-			else{
-				System.out.println("Reaction present in database!");
-			}
+//			else{
+//				System.out.println("Reaction present in database!");
+//			}
 			
 			rs.close();
 		}
@@ -6664,23 +6664,23 @@ public class ModelAPI {
 		
 		ResultSet rs2 = null;
 		
-		System.out.println("Pathway code: "+pathwayCode+"\t pathwayName: "+pathwayName);
+//		System.out.println("Pathway code: "+pathwayCode+"\t pathwayName: "+pathwayName);
 		
 		if(pathwayCode!=null & !pathwayCode.isEmpty()){
 			rs2 = newDbstmt.executeQuery("SELECT idpathway FROM pathway WHERE code='"+pathwayCode+"';");
 			
-			System.out.println("Search for pathwayCode...");
+//			System.out.println("Search for pathwayCode...");
 			
 			if(rs2.next()){
 				newPathwayId = rs2.getInt(1);
 				
-				System.out.println("Pathway code matched! New Pathway id: "+newPathwayId);
+//				System.out.println("Pathway code matched! New Pathway id: "+newPathwayId);
 			}
 		}
 		
 		if(newPathwayId==-1 && pathwayName!=null && !pathwayName.isEmpty()){
 			
-			System.out.println("Search for pathway name...");
+//			System.out.println("Search for pathway name...");
 			
 			rs2 = newDbstmt.executeQuery("SELECT idpathway FROM pathway WHERE name='"+pathwayName+"';");
 			
@@ -6693,8 +6693,8 @@ public class ModelAPI {
 		
 		if(newPathwayId==-1){
 			
-			System.out.println("Inserting pathway...");
-			System.out.println("Query: INSERT INTO pathway (code,name) VALUES('" + pathwayCode + "','" + pathwayName + "');");
+//			System.out.println("Inserting pathway...");
+//			System.out.println("Query: INSERT INTO pathway (code,name) VALUES('" + pathwayCode + "','" + pathwayName + "');");
 			
 			newDbstmt.execute("INSERT INTO pathway (code,name) VALUES('" + pathwayCode + "','" + pathwayName + "');");
 			
@@ -6702,7 +6702,7 @@ public class ModelAPI {
 			rs2.next();
 			newPathwayId = rs2.getInt(1);
 			
-			System.out.println("Pathway inserted with idpathway = "+newPathwayId);
+//			System.out.println("Pathway inserted with idpathway = "+newPathwayId);
 		}
 		
 		rs.close();
