@@ -1210,7 +1210,9 @@ public class TransportersAPI {
 			list[1]=rs.getString(2);
 			list[2]=rs.getString(3);
 			
-			result.add(list);
+
+			if(list[0] != null && list[1] != null && list[2] != null)
+				result.add(list);
 		}
 		rs.close();
 		return result;
