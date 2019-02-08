@@ -51,6 +51,29 @@ public class ModelAPI {
 
 
 	private static final int BATCH_SIZE = 500;
+	
+	
+	public static void swapReactantsAndProducts(String reactionID, Statement statement) throws SQLException {
+		
+		
+		ResultSet rs = statement.executeQuery("SELECT * FROM stoichiometry WHERE reaction_idreaction = '"+reactionID+"';");
+		
+		Map<String, Set<String>> stoichiometryMetabolite = new HashMap<>();
+		
+		while (rs.next()) {
+			
+			Set<String> set = new HashSet<>();
+			if(stoichiometryMetabolite.containsKey(rs.getString("stoichiometric_coefficient")))
+					set = stoichiometryMetabolite.get(rs.getString("stoichiometric_coefficient"));
+			
+			set.add(rs.getString("compound_idcompound"));
+					
+			stoichiometryMetabolite.put(rs.getString("stoichiometric_coefficient"),set);
+			
+		}
+		
+		
+	}
 
 	/**
 	 * Load gene to model.
