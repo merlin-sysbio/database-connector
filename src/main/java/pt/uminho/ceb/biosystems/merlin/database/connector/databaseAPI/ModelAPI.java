@@ -2356,7 +2356,7 @@ public class ModelAPI {
 				" AND protein.idprotein = reaction_has_enzyme.enzyme_protein_idprotein " +
 				" INNER JOIN reaction ON reaction.idreaction = reaction_has_enzyme.reaction_idreaction" +
 				originalReaction+encodedEnzyme+
-				" GROUP BY idprotein, ecnumber "+//, reaction.inModel " +
+				" GROUP BY idprotein, ecnumber , reaction.inModel " +
 				" ORDER BY ecnumber  ASC, reaction.inModel DESC;");
 
 		while(rs.next()) {
@@ -2848,7 +2848,7 @@ public class ModelAPI {
 				" INNER JOIN compartment ON stoichiometry.compartment_idcompartment=compartment.idcompartment " +
 				" INNER JOIN reaction ON (reaction.idreaction=reaction_idreaction) "+
 				aux + aux3 +" AND reaction.name NOT LIKE 'T%' "+
-				" GROUP BY compound.name, kegg_id, stoichiometry.compartment_idcompartment "+
+				" GROUP BY compound.name, compound.idcompound, kegg_id, stoichiometry.compartment_idcompartment "+
 				" ORDER BY "+aux2+" compound.name, kegg_id ;");
 
 		while(rs.next()){
@@ -2884,7 +2884,7 @@ public class ModelAPI {
 				" INNER JOIN compartment ON stoichiometry.compartment_idcompartment=compartment.idcompartment " +
 				" INNER JOIN reaction ON (reaction.idreaction=reaction_idreaction) "+
 				aux+ aux3 +" AND reaction.name LIKE 'T%' "+
-				" GROUP BY compound.name, kegg_id, stoichiometry.compartment_idcompartment "+
+				" GROUP BY compound.name, compound.idcompound, kegg_id, stoichiometry.compartment_idcompartment "+
 				" ORDER BY "+aux2+" compound.name, kegg_id ;");
 
 		while(rs.next()){
@@ -2945,7 +2945,7 @@ public class ModelAPI {
 				" INNER JOIN compartment ON stoichiometry.compartment_idcompartment=compartment.idcompartment " +
 				" INNER JOIN reaction ON (reaction.idreaction=reaction_idreaction) "+
 				aux+ aux3 +
-				" GROUP BY compound.name, kegg_id, stoichiometry.compartment_idcompartment "+
+				" GROUP BY compound.name, compound.idcompound, kegg_id, stoichiometry.compartment_idcompartment, compound.formula "+
 				" ORDER BY "+aux2+" compound.name, kegg_id ;");
 
 		while(rs.next()){
@@ -5971,15 +5971,15 @@ public class ModelAPI {
 		
 		Map<String, Integer> res = new HashMap<>();
 
-		ResultSet rs = stmt.executeQuery("SELECT gene.sequence_id, gene.locusTag, COUNT(DISTINCT(reaction_has_enzyme.reaction_idreaction))"
+		ResultSet rs = stmt.executeQuery("SELECT gene.sequence_id, COUNT(DISTINCT(reaction_has_enzyme.reaction_idreaction))"
 				+" FROM subunit INNER JOIN reaction_has_enzyme ON (subunit.enzyme_protein_idprotein = reaction_has_enzyme.enzyme_protein_idprotein"
 				+" AND subunit.enzyme_ecnumber = reaction_has_enzyme.enzyme_ecnumber)"
 				+" INNER JOIN gene ON gene.idgene = subunit.gene_idgene"
-				+" GROUP BY gene.sequence_id"
-				+" ORDER BY gene.locusTag;");
+				+" GROUP BY gene.sequence_id "
+				+" ORDER BY  gene.sequence_id;");
 
 		while(rs.next())
-			res.put(rs.getString(2), rs.getInt(3));
+			res.put(rs.getString(1), rs.getInt(2));
 		
 		rs.close();
 		return res;
@@ -6006,7 +6006,7 @@ public class ModelAPI {
 				+ " OR reaction.boolean_rule LIKE gene.idgene) FROM gene;");
 		
 		while(rs.next())
-			res.put(rs.getString(2), rs.getInt(3));
+			res.put(rs.getString(1), rs.getInt(3));
 		
 		rs.close();
 		return res;

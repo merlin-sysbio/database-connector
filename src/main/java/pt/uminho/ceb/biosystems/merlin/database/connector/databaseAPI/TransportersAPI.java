@@ -2683,14 +2683,14 @@ public class TransportersAPI {
 
 		Map<String, String> mets = new HashMap<>();
 		
-		ResultSet rs = stmt.executeQuery("SELECT locus_tag, count(distinct(metabolite_id)) FROM genes_has_metabolites "+
+		ResultSet rs = stmt.executeQuery("SELECT gene_id, count(distinct(metabolite_id)) FROM genes_has_metabolites "+
 				" INNER JOIN genes ON (genes.id = gene_id) " +
 				" INNER JOIN metabolites ON (metabolites.id = metabolite_id) " +
-				" GROUP BY locus_tag " +
+				" GROUP BY gene_id " +
 				" ORDER BY gene_id;");
 		
 		while(rs.next())
-			mets.put(rs.getString("locus_tag"), rs.getString(2));
+			mets.put(rs.getString("gene_id"), rs.getString(2));
 		
 		rs.close();
 		return mets;
@@ -2706,28 +2706,28 @@ public class TransportersAPI {
 
 		Map<String, String>  tcn = new HashMap<>();
 		
-		ResultSet rs = stmt.executeQuery("SELECT locus_tag, tc_family, SUM(similarity) as score FROM genes " +
+		ResultSet rs = stmt.executeQuery("SELECT gene_id, tc_family, SUM(similarity) as score FROM genes " +
 				" INNER JOIN genes_has_tcdb_registries ON (gene_id = genes.id)" +
 				" INNER JOIN tcdb_registries ON (genes_has_tcdb_registries.uniprot_id = tcdb_registries.uniprot_id AND genes_has_tcdb_registries.version = tcdb_registries.version)" +
 				" INNER JOIN tc_numbers ON (tcdb_registries.tc_number = tc_numbers.tc_number AND tc_numbers.tc_version = tcdb_registries.tc_version)" +
-				" GROUP BY locus_tag, tc_family" +
+				" GROUP BY gene_id, tc_family" +
 				" ORDER BY gene_id;");
 		
 		double max = 0;
 		while(rs.next()) {
 
-			if(tcn.containsKey(rs.getString("locus_tag"))) {
+			if(tcn.containsKey(rs.getString("gene_id"))) {
 				
 				if (rs.getDouble("score")>max) {
 				
-					tcn.put(rs.getString("locus_tag"), rs.getString("tc_family"));
+					tcn.put(rs.getString("gene_id"), rs.getString("tc_family"));
 					max = rs.getDouble("score");
 				}
 			}
 			else {
 				
 				max = 0;
-				tcn.put(rs.getString("locus_tag"), rs.getString("tc_family"));
+				tcn.put(rs.getString("gene_id"), rs.getString("tc_family"));
 			}
 		}
 		
@@ -2881,7 +2881,7 @@ public class TransportersAPI {
 		
 		ResultSet rs = stmt.executeQuery("SELECT metabolite_id, gene_id, similarity_score_sum, taxonomy_score_sum, frequency FROM genes_has_metabolites "
 				+ " LEFT JOIN genes ON (genes.id = gene_id) "
-				+ "  WHERE locus_tag = '"+ id +"' GROUP BY metabolite_id");
+				+ "  WHERE locus_tag = '"+ id +"' GROUP BY metabolite_id, genes_has_metabolites.gene_id");
 		
 		while(rs.next()){
 			String[] list = new String[5];
@@ -2968,7 +2968,7 @@ public class TransportersAPI {
 		ResultSet rs = stmt.executeQuery( "SELECT gene_id, transport_type, metabolite_id, metabolite_name, direction, reversible, sum(similarity) as sum_s, kegg_miriam "
 				+ " FROM gene_to_metabolite_direction "
 				+ " WHERE locus_tag = '"+ id +"' "
-				+ " GROUP BY metabolite_id, transport_type, reversible, direction;");
+				+ " GROUP BY metabolite_id, transport_type, reversible, direction, gene_to_metabolite_direction.gene_id;");
 		
 		while(rs.next()){
 			String[] list = new String[8];
