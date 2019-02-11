@@ -72,7 +72,18 @@ public class ModelAPI {
 			
 		}
 		
-		
+		for (String key : stoichiometryMetabolite.keySet()) {
+			
+			String stoichiometry = key;
+			
+			if(stoichiometry.startsWith("-"))
+				stoichiometry = stoichiometry.replace("-", "");
+			else
+				stoichiometry = "-".concat(stoichiometry);
+			
+			for (String metabliteID : stoichiometryMetabolite.get(key))
+				statement.execute("UPDATE stoichiometry SET stoichiometric_coefficient = '"+stoichiometry+"' WHERE reaction_idreaction = '"+reactionID+"' AND  compound_idcompound = "+metabliteID+" ;");
+		}
 	}
 
 	/**
