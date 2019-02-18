@@ -16,25 +16,15 @@
 		<maven.compiler.target>1.7</maven.compiler.target>
 		<pt.uminho.ceb.biosystems.merlin.version>0.0.4-SNAPSHOT</pt.uminho.ceb.biosystems.merlin.version>
 		<pt.uminho.ceb.biosystems.merlin.groupId>pt.uminho.ceb.biosystems.merlin</pt.uminho.ceb.biosystems.merlin.groupId>
-
 	</properties>
 
 	<repositories>
 		<repository>
 			<id>nexus</id>
 			<name>Nexus BioSystems Server</name>
-			<!-- <url>http://192.168.1.99/nexus/content/groups/public/</url> -->
-			<!-- <url>http://193.137.11.210/nexus/content/groups/public/</url> -->
-			<url>https://www.bio.di.uminho.pt/nexus/content/groups/public/</url>
+			<url>https://nexus.bio.di.uminho.pt/content/repositories/</url>
 		</repository>
 	</repositories>
-
-	<!-- <build> <sourceDirectory>D:\workspaces\maven\database-connector\src</sourceDirectory> 
-		<scriptSourceDirectory>D:\workspaces\maven\database-connector\src\main\scripts</scriptSourceDirectory> 
-		<testSourceDirectory>D:\workspaces\maven\database-connector\test</testSourceDirectory> 
-		<outputDirectory>D:\workspaces\maven\database-connector\bin\</outputDirectory> 
-		<testOutputDirectory>D:\workspaces\maven\database-connector\test-bin</testOutputDirectory> 
-		</build> -->
 
 	<build>
 		<plugins>
@@ -51,8 +41,6 @@
 				<artifactId>nexus-staging-maven-plugin</artifactId>
 				<version>1.6.6</version>
 				<extensions>true</extensions>
-				<!-- <configuration> <serverId>watson</serverId> <nexusUrl>http://193.137.11.210/nexus/</nexusUrl> 
-					</configuration> -->
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -66,9 +54,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-javadoc-plugin</artifactId> 
-				<executions> <execution> <id>attach-javadocs</id> <goals> <goal>jar</goal> 
-				</goals> </execution> </executions> </plugin> -->
 		</plugins>
 	</build>
 
@@ -113,19 +98,16 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 	</dependencies>
 
 	<distributionManagement>
 		<snapshotRepository>
 			<id>biosystems-snapshots</id>
-			<!-- <url>http://192.168.1.99/nexus/content/repositories/biosystems-snapshots</url> -->
-			<url>http://193.137.11.210/nexus/content/repositories/biosystems-snapshots</url>
+			<url>https://nexus.bio.di.uminho.pt/content/repositories/biosystems-snapshots</url>
 		</snapshotRepository>
 		<repository>
 			<id>biosystems-releases</id>
-			<!-- <url>http://192.168.1.99/nexus/content/repositories/biosystems-releases</url> -->
-			<url>http://193.137.11.210/nexus/content/repositories/biosystems-releases</url>
+			<url>https://nexus.bio.di.uminho.pt/content/repositories/biosystems-releases</url>
 		</repository>
 	</distributionManagement>
 
