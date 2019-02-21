@@ -226,12 +226,6 @@ public class DatabaseUtilities {
 		for(String table : tablesList)
 			tables = tables.concat(table).concat(" ");
 		
-//		String command = "mysqldump --no-create-info --no-create-db --user=" + user + " --host=" + host + " --password=" + password 
-//				+ " " +  originDb + " " + tables.trim() + " | mysql --user=" + user + " --host=" + host + " --password=" + password + " " + destinyDb;
-		
-//		String command = "mysqldump --no-create-info --no-create-db --user=" + user + " --host=" + host + " -p " + originDb + " gene compound "
-//				+ "| mysql --user=merlindev --host=193.137.11.210 -p " + destinyDb;
-		
 		String command = "mysqldump --no-create-info --no-create-db -u" + user + " -h" + host + " -p" + password + " " 
 				+ originDb + " " + tables + "| mysql -u" + user + " -h" + host + " -p" + password + " " + destinationDb;
 		
