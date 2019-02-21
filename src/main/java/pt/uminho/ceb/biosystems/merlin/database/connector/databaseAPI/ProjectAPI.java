@@ -22,6 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException;
+
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.utilities.containers.model.MetaboliteContainer;
 import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
@@ -3529,21 +3531,17 @@ public class ProjectAPI {
 	 */
 	public static Set<Integer> checkIfUpdated(Map<Integer, String> data, Statement statement) throws SQLException{
 
-		Set<Integer> forUpdate = new HashSet<>();
-
-		for (int id : data.keySet()){
-			if(!forUpdate.contains(id))
-				forUpdate.add(id);
-		}
+		Set<Integer> forUpdate = new HashSet<>(), existsUpdate = new HashSet<>();
+		forUpdate.addAll(data.keySet());
 
 		ResultSet rs = statement.executeQuery("SELECT * FROM updates");
 
-		while(rs.next()){
-			if(forUpdate.contains(rs.getInt(1)))
-				forUpdate.remove(rs.getInt(1));
-		}
-
+		while(rs.next())
+			existsUpdate.add(rs.getInt(1));
 		rs.close();
+		
+		forUpdate.removeAll(existsUpdate);
+		
 		return forUpdate;
 	}
 
@@ -3560,9 +3558,16 @@ public class ProjectAPI {
 		long time = System.currentTimeMillis();
 		Timestamp timestamp = new Timestamp(time);
 
-		for(int code : forUpdate){
-			statement.execute(data.get(code));
-			statement.execute("INSERT INTO updates(id , date) values (" + code + ", '" + timestamp + "');");
+		for(int code : forUpdate) {
+			
+			try {
+				logger.debug("{}\t[}",code, data.get(code));
+				statement.execute(data.get(code));
+				statement.execute("INSERT INTO updates(id , date) values (" + code + ", '" + timestamp + "');");
+			}
+			catch(MySQLSyntaxErrorException e) {
+				logger.error("Update code {} already inserted",code);
+			}
 		}
 	}
 
